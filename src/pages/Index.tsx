@@ -4,16 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import IdeaSubmissionForm from '@/components/IdeaSubmissionForm';
 import IdeaCard from '@/components/IdeaCard';
+import DailyPromptCard from '@/components/DailyPromptCard';
+import StreakBadge from '@/components/StreakBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useStreaks } from '@/hooks/useStreaks';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
+  const [ideaFormText, setIdeaFormText] = useState('');
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { ideas, loading: ideasLoading, submitIdea, toggleLike, generateAnalysis, saveFinalVerdict } = useIdeas(currentLanguage);
+  const { updateStreak } = useStreaks(currentLanguage);
 
   const text = {
     ko: {
@@ -36,6 +41,22 @@ const Index = () => {
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
+  };
+
+  const handleUsePrompt = (promptText: string) => {
+    setIdeaFormText(promptText);
+    // Scroll to form
+    const formElement = document.querySelector('#idea-submission-form');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleSubmitIdea = async (ideaText: string) => {
+    await submitIdea(ideaText);
+    // Update streak after successful submission
+    await updateStreak();
+    setIdeaFormText('');
   };
 
   if (authLoading || roleLoading) {
@@ -61,10 +82,20 @@ const Index = () => {
       />
       
       <main className="container mx-auto px-4 py-8">
-        <IdeaSubmissionForm
+        <DailyPromptCard 
           currentLanguage={currentLanguage}
-          onSubmit={submitIdea}
+          onUsePrompt={handleUsePrompt}
         />
+        
+        <StreakBadge currentLanguage={currentLanguage} />
+        
+        <div id="idea-submission-form">
+          <IdeaSubmissionForm
+            currentLanguage={currentLanguage}
+            onSubmit={handleSubmitIdea}
+            initialText={ideaFormText}
+          />
+        </div>
         
         <div className="space-y-6">
           {ideasLoading ? (

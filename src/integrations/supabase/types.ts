@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      daily_prompts: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          prompt_text_en: string
+          prompt_text_ko: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          prompt_text_en: string
+          prompt_text_ko: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          prompt_text_en?: string
+          prompt_text_ko?: string
+        }
+        Relationships: []
+      }
       idea_likes: {
         Row: {
           created_at: string
@@ -118,6 +142,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          badge_emoji: string
+          badge_type: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_emoji: string
+          badge_type: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_emoji?: string
+          badge_type?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -139,17 +195,63 @@ export type Database = {
         }
         Relationships: []
       }
+      user_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_submission_date: string | null
+          max_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_submission_date?: string | null
+          max_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_submission_date?: string | null
+          max_streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_streaks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      check_and_award_streak_badge: {
+        Args: { p_user_id: string; p_streak: number }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      update_user_streak: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {

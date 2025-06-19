@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Loader, Zap, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,12 +9,24 @@ import { checkInappropriateContent, getContentWarning } from '@/utils/contentFil
 interface IdeaSubmissionFormProps {
   currentLanguage: 'ko' | 'en';
   onSubmit: (idea: string) => Promise<void>;
+  initialText?: string;
 }
 
-const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({ currentLanguage, onSubmit }) => {
-  const [idea, setIdea] = useState('');
+const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({ 
+  currentLanguage, 
+  onSubmit, 
+  initialText = '' 
+}) => {
+  const [idea, setIdea] = useState(initialText);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+
+  // Update idea text when initialText prop changes
+  useEffect(() => {
+    if (initialText && initialText !== idea) {
+      setIdea(initialText);
+    }
+  }, [initialText]);
 
   const text = {
     ko: {
