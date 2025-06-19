@@ -4,6 +4,7 @@ import { Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 import IdeaCardHeader from './IdeaCardHeader';
 import IdeaAnalysisSection from './IdeaAnalysisSection';
 import IdeaCardActions from './IdeaCardActions';
@@ -48,6 +49,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   const [finalVerdict, setFinalVerdict] = useState(idea.finalVerdict || '');
   const [isSavingVerdict, setIsSavingVerdict] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const text = {
     ko: {
@@ -99,7 +101,9 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   const showGenerateButton = (!idea.improvements || !idea.marketPotential);
 
   return (
-    <div className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] p-6 mb-6 ${
+    <div className={`bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.01] ${
+      isMobile ? 'p-4' : 'p-6'
+    } mb-4 md:mb-6 border border-slate-200 ${
       idea.seed ? 'border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50' : ''
     }`}>
       <IdeaCardHeader 
@@ -110,18 +114,24 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       />
 
       {/* Idea Text */}
-      <p className="text-gray-800 text-lg mb-4 leading-relaxed">{idea.text}</p>
+      <p className={`text-slate-800 leading-relaxed mb-4 ${
+        isMobile ? 'text-base' : 'text-lg'
+      }`}>
+        {idea.text}
+      </p>
 
       {/* Tags */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className={`flex flex-wrap gap-2 mb-4 ${isMobile ? 'gap-1' : 'gap-2'}`}>
         {idea.tags.map((tag, index) => (
           <span
             key={index}
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
+            className={`px-3 py-1 rounded-full font-medium ${
+              isMobile ? 'text-xs' : 'text-sm'
+            } ${
               idea.seed 
                 ? 'bg-gradient-to-r from-orange-400 to-red-400 text-white'
                 : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-            }`}
+            } shadow-sm`}
           >
             #{tag}
           </span>
@@ -140,32 +150,32 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
 
       {/* Final Verdict Section */}
       {idea.finalVerdict && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border-l-4 border-yellow-400">
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 mb-4 border-l-4 border-yellow-400 shadow-sm">
           <div className="flex items-center space-x-2 mb-2">
             <Award className="h-5 w-5 text-yellow-600" />
-            <span className="font-semibold text-gray-800">{text[currentLanguage].finalVerdict}</span>
+            <span className="font-semibold text-slate-800">{text[currentLanguage].finalVerdict}</span>
           </div>
-          <p className="text-gray-700">{idea.finalVerdict}</p>
+          <p className="text-slate-700">{idea.finalVerdict}</p>
         </div>
       )}
 
       {/* Admin Final Verdict Input */}
       {isAuthenticated && isAdmin && !idea.finalVerdict && !idea.seed && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border-l-4 border-yellow-400">
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 mb-4 border-l-4 border-yellow-400 shadow-sm">
           <div className="flex items-center space-x-2 mb-3">
             <Award className="h-5 w-5 text-yellow-600" />
-            <span className="font-semibold text-gray-800">{text[currentLanguage].finalVerdict}</span>
+            <span className="font-semibold text-slate-800">{text[currentLanguage].finalVerdict}</span>
           </div>
           <Textarea
             value={finalVerdict}
             onChange={(e) => setFinalVerdict(e.target.value)}
             placeholder={text[currentLanguage].verdictPlaceholder}
-            className="mb-3 min-h-[80px]"
+            className="mb-3 min-h-[80px] border-yellow-200 focus:border-yellow-400"
           />
           <Button
             onClick={handleSaveVerdict}
             disabled={!finalVerdict.trim() || isSavingVerdict}
-            className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+            className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 shadow-sm"
           >
             {isSavingVerdict ? text[currentLanguage].savingVerdict : text[currentLanguage].saveVerdict}
           </Button>

@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useStreaks } from '@/hooks/useStreaks';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -19,6 +20,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { ideas, loading: ideasLoading, submitIdea, toggleLike, generateAnalysis, saveFinalVerdict } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
+  const isMobile = useIsMobile();
 
   const text = {
     ko: {
@@ -82,23 +84,23 @@ const Index = () => {
   // Show loading only while auth state is being determined initially
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-16 w-16 md:h-32 md:w-32 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-lg text-slate-600">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50">
       <Header 
         currentLanguage={currentLanguage}
         onLanguageToggle={handleLanguageToggle}
       />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className={`container mx-auto px-4 py-6 md:py-8 max-w-4xl ${isMobile ? 'space-y-4' : 'space-y-6'}`}>
         <DailyPromptCard 
           currentLanguage={currentLanguage}
           onUsePrompt={handleUsePrompt}
@@ -108,8 +110,8 @@ const Index = () => {
         
         {/* Login encouragement banner for non-authenticated users */}
         {!user && (
-          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-4 mb-6 border border-purple-200">
-            <p className="text-center text-purple-800 font-medium">
+          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-4 md:p-6 mb-4 md:mb-6 border border-purple-200 shadow-lg backdrop-blur-sm">
+            <p className={`text-center text-purple-800 font-medium ${isMobile ? 'text-sm' : 'text-base'}`}>
               {text[currentLanguage].loginForMoreFeatures}
             </p>
           </div>
@@ -124,15 +126,18 @@ const Index = () => {
           />
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {ideasLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-gray-500 text-lg">{text[currentLanguage].loadingIdeas}</p>
+            <div className="text-center py-8 md:py-12">
+              <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p className="text-slate-500 text-base md:text-lg">{text[currentLanguage].loadingIdeas}</p>
             </div>
           ) : ideas.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">{text[currentLanguage].noIdeas}</p>
+            <div className="text-center py-8 md:py-12">
+              <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8 border border-slate-200">
+                <div className="text-6xl md:text-8xl mb-4">💡</div>
+                <p className="text-slate-500 text-base md:text-lg">{text[currentLanguage].noIdeas}</p>
+              </div>
             </div>
           ) : (
             ideas.map(idea => (

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DailyPrompt {
   id: string;
@@ -19,6 +20,7 @@ interface DailyPromptCardProps {
 const DailyPromptCard: React.FC<DailyPromptCardProps> = ({ currentLanguage, onUsePrompt }) => {
   const [prompt, setPrompt] = useState<DailyPrompt | null>(null);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   const text = {
     ko: {
@@ -85,7 +87,9 @@ const DailyPromptCard: React.FC<DailyPromptCardProps> = ({ currentLanguage, onUs
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-r from-purple-400 to-blue-400 rounded-xl shadow-lg p-4 mb-4">
+      <div className={`bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl shadow-lg ${
+        isMobile ? 'p-4' : 'p-6'
+      } mb-4 border border-purple-300`}>
         <div className="animate-pulse">
           <div className="h-4 bg-white/20 rounded w-24 mb-2"></div>
           <div className="h-3 bg-white/20 rounded w-full"></div>
@@ -96,34 +100,46 @@ const DailyPromptCard: React.FC<DailyPromptCardProps> = ({ currentLanguage, onUs
 
   if (!prompt) {
     return (
-      <div className="bg-gradient-to-r from-gray-300 to-gray-400 rounded-xl shadow-lg p-4 mb-4">
+      <div className={`bg-gradient-to-r from-slate-400 to-slate-500 rounded-2xl shadow-lg ${
+        isMobile ? 'p-4' : 'p-6'
+      } mb-4 border border-slate-300`}>
         <div className="flex items-center space-x-2 text-white mb-2">
           <Calendar className="h-4 w-4" />
-          <h3 className="text-sm font-semibold">{text[currentLanguage].todaysPrompt}</h3>
+          <h3 className={`font-semibold ${isMobile ? 'text-sm' : 'text-base'}`}>
+            {text[currentLanguage].todaysPrompt}
+          </h3>
         </div>
-        <p className="text-white/80 text-xs">{text[currentLanguage].noPrompt}</p>
+        <p className={`text-white/80 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+          {text[currentLanguage].noPrompt}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-r from-purple-400 to-blue-400 rounded-xl shadow-lg p-4 mb-4 text-white">
-      <div className="flex items-center justify-between mb-2">
+    <div className={`bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl shadow-lg ${
+      isMobile ? 'p-4' : 'p-6'
+    } mb-4 text-white border border-purple-300`}>
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4" />
-          <h3 className="text-sm font-semibold">{text[currentLanguage].todaysPrompt}</h3>
+          <h3 className={`font-semibold ${isMobile ? 'text-sm' : 'text-base'}`}>
+            {text[currentLanguage].todaysPrompt}
+          </h3>
         </div>
         <Sparkles className="h-4 w-4 animate-pulse" />
       </div>
       
-      <p className="text-white/90 text-sm mb-3 leading-relaxed line-clamp-2">
+      <p className={`text-white/90 leading-relaxed mb-4 ${
+        isMobile ? 'text-sm' : 'text-base'
+      } ${isMobile ? 'line-clamp-3' : 'line-clamp-2'}`}>
         {currentLanguage === 'ko' ? prompt.prompt_text_ko : prompt.prompt_text_en}
       </p>
       
       <Button
         onClick={handleUsePrompt}
-        size="sm"
-        className="bg-white/20 hover:bg-white/30 text-white border border-white/30 transition-all duration-300 text-xs"
+        size={isMobile ? "sm" : "default"}
+        className="bg-white/20 hover:bg-white/30 text-white border border-white/30 transition-all duration-300 shadow-sm backdrop-blur-sm"
       >
         {text[currentLanguage].useThisTopic}
       </Button>
