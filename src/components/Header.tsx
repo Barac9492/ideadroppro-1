@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Globe, Lightbulb, LogOut, User, Settings } from 'lucide-react';
@@ -22,14 +21,14 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
   const text = {
     ko: {
       title: 'IdeaDrop Pro',
-      subtitle: '혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요',
+      subtitle: 'AI의 실시간 피드백과, 현업 VC의 주간 피드백을 받아보세요',
       signIn: '로그인',
       signOut: '로그아웃',
       adminPanel: '관리자 패널'
     },
     en: {
       title: 'IdeaDrop Pro',
-      subtitle: 'Share innovative ideas and get instant AI feedback',
+      subtitle: 'Get real-time AI feedback and weekly insights from professional VCs',
       signIn: 'Sign In',
       signOut: 'Sign Out',
       adminPanel: 'Admin Panel'
