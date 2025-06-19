@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Trash2 } from 'lucide-react';
+import { Rocket, Trash2, Info } from 'lucide-react';
 import { useIdeas } from '@/hooks/useIdeas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -14,6 +14,8 @@ interface SeedDataManagementProps {
 const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [seedCount, setSeedCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const { generateSeedIdeas } = useIdeas(currentLanguage);
 
   const text = {
@@ -24,9 +26,12 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
       generating: '생성 중...',
       deleting: '삭제 중...',
       description: '앱에 표시될 데모 아이디어를 관리합니다.',
+      currentCount: '현재 시드 아이디어 개수:',
       confirmDelete: '모든 데모 아이디어를 삭제하시겠습니까?',
       deleteSuccess: '데모 아이디어가 삭제되었습니다.',
-      deleteError: '데모 아이디어 삭제 중 오류가 발생했습니다.'
+      deleteError: '데모 아이디어 삭제 중 오류가 발생했습니다.',
+      noSeedData: '현재 생성된 시드 데이터가 없습니다.',
+      refreshing: '새로고침 중...'
     },
     en: {
       title: 'Seed Data Management',
@@ -35,16 +40,41 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
       generating: 'Generating...',
       deleting: 'Deleting...',
       description: 'Manage demo ideas displayed in the app.',
+      currentCount: 'Current seed ideas count:',
       confirmDelete: 'Are you sure you want to delete all demo ideas?',
       deleteSuccess: 'Demo ideas deleted successfully.',
-      deleteError: 'Error occurred while deleting demo ideas.'
+      deleteError: 'Error occurred while deleting demo ideas.',
+      noSeedData: 'No seed data currently generated.',
+      refreshing: 'Refreshing...'
     }
   };
+
+  const fetchSeedCount = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ideas')
+        .select('id', { count: 'exact' })
+        .eq('seed', true);
+
+      if (error) throw error;
+
+      setSeedCount(data?.length || 0);
+    } catch (error) {
+      console.error('Error fetching seed count:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSeedCount();
+  }, []);
 
   const handleGenerateSeeds = async () => {
     setIsGenerating(true);
     try {
       await generateSeedIdeas();
+      await fetchSeedCount(); // Refresh count after generation
     } finally {
       setIsGenerating(false);
     }
@@ -86,6 +116,8 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
         duration: 3000,
       });
 
+      await fetchSeedCount(); // Refresh count after deletion
+      
       // Refresh the page to update the ideas list
       window.location.reload();
     } catch (error) {
@@ -112,6 +144,24 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
         <p className="text-gray-600 mb-4">
           {text[currentLanguage].description}
         </p>
+        
+        {/* Seed Count Info */}
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+          <div className="flex items-center">
+            <Info className="h-5 w-5 text-blue-400 mr-2" />
+            <div>
+              <p className="text-sm font-medium text-blue-800">
+                {text[currentLanguage].currentCount} {loading ? text[currentLanguage].refreshing : seedCount}
+              </p>
+              {seedCount === 0 && !loading && (
+                <p className="text-sm text-blue-600">
+                  {text[currentLanguage].noSeedData}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="flex space-x-2">
           <Button
             onClick={handleGenerateSeeds}
@@ -123,7 +173,7 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
           </Button>
           <Button
             onClick={handleDeleteSeeds}
-            disabled={isDeleting}
+            disabled={isDeleting || seedCount === 0}
             variant="destructive"
           >
             <Trash2 className="h-4 w-4 mr-2" />

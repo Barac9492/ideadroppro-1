@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Crown, User, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import IdeaManagement from './IdeaManagement';
+import SeedDataManagement from './SeedDataManagement';
 
 interface User {
   id: string;
@@ -26,6 +28,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
     ko: {
       userManagement: '사용자 관리',
       ideaManagement: '아이디어 관리',
+      seedDataManagement: '시드 데이터 관리',
       email: '이메일',
       role: '역할',
       admin: '관리자',
@@ -38,6 +41,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
     en: {
       userManagement: 'User Management',
       ideaManagement: 'Idea Management',
+      seedDataManagement: 'Seed Data Management',
       email: 'Email',
       role: 'Role',
       admin: 'Admin',
@@ -144,9 +148,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="users">{text[currentLanguage].userManagement}</TabsTrigger>
         <TabsTrigger value="ideas">{text[currentLanguage].ideaManagement}</TabsTrigger>
+        <TabsTrigger value="seeds">{text[currentLanguage].seedDataManagement}</TabsTrigger>
       </TabsList>
       
       <TabsContent value="users">
@@ -196,6 +201,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
       <TabsContent value="ideas">
         <IdeaManagement currentLanguage={currentLanguage} />
+      </TabsContent>
+
+      <TabsContent value="seeds">
+        <SeedDataManagement currentLanguage={currentLanguage} />
       </TabsContent>
     </Tabs>
   );
