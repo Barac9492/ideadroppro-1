@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -62,8 +61,13 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
       const { data, error } = await supabase
         .from('ideas')
         .select(`
-          *,
-          profiles(username)
+          id,
+          text,
+          score,
+          tags,
+          created_at,
+          user_id,
+          profiles!inner(username)
         `)
         .order('created_at', { ascending: false });
 
