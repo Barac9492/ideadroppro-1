@@ -6,15 +6,14 @@ import IdeaSubmissionForm from '@/components/IdeaSubmissionForm';
 import IdeaCard from '@/components/IdeaCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { ideas, loading: ideasLoading, submitIdea, toggleLike, generateAnalysis, saveFinalVerdict } = useIdeas(currentLanguage);
-
-  // Mock admin check (in real app, this would be based on user role)
-  const isAdmin = true;
 
   const text = {
     ko: {
@@ -39,7 +38,7 @@ const Index = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  if (authLoading) {
+  if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">

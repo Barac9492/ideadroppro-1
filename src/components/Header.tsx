@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Globe, Lightbulb, LogOut, User } from 'lucide-react';
+import { Globe, Lightbulb, LogOut, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import AdminPanel from './AdminPanel';
 
 interface HeaderProps {
   currentLanguage: 'ko' | 'en';
@@ -12,6 +15,8 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const navigate = useNavigate();
 
   const text = {
@@ -19,13 +24,15 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
       title: 'IdeaDrop Pro',
       subtitle: '혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요',
       signIn: '로그인',
-      signOut: '로그아웃'
+      signOut: '로그아웃',
+      adminPanel: '관리자 패널'
     },
     en: {
       title: 'IdeaDrop Pro',
       subtitle: 'Share innovative ideas and get instant AI feedback',
       signIn: 'Sign In',
-      signOut: 'Sign Out'
+      signOut: 'Sign Out',
+      adminPanel: 'Admin Panel'
     }
   };
 
@@ -63,6 +70,28 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
                   <User className="h-4 w-4" />
                   <span className="text-sm">{user.email}</span>
                 </div>
+
+                {isAdmin && (
+                  <Dialog open={showAdminPanel} onOpenChange={setShowAdminPanel}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:bg-white/20"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        {text[currentLanguage].adminPanel}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{text[currentLanguage].adminPanel}</DialogTitle>
+                      </DialogHeader>
+                      <AdminPanel currentLanguage={currentLanguage} />
+                    </DialogContent>
+                  </Dialog>
+                )}
+
                 <Button
                   onClick={handleSignOut}
                   variant="ghost"
