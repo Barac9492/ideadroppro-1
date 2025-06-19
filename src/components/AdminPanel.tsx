@@ -38,7 +38,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       user: '사용자',
       updateRole: '역할 업데이트',
       updated: '역할이 업데이트되었습니다',
-      error: '역할 업데이트 중 오류가 발생했습니다'
+      error: '역할 업데이트 중 오류가 발생했습니다',
+      loadingUsers: '사용자 정보를 불러오는 중...',
+      fetchError: '사용자 정보를 가져오는데 실패했습니다'
     },
     en: {
       userManagement: 'User Management',
@@ -52,7 +54,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       user: 'User',
       updateRole: 'Update Role',
       updated: 'Role updated successfully',
-      error: 'Error updating user role'
+      error: 'Error updating user role',
+      loadingUsers: 'Loading users...',
+      fetchError: 'Failed to fetch users'
     }
   };
 
@@ -62,35 +66,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
   const fetchUsers = async () => {
     try {
-      // Get all users with their roles
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      const { data, error } = await supabase.functions.invoke('admin-get-users');
       
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
+      if (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: text[currentLanguage].fetchError,
+          variant: 'destructive',
+          duration: 3000,
+        });
         return;
       }
 
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
-        return;
-      }
-
-      const usersWithRoles = authUsers.users.map(user => {
-        const userRole = userRoles?.find(role => role.user_id === user.id);
-        return {
-          id: user.id,
-          email: user.email || '',
-          role: userRole?.role || 'user'
-        };
-      });
-
-      setUsers(usersWithRoles);
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast({
+        title: text[currentLanguage].fetchError,
+        variant: 'destructive',
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -142,7 +137,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
         <CardContent className="p-6">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-2 text-gray-500">Loading users...</p>
+            <p className="mt-2 text-gray-500">{text[currentLanguage].loadingUsers}</p>
           </div>
         </CardContent>
       </Card>
@@ -168,36 +163,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {users.map(user => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    {getRoleIcon(user.role)}
-                    <div>
-                      <p className="font-medium">{user.email}</p>
-                      <p className="text-sm text-gray-500">
-                        {text[currentLanguage][user.role || 'user']}
-                      </p>
+              {users.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  {text[currentLanguage].fetchError}
+                </p>
+              ) : (
+                users.map(user => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {getRoleIcon(user.role)}
+                      <div>
+                        <p className="font-medium">{user.email}</p>
+                        <p className="text-sm text-gray-500">
+                          {text[currentLanguage][user.role || 'user']}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Select
+                        value={user.role}
+                        onValueChange={(value: 'admin' | 'moderator' | 'user') => 
+                          updateUserRole(user.id, value)
+                        }
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">{text[currentLanguage].user}</SelectItem>
+                          <SelectItem value="moderator">{text[currentLanguage].moderator}</SelectItem>
+                          <SelectItem value="admin">{text[currentLanguage].admin}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Select
-                      value={user.role}
-                      onValueChange={(value: 'admin' | 'moderator' | 'user') => 
-                        updateUserRole(user.id, value)
-                      }
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">{text[currentLanguage].user}</SelectItem>
-                        <SelectItem value="moderator">{text[currentLanguage].moderator}</SelectItem>
-                        <SelectItem value="admin">{text[currentLanguage].admin}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

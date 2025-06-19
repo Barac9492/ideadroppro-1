@@ -46,6 +46,15 @@ port = 54328
 [functions.analyze-idea]
 verify_jwt = true
 
+[functions.admin-get-users]
+verify_jwt = true
+
+[functions.generate-seed-ideas]
+verify_jwt = true
+
+[functions.generate-daily-prompt]
+verify_jwt = true
+
 [auth]
 enabled = true
 port = 54329
