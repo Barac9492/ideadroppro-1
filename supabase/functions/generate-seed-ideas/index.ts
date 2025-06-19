@@ -124,6 +124,33 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Get the authorization header to identify the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization required' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      );
+    }
+
+    // Get user from the JWT token
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid user token' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      );
+    }
+
     const { language = 'ko' } = await req.json().catch(() => ({}));
 
     // Check if seed data already exists
@@ -147,8 +174,8 @@ serve(async (req) => {
       );
     }
 
-    // Create a dummy user ID for seed data
-    const seedUserId = '00000000-0000-0000-0000-000000000000';
+    // Use the actual user ID instead of a dummy one
+    const seedUserId = user.id;
 
     // Prepare seed data for insertion
     const seedDataToInsert = seedIdeas.map(idea => ({
