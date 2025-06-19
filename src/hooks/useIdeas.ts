@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { checkInappropriateContent, getContentWarning } from '@/utils/contentFilter';
 
 interface Idea {
   id: string;
@@ -32,7 +33,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
       analysisGenerated: 'AI 분석이 생성되었습니다!',
       analysisError: 'AI 분석 생성 중 오류가 발생했습니다.',
       verdictSaved: 'VC 평가가 저장되었습니다!',
-      verdictError: 'VC 평가 저장 중 오류가 발생했습니다.'
+      verdictError: 'VC 평가 저장 중 오류가 발생했습니다.',
+      contentBlocked: '부적절한 콘텐츠가 감지되어 아이디어를 제출할 수 없습니다.'
     },
     en: {
       submitSuccess: 'Idea submitted successfully!',
@@ -40,7 +42,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
       analysisGenerated: 'AI analysis generated successfully!',
       analysisError: 'Error occurred while generating AI analysis.',
       verdictSaved: 'VC verdict saved successfully!',
-      verdictError: 'Error occurred while saving VC verdict.'
+      verdictError: 'Error occurred while saving VC verdict.',
+      contentBlocked: 'Inappropriate content detected. Idea cannot be submitted.'
     }
   };
 
@@ -93,6 +96,18 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
   const submitIdea = async (ideaText: string) => {
     if (!user) return;
+
+    // Check for inappropriate content
+    if (checkInappropriateContent(ideaText, currentLanguage)) {
+      const warning = getContentWarning(currentLanguage);
+      toast({
+        title: warning.title,
+        description: warning.message,
+        variant: 'destructive',
+        duration: 5000,
+      });
+      return;
+    }
 
     try {
       console.log('Requesting AI analysis for:', ideaText);

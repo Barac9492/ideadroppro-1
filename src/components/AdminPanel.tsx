@@ -1,11 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Crown, User, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import IdeaManagement from './IdeaManagement';
 
 interface User {
   id: string;
@@ -23,7 +24,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
   const text = {
     ko: {
-      title: '사용자 관리',
+      userManagement: '사용자 관리',
+      ideaManagement: '아이디어 관리',
       email: '이메일',
       role: '역할',
       admin: '관리자',
@@ -34,7 +36,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       error: '역할 업데이트 중 오류가 발생했습니다'
     },
     en: {
-      title: 'User Management',
+      userManagement: 'User Management',
+      ideaManagement: 'Idea Management',
       email: 'Email',
       role: 'Role',
       admin: 'Admin',
@@ -140,48 +143,61 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Crown className="h-5 w-5" />
-          <span>{text[currentLanguage].title}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {users.map(user => (
-            <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                {getRoleIcon(user.role)}
-                <div>
-                  <p className="font-medium">{user.email}</p>
-                  <p className="text-sm text-gray-500">
-                    {text[currentLanguage][user.role || 'user']}
-                  </p>
+    <Tabs defaultValue="users" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="users">{text[currentLanguage].userManagement}</TabsTrigger>
+        <TabsTrigger value="ideas">{text[currentLanguage].ideaManagement}</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="users">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Crown className="h-5 w-5" />
+              <span>{text[currentLanguage].userManagement}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {users.map(user => (
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    {getRoleIcon(user.role)}
+                    <div>
+                      <p className="font-medium">{user.email}</p>
+                      <p className="text-sm text-gray-500">
+                        {text[currentLanguage][user.role || 'user']}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Select
+                      value={user.role}
+                      onValueChange={(value: 'admin' | 'moderator' | 'user') => 
+                        updateUserRole(user.id, value)
+                      }
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">{text[currentLanguage].user}</SelectItem>
+                        <SelectItem value="moderator">{text[currentLanguage].moderator}</SelectItem>
+                        <SelectItem value="admin">{text[currentLanguage].admin}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Select
-                  value={user.role}
-                  onValueChange={(value: 'admin' | 'moderator' | 'user') => 
-                    updateUserRole(user.id, value)
-                  }
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">{text[currentLanguage].user}</SelectItem>
-                    <SelectItem value="moderator">{text[currentLanguage].moderator}</SelectItem>
-                    <SelectItem value="admin">{text[currentLanguage].admin}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="ideas">
+        <IdeaManagement currentLanguage={currentLanguage} />
+      </TabsContent>
+    </Tabs>
   );
 };
 
