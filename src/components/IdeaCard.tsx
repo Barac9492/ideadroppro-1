@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { Heart, Star, Clock, Zap, TrendingUp, Users, Award, Rocket } from 'lucide-react';
+import { Heart, Star, Clock, Zap, TrendingUp, Users, Award, Rocket, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 interface Idea {
   id: string;
@@ -29,6 +30,7 @@ interface IdeaCardProps {
   onGenerateAnalysis: (ideaId: string) => Promise<void>;
   onSaveFinalVerdict?: (ideaId: string, verdict: string) => void;
   isAdmin?: boolean;
+  isAuthenticated: boolean;
 }
 
 const IdeaCard: React.FC<IdeaCardProps> = ({ 
@@ -37,11 +39,13 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   onLike, 
   onGenerateAnalysis,
   onSaveFinalVerdict,
-  isAdmin = false
+  isAdmin = false,
+  isAuthenticated
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [finalVerdict, setFinalVerdict] = useState(idea.finalVerdict || '');
   const [isSavingVerdict, setIsSavingVerdict] = useState(false);
+  const navigate = useNavigate();
 
   const text = {
     ko: {
@@ -59,7 +63,9 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       saveVerdict: '평가 저장',
       savingVerdict: '저장 중...',
       verdictPlaceholder: 'VC로서 이 아이디어에 대한 최종 평가를 작성해주세요...',
-      demoIdea: '데모 아이디어'
+      demoIdea: '데모 아이디어',
+      loginToInteract: '로그인 후 이용 가능',
+      loginRequired: '로그인이 필요합니다'
     },
     en: {
       score: 'Score',
@@ -76,11 +82,17 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       saveVerdict: 'Save Verdict',
       savingVerdict: 'Saving...',
       verdictPlaceholder: 'Write your final verdict on this idea as a VC...',
-      demoIdea: 'Demo Idea'
+      demoIdea: 'Demo Idea',
+      loginToInteract: 'Login to interact',
+      loginRequired: 'Login required'
     }
   };
 
   const handleGenerateAnalysis = async () => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
     setIsGenerating(true);
     try {
       await onGenerateAnalysis(idea.id);
@@ -98,6 +110,14 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     } finally {
       setIsSavingVerdict(false);
     }
+  };
+
+  const handleLikeClick = () => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    onLike(idea.id);
   };
 
   const getTimeAgo = (timestamp: Date) => {
@@ -240,7 +260,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       )}
 
       {/* Admin Final Verdict Input */}
-      {isAdmin && !idea.finalVerdict && !idea.seed && (
+      {isAuthenticated && isAdmin && !idea.finalVerdict && !idea.seed && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border-l-4 border-yellow-400">
           <div className="flex items-center space-x-2 mb-3">
             <Award className="h-5 w-5 text-yellow-600" />
@@ -265,27 +285,47 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       {/* Actions */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <button
-          onClick={() => onLike(idea.id)}
+          onClick={handleLikeClick}
           disabled={idea.seed}
           className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 ${
             idea.seed 
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : idea.hasLiked
-                ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600'
+              : !isAuthenticated
+                ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                : idea.hasLiked
+                  ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600'
           }`}
+          title={!isAuthenticated ? text[currentLanguage].loginRequired : ''}
         >
-          <Heart className={`h-4 w-4 ${idea.hasLiked ? 'fill-current' : ''}`} />
+          <Heart className={`h-4 w-4 ${idea.hasLiked && isAuthenticated ? 'fill-current' : ''}`} />
           <span>{idea.likes} {text[currentLanguage].likes}</span>
+          {!isAuthenticated && !idea.seed && (
+            <LogIn className="h-3 w-3 ml-1 opacity-60" />
+          )}
         </button>
 
         {(!idea.improvements || !idea.marketPotential) && !idea.seed && (
           <Button
             onClick={handleGenerateAnalysis}
             disabled={isGenerating}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            className={`${
+              !isAuthenticated 
+                ? 'bg-gray-400 hover:bg-gray-500' 
+                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+            }`}
+            title={!isAuthenticated ? text[currentLanguage].loginRequired : ''}
           >
-            {isGenerating ? text[currentLanguage].generating : text[currentLanguage].generateAnalysis}
+            {!isAuthenticated ? (
+              <>
+                <LogIn className="h-4 w-4 mr-2" />
+                {text[currentLanguage].loginToInteract}
+              </>
+            ) : (
+              <>
+                {isGenerating ? text[currentLanguage].generating : text[currentLanguage].generateAnalysis}
+              </>
+            )}
           </Button>
         )}
       </div>

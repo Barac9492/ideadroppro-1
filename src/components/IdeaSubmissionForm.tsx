@@ -1,25 +1,29 @@
 
 import React, { useState, useEffect } from 'react';
-import { Send, Loader, Zap, AlertTriangle } from 'lucide-react';
+import { Send, Loader, Zap, AlertTriangle, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { checkInappropriateContent, getContentWarning } from '@/utils/contentFilter';
+import { useNavigate } from 'react-router-dom';
 
 interface IdeaSubmissionFormProps {
   currentLanguage: 'ko' | 'en';
   onSubmit: (idea: string) => Promise<void>;
   initialText?: string;
+  isAuthenticated: boolean;
 }
 
 const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({ 
   currentLanguage, 
   onSubmit, 
-  initialText = '' 
+  initialText = '',
+  isAuthenticated
 }) => {
   const [idea, setIdea] = useState(initialText);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const navigate = useNavigate();
 
   // Update idea text when initialText prop changes
   useEffect(() => {
@@ -34,19 +38,29 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       submit: 'AI 분석으로 아이디어 제출',
       submitting: 'AI가 분석 중입니다...',
       charCount: '글자',
-      guidelines: '커뮤니티 가이드라인: 폭력적이거나 성적인 내용, 혐오 표현은 금지됩니다.'
+      guidelines: '커뮤니티 가이드라인: 폭력적이거나 성적인 내용, 혐오 표현은 금지됩니다.',
+      loginRequired: '아이디어를 제출하려면 로그인이 필요합니다',
+      loginButton: '로그인 / 회원가입',
+      loginDescription: '로그인하여 혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요!'
     },
     en: {
       placeholder: 'Share your innovative idea in 500 characters or less...',
       submit: 'Submit Idea with AI Analysis',
       submitting: 'AI is analyzing...',
       charCount: 'characters',
-      guidelines: 'Community Guidelines: Violent, sexual, or hateful content is prohibited.'
+      guidelines: 'Community Guidelines: Violent, sexual, or hateful content is prohibited.',
+      loginRequired: 'Login required to submit ideas',
+      loginButton: 'Sign In / Sign Up',
+      loginDescription: 'Sign in to share your innovative ideas and get instant AI feedback!'
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
     if (idea.trim().length === 0 || idea.length > 500) return;
 
     // Check for inappropriate content before submission
@@ -72,6 +86,31 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
 
   const remainingChars = 500 - idea.length;
   const warning = getContentWarning(currentLanguage);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+        <div className="text-center">
+          <div className="mb-4">
+            <LogIn className="h-12 w-12 text-purple-600 mx-auto mb-3" />
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              {text[currentLanguage].loginRequired}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {text[currentLanguage].loginDescription}
+            </p>
+          </div>
+          <Button
+            onClick={() => navigate('/auth')}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105"
+          >
+            <LogIn className="h-4 w-4 mr-2" />
+            {text[currentLanguage].loginButton}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">

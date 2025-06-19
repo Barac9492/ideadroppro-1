@@ -33,17 +33,15 @@ const Index = () => {
     }
   };
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
   const handleUsePrompt = (promptText: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
     setIdeaFormText(promptText);
     // Scroll to form
     const formElement = document.querySelector('#idea-submission-form');
@@ -53,13 +51,33 @@ const Index = () => {
   };
 
   const handleSubmitIdea = async (ideaText: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
     await submitIdea(ideaText);
     // Update streak after successful submission
     await updateStreak();
     setIdeaFormText('');
   };
 
-  if (authLoading || roleLoading) {
+  const handleLike = (ideaId: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    toggleLike(ideaId);
+  };
+
+  const handleGenerateAnalysis = (ideaId: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    return generateAnalysis(ideaId);
+  };
+
+  if (authLoading || (user && roleLoading)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
@@ -68,10 +86,6 @@ const Index = () => {
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   return (
@@ -87,13 +101,14 @@ const Index = () => {
           onUsePrompt={handleUsePrompt}
         />
         
-        <StreakBadge currentLanguage={currentLanguage} />
+        {user && <StreakBadge currentLanguage={currentLanguage} />}
         
         <div id="idea-submission-form">
           <IdeaSubmissionForm
             currentLanguage={currentLanguage}
             onSubmit={handleSubmitIdea}
             initialText={ideaFormText}
+            isAuthenticated={!!user}
           />
         </div>
         
@@ -113,10 +128,11 @@ const Index = () => {
                 key={idea.id}
                 idea={idea}
                 currentLanguage={currentLanguage}
-                onLike={toggleLike}
-                onGenerateAnalysis={generateAnalysis}
+                onLike={handleLike}
+                onGenerateAnalysis={handleGenerateAnalysis}
                 onSaveFinalVerdict={saveFinalVerdict}
                 isAdmin={isAdmin}
+                isAuthenticated={!!user}
               />
             ))
           )}

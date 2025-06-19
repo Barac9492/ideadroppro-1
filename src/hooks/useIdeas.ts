@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -253,6 +254,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   };
 
   const generateAnalysis = async (ideaId: string) => {
+    if (!user) return;
+
     try {
       const idea = ideas.find(i => i.id === ideaId);
       if (!idea || idea.seed) return; // Prevent analysis generation for seed ideas
@@ -304,6 +307,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   };
 
   const saveFinalVerdict = async (ideaId: string, verdict: string) => {
+    if (!user) return;
+
     try {
       const idea = ideas.find(i => i.id === ideaId);
       if (idea?.seed) return; // Prevent verdict saving for seed ideas
