@@ -67,6 +67,7 @@ export type Database = {
           ai_analysis: string | null
           created_at: string
           final_verdict: string | null
+          global_analysis: Json | null
           id: string
           improvements: string[] | null
           likes_count: number | null
@@ -84,6 +85,7 @@ export type Database = {
           ai_analysis?: string | null
           created_at?: string
           final_verdict?: string | null
+          global_analysis?: Json | null
           id?: string
           improvements?: string[] | null
           likes_count?: number | null
@@ -101,6 +103,7 @@ export type Database = {
           ai_analysis?: string | null
           created_at?: string
           final_verdict?: string | null
+          global_analysis?: Json | null
           id?: string
           improvements?: string[] | null
           likes_count?: number | null

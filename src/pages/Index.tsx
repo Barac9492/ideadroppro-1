@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -18,7 +17,7 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
-  const { ideas, loading: ideasLoading, submitIdea, toggleLike, generateAnalysis, saveFinalVerdict } = useIdeas(currentLanguage);
+  const { ideas, loading: ideasLoading, submitIdea, toggleLike, generateAnalysis, generateGlobalAnalysis, saveFinalVerdict } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
   const isMobile = useIsMobile();
 
@@ -79,6 +78,14 @@ const Index = () => {
       return;
     }
     return generateAnalysis(ideaId);
+  };
+
+  const handleGenerateGlobalAnalysis = (ideaId: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    return generateGlobalAnalysis(ideaId);
   };
 
   // Show loading only while auth state is being determined initially
@@ -147,6 +154,7 @@ const Index = () => {
                 currentLanguage={currentLanguage}
                 onLike={handleLike}
                 onGenerateAnalysis={handleGenerateAnalysis}
+                onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
                 onSaveFinalVerdict={saveFinalVerdict}
                 isAdmin={user && roleLoading === false ? isAdmin : false}
                 isAuthenticated={!!user}

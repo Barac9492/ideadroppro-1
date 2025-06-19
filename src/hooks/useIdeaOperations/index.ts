@@ -2,6 +2,7 @@
 import { useIdeaSubmission } from './useIdeaSubmission';
 import { useAnalysisGeneration } from './useAnalysisGeneration';
 import { useVerdictManagement } from './useVerdictManagement';
+import { useGlobalAnalysis } from './useGlobalAnalysis';
 
 interface IdeaOperationsProps {
   currentLanguage: 'ko' | 'en';
@@ -13,10 +14,12 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
   const { submitIdea } = useIdeaSubmission({ currentLanguage, user, fetchIdeas });
   const { generateAnalysis } = useAnalysisGeneration({ currentLanguage, user, fetchIdeas });
   const { saveFinalVerdict } = useVerdictManagement({ currentLanguage, user, fetchIdeas });
+  const { generateGlobalAnalysis } = useGlobalAnalysis({ currentLanguage, user, fetchIdeas });
 
   return {
     submitIdea,
     generateAnalysis,
-    saveFinalVerdict
+    saveFinalVerdict,
+    generateGlobalAnalysis
   };
 };

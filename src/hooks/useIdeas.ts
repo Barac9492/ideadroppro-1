@@ -20,6 +20,7 @@ interface Idea {
   similarIdeas?: string[];
   pitchPoints?: string[];
   finalVerdict?: string;
+  globalAnalysis?: any;
   user_id: string;
   seed?: boolean;
 }
@@ -67,6 +68,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           similarIdeas: idea.similar_ideas,
           pitchPoints: idea.pitch_points,
           finalVerdict: idea.final_verdict,
+          globalAnalysis: idea.global_analysis,
           user_id: idea.user_id,
           seed: idea.seed || false
         };
@@ -103,6 +105,13 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     return ideaOperations.generateAnalysis(ideaId, idea.text);
   };
 
+  const generateGlobalAnalysis = async (ideaId: string) => {
+    const idea = ideas.find(i => i.id === ideaId);
+    if (!idea || idea.seed) return; // Prevent global analysis generation for seed ideas
+    
+    return ideaOperations.generateGlobalAnalysis(ideaId, idea.text);
+  };
+
   const saveFinalVerdict = async (ideaId: string, verdict: string) => {
     const idea = ideas.find(i => i.id === ideaId);
     if (idea?.seed) return; // Prevent verdict saving for seed ideas
@@ -116,6 +125,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     submitIdea: ideaOperations.submitIdea,
     toggleLike: ideaLikes.toggleLike,
     generateAnalysis,
+    generateGlobalAnalysis,
     saveFinalVerdict,
     generateSeedIdeas: seedIdeas.generateSeedIdeas
   };

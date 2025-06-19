@@ -10,6 +10,8 @@ export const ideaOperationsText = {
     contentBlocked: '부적절한 콘텐츠가 감지되어 아이디어를 제출할 수 없습니다.',
     analysisWithFallback: 'AI 분석이 부분적으로 완료되었습니다.',
     lowScoreNotice: '점수가 낮게 나왔습니다. 더 구체적인 아이디어를 고려해보세요.',
+    globalAnalysisGenerated: '🌍 글로벌 시장 분석이 완료되었습니다!',
+    globalAnalysisError: '글로벌 분석 생성 중 오류가 발생했습니다.',
   },
   en: {
     submitSuccess: 'Idea submitted successfully!',
@@ -21,5 +23,7 @@ export const ideaOperationsText = {
     contentBlocked: 'Inappropriate content detected. Idea cannot be submitted.',
     analysisWithFallback: 'AI analysis partially completed.',
     lowScoreNotice: 'Low score received. Consider a more specific idea.',
+    globalAnalysisGenerated: '🌍 Global Market Analysis Completed!',
+    globalAnalysisError: 'Error occurred while generating global analysis.',
   }
 };

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import IdeaCardHeader from './IdeaCardHeader';
 import IdeaAnalysisSection from './IdeaAnalysisSection';
+import GlobalAnalysisSection from './GlobalAnalysisSection';
 import IdeaCardActions from './IdeaCardActions';
 
 interface Idea {
@@ -23,6 +24,7 @@ interface Idea {
   similarIdeas?: string[];
   pitchPoints?: string[];
   finalVerdict?: string;
+  globalAnalysis?: any;
   seed?: boolean;
 }
 
@@ -31,6 +33,7 @@ interface IdeaCardProps {
   currentLanguage: 'ko' | 'en';
   onLike: (ideaId: string) => void;
   onGenerateAnalysis: (ideaId: string) => Promise<void>;
+  onGenerateGlobalAnalysis?: (ideaId: string) => Promise<void>;
   onSaveFinalVerdict?: (ideaId: string, verdict: string) => void;
   isAdmin?: boolean;
   isAuthenticated: boolean;
@@ -41,11 +44,13 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   currentLanguage, 
   onLike, 
   onGenerateAnalysis,
+  onGenerateGlobalAnalysis,
   onSaveFinalVerdict,
   isAdmin = false,
   isAuthenticated
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingGlobal, setIsGeneratingGlobal] = useState(false);
   const [finalVerdict, setFinalVerdict] = useState(idea.finalVerdict || '');
   const [isSavingVerdict, setIsSavingVerdict] = useState(false);
   const navigate = useNavigate();
@@ -79,6 +84,19 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     }
   };
 
+  const handleGenerateGlobalAnalysis = async () => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    setIsGeneratingGlobal(true);
+    try {
+      await onGenerateGlobalAnalysis?.(idea.id);
+    } finally {
+      setIsGeneratingGlobal(false);
+    }
+  };
+
   const handleSaveVerdict = async () => {
     if (!onSaveFinalVerdict || !finalVerdict.trim()) return;
     
@@ -99,6 +117,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   };
 
   const showGenerateButton = (!idea.improvements || !idea.marketPotential);
+  const showGlobalButton = !idea.globalAnalysis && (idea.improvements && idea.marketPotential);
 
   return (
     <div className={`bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.01] ${
@@ -148,6 +167,14 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         currentLanguage={currentLanguage}
       />
 
+      {/* Global Analysis Section */}
+      {idea.globalAnalysis && (
+        <GlobalAnalysisSection
+          globalAnalysis={idea.globalAnalysis}
+          currentLanguage={currentLanguage}
+        />
+      )}
+
       {/* Final Verdict Section */}
       {idea.finalVerdict && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 mb-4 border-l-4 border-yellow-400 shadow-sm">
@@ -188,9 +215,12 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         isSeed={idea.seed}
         isAuthenticated={isAuthenticated}
         isGenerating={isGenerating}
+        isGeneratingGlobal={isGeneratingGlobal}
         showGenerateButton={showGenerateButton}
+        showGlobalButton={showGlobalButton}
         onLike={handleLikeClick}
         onGenerateAnalysis={handleGenerateAnalysis}
+        onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
         currentLanguage={currentLanguage}
       />
     </div>
