@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -109,7 +108,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     const idea = ideas.find(i => i.id === ideaId);
     if (!idea || idea.seed) return; // Prevent global analysis generation for seed ideas
     
-    return ideaOperations.generateGlobalAnalysis(ideaId, idea.text);
+    return ideaOperations.generateGlobalAnalysis(ideaId);
   };
 
   const saveFinalVerdict = async (ideaId: string, verdict: string) => {
