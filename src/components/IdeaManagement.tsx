@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ interface Idea {
   tags: string[];
   created_at: string;
   user_id: string;
-  profiles?: {
+  profiles: {
     username: string | null;
   } | null;
 }
@@ -73,18 +74,7 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
 
       if (error) throw error;
       
-      // Transform data to match our Idea interface
-      const transformedData: Idea[] = (data || []).map(item => ({
-        id: item.id,
-        text: item.text,
-        score: item.score || 0,
-        tags: item.tags || [],
-        created_at: item.created_at,
-        user_id: item.user_id,
-        profiles: item.profiles ? { username: item.profiles.username } : null
-      }));
-      
-      setIdeas(transformedData);
+      setIdeas(data || []);
     } catch (error) {
       console.error('Error fetching ideas:', error);
     } finally {
