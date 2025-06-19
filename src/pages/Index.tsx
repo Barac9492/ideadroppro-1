@@ -79,7 +79,7 @@ const Index = () => {
     return generateAnalysis(ideaId);
   };
 
-  // Only show loading spinner for auth when we're still checking auth state
+  // Show loading only while auth state is being determined initially
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex items-center justify-center">

@@ -30,13 +30,19 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   const { user } = useAuth();
 
   const fetchIdeas = async () => {
+    console.log('Fetching ideas...');
     try {
       const { data: ideasData, error } = await supabase
         .from('ideas')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching ideas:', error);
+        throw error;
+      }
+
+      console.log('Fetched ideas:', ideasData?.length);
 
       const ideasWithLikes = await Promise.all((ideasData || []).map(async (idea) => {
         const { data: likesData } = await supabase
@@ -74,9 +80,16 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     }
   };
 
-  // Fetch ideas on component mount and when user state changes (for like status)
+  // Fetch ideas immediately on mount, and refetch when user changes (for like status)
   useEffect(() => {
     fetchIdeas();
+  }, []); // Remove user dependency to fetch ideas regardless of auth state
+
+  // Refetch ideas when user changes to update like status
+  useEffect(() => {
+    if (ideas.length > 0) {
+      fetchIdeas();
+    }
   }, [user]);
 
   const ideaOperations = useIdeaOperations({ currentLanguage, user, fetchIdeas });
