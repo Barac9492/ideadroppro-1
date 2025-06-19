@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -96,8 +95,9 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     if (!user) return;
 
     try {
-      // 먼저 AI 분석 요청
       console.log('Requesting AI analysis for:', ideaText);
+      
+      // AI 분석 요청
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-idea', {
         body: { 
           ideaText: ideaText,
@@ -107,12 +107,42 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
       if (analysisError) {
         console.error('Analysis error:', analysisError);
-        throw new Error('AI 분석 중 오류가 발생했습니다.');
+        // 분석 실패 시 기본값으로 아이디어만 저장
+        const { data, error } = await supabase
+          .from('ideas')
+          .insert([{
+            user_id: user.id,
+            text: ideaText,
+            score: Math.round((Math.random() * 3 + 7) * 10) / 10,
+            tags: ['일반'],
+            ai_analysis: currentLanguage === 'ko' 
+              ? 'AI 분석을 불러올 수 없어 기본 분석으로 대체되었습니다.' 
+              : 'AI analysis failed, replaced with default analysis.',
+            improvements: [currentLanguage === 'ko' ? '추후 분석 필요' : 'Further analysis needed'],
+            market_potential: [currentLanguage === 'ko' ? '시장성 검토 필요' : 'Market potential review needed'],
+            similar_ideas: [currentLanguage === 'ko' ? '유사 아이디어 조사 필요' : 'Similar ideas research needed'],
+            pitch_points: [currentLanguage === 'ko' ? '피칭 포인트 개발 필요' : 'Pitch points development needed']
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        toast({
+          title: text[currentLanguage].submitSuccess,
+          description: currentLanguage === 'ko' 
+            ? 'AI 분석은 실패했지만 아이디어가 저장되었습니다.' 
+            : 'AI analysis failed but idea was saved.',
+          duration: 3000,
+        });
+
+        fetchIdeas();
+        return;
       }
 
       console.log('Analysis result:', analysisData);
 
-      // 분석 결과를 사용하여 아이디어 저장
+      // 분석 성공 시 결과와 함께 저장
       const { data, error } = await supabase
         .from('ideas')
         .insert([{
