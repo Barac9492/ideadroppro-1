@@ -41,7 +41,8 @@ const DailyPromptCard: React.FC<DailyPromptCardProps> = ({ currentLanguage, onUs
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data, error } = await supabase
+      // First try to get today's prompt
+      let { data, error } = await supabase
         .from('daily_prompts')
         .select('*')
         .eq('date', today)
@@ -49,6 +50,22 @@ const DailyPromptCard: React.FC<DailyPromptCardProps> = ({ currentLanguage, onUs
 
       if (error) {
         console.error('Error fetching daily prompt:', error);
+      }
+
+      // If no prompt for today, get the most recent one
+      if (!data) {
+        const { data: recentData, error: recentError } = await supabase
+          .from('daily_prompts')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (recentError) {
+          console.error('Error fetching recent prompt:', recentError);
+        }
+
+        data = recentData;
       }
 
       setPrompt(data || null);

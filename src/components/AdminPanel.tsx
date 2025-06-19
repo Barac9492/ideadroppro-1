@@ -9,6 +9,7 @@ import { Crown, User, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import IdeaManagement from './IdeaManagement';
 import SeedDataManagement from './SeedDataManagement';
+import DailyPromptManagement from './DailyPromptManagement';
 
 interface User {
   id: string;
@@ -29,6 +30,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       userManagement: '사용자 관리',
       ideaManagement: '아이디어 관리',
       seedDataManagement: '시드 데이터 관리',
+      dailyPromptManagement: '오늘의 주제 관리',
       email: '이메일',
       role: '역할',
       admin: '관리자',
@@ -42,6 +44,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       userManagement: 'User Management',
       ideaManagement: 'Idea Management',
       seedDataManagement: 'Seed Data Management',
+      dailyPromptManagement: 'Daily Prompt Management',
       email: 'Email',
       role: 'Role',
       admin: 'Admin',
@@ -148,10 +151,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="users">{text[currentLanguage].userManagement}</TabsTrigger>
         <TabsTrigger value="ideas">{text[currentLanguage].ideaManagement}</TabsTrigger>
         <TabsTrigger value="seeds">{text[currentLanguage].seedDataManagement}</TabsTrigger>
+        <TabsTrigger value="prompts">{text[currentLanguage].dailyPromptManagement}</TabsTrigger>
       </TabsList>
       
       <TabsContent value="users">
@@ -205,6 +209,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
       <TabsContent value="seeds">
         <SeedDataManagement currentLanguage={currentLanguage} />
+      </TabsContent>
+
+      <TabsContent value="prompts">
+        <DailyPromptManagement currentLanguage={currentLanguage} />
       </TabsContent>
     </Tabs>
   );
