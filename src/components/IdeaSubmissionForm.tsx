@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Send, Loader } from 'lucide-react';
+import { Send, Loader, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -16,14 +16,14 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({ currentLanguage
   const text = {
     ko: {
       placeholder: '당신의 혁신적인 아이디어를 500자 이내로 공유해주세요...',
-      submit: '아이디어 제출',
-      submitting: '제출 중...',
+      submit: 'AI 분석으로 아이디어 제출',
+      submitting: 'AI가 분석 중입니다...',
       charCount: '글자'
     },
     en: {
       placeholder: 'Share your innovative idea in 500 characters or less...',
-      submit: 'Submit Idea',
-      submitting: 'Submitting...',
+      submit: 'Submit Idea with AI Analysis',
+      submitting: 'AI is analyzing...',
       charCount: 'characters'
     }
   };
@@ -53,6 +53,7 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({ currentLanguage
             placeholder={text[currentLanguage].placeholder}
             className="min-h-[120px] resize-none border-2 border-purple-100 focus:border-purple-400 transition-colors duration-300"
             maxLength={500}
+            disabled={isSubmitting}
           />
           <div className={`absolute bottom-3 right-3 text-sm ${remainingChars < 50 ? 'text-red-500' : 'text-gray-400'}`}>
             {remainingChars} {text[currentLanguage].charCount}
@@ -67,10 +68,12 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({ currentLanguage
           {isSubmitting ? (
             <div className="flex items-center space-x-2">
               <Loader className="h-4 w-4 animate-spin" />
+              <Zap className="h-4 w-4 animate-pulse text-yellow-300" />
               <span>{text[currentLanguage].submitting}</span>
             </div>
           ) : (
             <div className="flex items-center space-x-2">
+              <Zap className="h-4 w-4" />
               <Send className="h-4 w-4" />
               <span>{text[currentLanguage].submit}</span>
             </div>
