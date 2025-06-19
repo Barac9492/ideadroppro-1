@@ -15,8 +15,8 @@ interface Idea {
   created_at: string;
   user_id: string;
   profiles?: {
-    username: string;
-  };
+    username: string | null;
+  } | null;
 }
 
 interface IdeaManagementProps {
@@ -68,7 +68,19 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setIdeas(data || []);
+      
+      // Transform data to match our Idea interface
+      const transformedData: Idea[] = (data || []).map(item => ({
+        id: item.id,
+        text: item.text,
+        score: item.score || 0,
+        tags: item.tags || [],
+        created_at: item.created_at,
+        user_id: item.user_id,
+        profiles: item.profiles ? { username: item.profiles.username } : null
+      }));
+      
+      setIdeas(transformedData);
     } catch (error) {
       console.error('Error fetching ideas:', error);
     } finally {

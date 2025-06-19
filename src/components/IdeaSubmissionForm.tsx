@@ -68,8 +68,8 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({ currentLanguage
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div>
-              <p className="font-medium">{warning.title}</p>
-              <p className="text-sm mt-1">{warning.message}</p>
+              <p className="font-medium">{warning[currentLanguage].title}</p>
+              <p className="text-sm mt-1">{warning[currentLanguage].message}</p>
             </div>
           </AlertDescription>
         </Alert>

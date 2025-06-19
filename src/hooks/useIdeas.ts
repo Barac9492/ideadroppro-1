@@ -101,8 +101,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     if (checkInappropriateContent(ideaText, currentLanguage)) {
       const warning = getContentWarning(currentLanguage);
       toast({
-        title: warning.title,
-        description: warning.message,
+        title: warning[currentLanguage].title,
+        description: warning[currentLanguage].message,
         variant: 'destructive',
         duration: 5000,
       });
