@@ -44,6 +44,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           .select('user_id')
           .eq('idea_id', idea.id);
 
+        // Only check if user has liked if they are logged in
         const hasLiked = user ? likesData?.some(like => like.user_id === user.id) || false : false;
 
         return {
@@ -73,6 +74,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     }
   };
 
+  // Fetch ideas on component mount and when user state changes (for like status)
   useEffect(() => {
     fetchIdeas();
   }, [user]);

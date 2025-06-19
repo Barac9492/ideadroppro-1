@@ -24,12 +24,14 @@ const Index = () => {
     ko: {
       noIdeas: '아직 제출된 아이디어가 없습니다. 첫 번째 아이디어를 공유해보세요!',
       loadingIdeas: '아이디어를 불러오는 중...',
-      pleaseSignIn: '아이디어를 제출하려면 로그인이 필요합니다.'
+      pleaseSignIn: '아이디어를 제출하려면 로그인이 필요합니다.',
+      loginForMoreFeatures: '💡 로그인하면 아이디어 좋아요, AI 분석 생성 등 더 많은 기능을 사용할 수 있습니다!'
     },
     en: {
       noIdeas: 'No ideas submitted yet. Be the first to share your innovative idea!',
       loadingIdeas: 'Loading ideas...',
-      pleaseSignIn: 'Please sign in to submit ideas.'
+      pleaseSignIn: 'Please sign in to submit ideas.',
+      loginForMoreFeatures: '💡 Sign in to access more features like liking ideas, generating AI analysis, and more!'
     }
   };
 
@@ -77,7 +79,8 @@ const Index = () => {
     return generateAnalysis(ideaId);
   };
 
-  if (authLoading || (user && roleLoading)) {
+  // Only show loading spinner for auth when we're still checking auth state
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
@@ -102,6 +105,15 @@ const Index = () => {
         />
         
         {user && <StreakBadge currentLanguage={currentLanguage} />}
+        
+        {/* Login encouragement banner for non-authenticated users */}
+        {!user && (
+          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-4 mb-6 border border-purple-200">
+            <p className="text-center text-purple-800 font-medium">
+              {text[currentLanguage].loginForMoreFeatures}
+            </p>
+          </div>
+        )}
         
         <div id="idea-submission-form">
           <IdeaSubmissionForm
@@ -131,7 +143,7 @@ const Index = () => {
                 onLike={handleLike}
                 onGenerateAnalysis={handleGenerateAnalysis}
                 onSaveFinalVerdict={saveFinalVerdict}
-                isAdmin={isAdmin}
+                isAdmin={user && roleLoading === false ? isAdmin : false}
                 isAuthenticated={!!user}
               />
             ))

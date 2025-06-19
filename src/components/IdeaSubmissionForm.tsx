@@ -41,7 +41,8 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       guidelines: '커뮤니티 가이드라인: 폭력적이거나 성적인 내용, 혐오 표현은 금지됩니다.',
       loginRequired: '아이디어를 제출하려면 로그인이 필요합니다',
       loginButton: '로그인 / 회원가입',
-      loginDescription: '로그인하여 혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요!'
+      loginDescription: '로그인하여 혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요!',
+      viewOnly: '로그인 후 아이디어를 제출할 수 있습니다'
     },
     en: {
       placeholder: 'Share your innovative idea in 500 characters or less...',
@@ -51,7 +52,8 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       guidelines: 'Community Guidelines: Violent, sexual, or hateful content is prohibited.',
       loginRequired: 'Login required to submit ideas',
       loginButton: 'Sign In / Sign Up',
-      loginDescription: 'Sign in to share your innovative ideas and get instant AI feedback!'
+      loginDescription: 'Sign in to share your innovative ideas and get instant AI feedback!',
+      viewOnly: 'Sign in to submit ideas'
     }
   };
 
