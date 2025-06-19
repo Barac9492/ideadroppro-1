@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +20,7 @@ interface Idea {
   pitchPoints?: string[];
   finalVerdict?: string;
   user_id: string;
+  seed?: boolean;
 }
 
 export const useIdeas = (currentLanguage: 'ko' | 'en') => {
@@ -34,7 +36,9 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
       analysisError: 'AI 분석 생성 중 오류가 발생했습니다.',
       verdictSaved: 'VC 평가가 저장되었습니다!',
       verdictError: 'VC 평가 저장 중 오류가 발생했습니다.',
-      contentBlocked: '부적절한 콘텐츠가 감지되어 아이디어를 제출할 수 없습니다.'
+      contentBlocked: '부적절한 콘텐츠가 감지되어 아이디어를 제출할 수 없습니다.',
+      seedGenerated: '데모 아이디어가 생성되었습니다!',
+      seedError: '데모 아이디어 생성 중 오류가 발생했습니다.'
     },
     en: {
       submitSuccess: 'Idea submitted successfully!',
@@ -43,7 +47,9 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
       analysisError: 'Error occurred while generating AI analysis.',
       verdictSaved: 'VC verdict saved successfully!',
       verdictError: 'Error occurred while saving VC verdict.',
-      contentBlocked: 'Inappropriate content detected. Idea cannot be submitted.'
+      contentBlocked: 'Inappropriate content detected. Idea cannot be submitted.',
+      seedGenerated: 'Demo ideas generated successfully!',
+      seedError: 'Error occurred while generating demo ideas.'
     }
   };
 
@@ -69,7 +75,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           text: idea.text,
           score: parseFloat(idea.score?.toString() || '0'),
           tags: idea.tags || [],
-          likes: likesData?.length || 0,
+          likes: lik
           hasLiked,
           timestamp: new Date(idea.created_at),
           aiAnalysis: idea.ai_analysis,
@@ -78,7 +84,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           similarIdeas: idea.similar_ideas,
           pitchPoints: idea.pitch_points,
           finalVerdict: idea.final_verdict,
-          user_id: idea.user_id
+          user_id: idea.user_id,
+          seed: idea.seed || false
         };
       }));
 
@@ -93,6 +100,32 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   useEffect(() => {
     fetchIdeas();
   }, [user]);
+
+  const generateSeedIdeas = async () => {
+    try {
+      console.log('Generating seed ideas...');
+      
+      const { data, error } = await supabase.functions.invoke('generate-seed-ideas', {
+        body: { language: currentLanguage }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: text[currentLanguage].seedGenerated,
+        duration: 3000,
+      });
+
+      fetchIdeas();
+    } catch (error) {
+      console.error('Error generating seed ideas:', error);
+      toast({
+        title: text[currentLanguage].seedError,
+        variant: 'destructive',
+        duration: 3000,
+      });
+    }
+  };
 
   const submitIdea = async (ideaText: string) => {
     if (!user) return;
@@ -197,7 +230,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
     try {
       const idea = ideas.find(i => i.id === ideaId);
-      if (!idea) return;
+      if (!idea || idea.seed) return; // Prevent liking seed ideas
 
       if (idea.hasLiked) {
         await supabase
@@ -223,7 +256,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   const generateAnalysis = async (ideaId: string) => {
     try {
       const idea = ideas.find(i => i.id === ideaId);
-      if (!idea) return;
+      if (!idea || idea.seed) return; // Prevent analysis generation for seed ideas
 
       console.log('Generating analysis for idea:', idea.text);
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-idea', {
@@ -273,6 +306,9 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
   const saveFinalVerdict = async (ideaId: string, verdict: string) => {
     try {
+      const idea = ideas.find(i => i.id === ideaId);
+      if (idea?.seed) return; // Prevent verdict saving for seed ideas
+
       const { error } = await supabase
         .from('ideas')
         .update({ final_verdict: verdict })
@@ -302,6 +338,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     submitIdea,
     toggleLike,
     generateAnalysis,
-    saveFinalVerdict
+    saveFinalVerdict,
+    generateSeedIdeas
   };
 };

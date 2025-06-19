@@ -73,6 +73,7 @@ export type Database = {
           market_potential: string[] | null
           pitch_points: string[] | null
           score: number | null
+          seed: boolean | null
           similar_ideas: string[] | null
           tags: string[] | null
           text: string
@@ -89,6 +90,7 @@ export type Database = {
           market_potential?: string[] | null
           pitch_points?: string[] | null
           score?: number | null
+          seed?: boolean | null
           similar_ideas?: string[] | null
           tags?: string[] | null
           text: string
@@ -105,6 +107,7 @@ export type Database = {
           market_potential?: string[] | null
           pitch_points?: string[] | null
           score?: number | null
+          seed?: boolean | null
           similar_ideas?: string[] | null
           tags?: string[] | null
           text?: string
