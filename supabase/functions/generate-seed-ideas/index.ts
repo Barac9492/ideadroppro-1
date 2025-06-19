@@ -127,6 +127,7 @@ serve(async (req) => {
     // Get the authorization header to identify the user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.log('No authorization header provided');
       return new Response(
         JSON.stringify({ error: 'Authorization required' }),
         {
@@ -142,6 +143,7 @@ serve(async (req) => {
     );
 
     if (userError || !user) {
+      console.log('User error:', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid user token' }),
         {
@@ -151,22 +153,30 @@ serve(async (req) => {
       );
     }
 
-    const { language = 'ko' } = await req.json().catch(() => ({}));
+    console.log('User authenticated:', user.id);
 
-    // Check if seed data already exists
+    const { language = 'ko' } = await req.json().catch(() => ({}));
+    console.log('Requested language:', language);
+
+    // Check current seed data count (allow up to 10 seed ideas)
     const { data: existingSeed, error: checkError } = await supabaseClient
       .from('ideas')
       .select('id')
-      .eq('seed', true)
-      .limit(1);
+      .eq('seed', true);
 
     if (checkError) {
+      console.error('Error checking existing seed data:', checkError);
       throw checkError;
     }
 
-    if (existingSeed && existingSeed.length > 0) {
+    const currentSeedCount = existingSeed?.length || 0;
+    console.log('Current seed count:', currentSeedCount);
+
+    // Allow generation if we have less than 10 seed ideas
+    if (currentSeedCount >= 10) {
+      console.log('Maximum seed ideas reached (10), skipping generation');
       return new Response(
-        JSON.stringify({ message: 'Seed data already exists' }),
+        JSON.stringify({ message: 'Maximum seed ideas limit reached (10)' }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -174,8 +184,9 @@ serve(async (req) => {
       );
     }
 
-    // Use the actual user ID instead of a dummy one
+    // Use the actual user ID
     const seedUserId = user.id;
+    console.log('Using user ID for seeds:', seedUserId);
 
     // Prepare seed data for insertion
     const seedDataToInsert = seedIdeas.map(idea => ({
@@ -192,12 +203,15 @@ serve(async (req) => {
       likes_count: Math.floor(Math.random() * 10) + 1 // Random likes between 1-10
     }));
 
+    console.log('Preparing to insert', seedDataToInsert.length, 'seed ideas');
+
     // Insert seed data
     const { data, error } = await supabaseClient
       .from('ideas')
       .insert(seedDataToInsert);
 
     if (error) {
+      console.error('Error inserting seed data:', error);
       throw error;
     }
 
@@ -206,7 +220,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         message: `Successfully generated ${seedIdeas.length} seed ideas`,
-        count: seedIdeas.length 
+        count: seedIdeas.length,
+        totalSeedCount: currentSeedCount + seedIdeas.length
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

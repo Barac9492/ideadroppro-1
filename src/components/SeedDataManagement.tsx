@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Trash2, Info } from 'lucide-react';
+import { Rocket, Trash2, Info, RefreshCw } from 'lucide-react';
 import { useIdeas } from '@/hooks/useIdeas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -23,42 +23,52 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
       title: '시드 데이터 관리',
       generateSeeds: '데모 아이디어 생성',
       deleteSeeds: '데모 아이디어 삭제',
+      refreshCount: '개수 새로고침',
       generating: '생성 중...',
       deleting: '삭제 중...',
-      description: '앱에 표시될 데모 아이디어를 관리합니다.',
+      refreshing: '새로고침 중...',
+      description: '앱에 표시될 데모 아이디어를 관리합니다. (최대 10개)',
       currentCount: '현재 시드 아이디어 개수:',
       confirmDelete: '모든 데모 아이디어를 삭제하시겠습니까?',
       deleteSuccess: '데모 아이디어가 삭제되었습니다.',
       deleteError: '데모 아이디어 삭제 중 오류가 발생했습니다.',
       noSeedData: '현재 생성된 시드 데이터가 없습니다.',
-      refreshing: '새로고침 중...'
+      maxLimitReached: '최대 개수(10개)에 도달했습니다.'
     },
     en: {
       title: 'Seed Data Management',
       generateSeeds: 'Generate Demo Ideas',
       deleteSeeds: 'Delete Demo Ideas',
+      refreshCount: 'Refresh Count',
       generating: 'Generating...',
       deleting: 'Deleting...',
-      description: 'Manage demo ideas displayed in the app.',
+      refreshing: 'Refreshing...',
+      description: 'Manage demo ideas displayed in the app. (Max 10)',
       currentCount: 'Current seed ideas count:',
       confirmDelete: 'Are you sure you want to delete all demo ideas?',
       deleteSuccess: 'Demo ideas deleted successfully.',
       deleteError: 'Error occurred while deleting demo ideas.',
       noSeedData: 'No seed data currently generated.',
-      refreshing: 'Refreshing...'
+      maxLimitReached: 'Maximum limit (10) reached.'
     }
   };
 
   const fetchSeedCount = async () => {
     try {
+      console.log('Fetching seed count...');
       const { data, error } = await supabase
         .from('ideas')
         .select('id', { count: 'exact' })
         .eq('seed', true);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching seed count:', error);
+        throw error;
+      }
 
-      setSeedCount(data?.length || 0);
+      const count = data?.length || 0;
+      console.log('Seed count:', count);
+      setSeedCount(count);
     } catch (error) {
       console.error('Error fetching seed count:', error);
     } finally {
@@ -71,10 +81,14 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
   }, []);
 
   const handleGenerateSeeds = async () => {
+    console.log('Generate seeds button clicked');
     setIsGenerating(true);
     try {
       await generateSeedIdeas();
-      await fetchSeedCount(); // Refresh count after generation
+      // Wait a bit for the data to be inserted, then refresh count
+      setTimeout(async () => {
+        await fetchSeedCount();
+      }, 1000);
     } finally {
       setIsGenerating(false);
     }
@@ -83,6 +97,7 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
   const handleDeleteSeeds = async () => {
     if (!confirm(text[currentLanguage].confirmDelete)) return;
 
+    console.log('Delete seeds confirmed');
     setIsDeleting(true);
     try {
       // First, get all seed idea IDs
@@ -95,6 +110,7 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
 
       if (seedIdeas && seedIdeas.length > 0) {
         const seedIdeaIds = seedIdeas.map(idea => idea.id);
+        console.log('Deleting seed ideas:', seedIdeaIds.length);
 
         // Delete likes for seed ideas first
         await supabase
@@ -132,6 +148,11 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
     }
   };
 
+  const handleRefreshCount = async () => {
+    setLoading(true);
+    await fetchSeedCount();
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -147,25 +168,40 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
         
         {/* Seed Count Info */}
         <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-          <div className="flex items-center">
-            <Info className="h-5 w-5 text-blue-400 mr-2" />
-            <div>
-              <p className="text-sm font-medium text-blue-800">
-                {text[currentLanguage].currentCount} {loading ? text[currentLanguage].refreshing : seedCount}
-              </p>
-              {seedCount === 0 && !loading && (
-                <p className="text-sm text-blue-600">
-                  {text[currentLanguage].noSeedData}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Info className="h-5 w-5 text-blue-400 mr-2" />
+              <div>
+                <p className="text-sm font-medium text-blue-800">
+                  {text[currentLanguage].currentCount} {loading ? text[currentLanguage].refreshing : seedCount}
                 </p>
-              )}
+                {seedCount === 0 && !loading && (
+                  <p className="text-sm text-blue-600">
+                    {text[currentLanguage].noSeedData}
+                  </p>
+                )}
+                {seedCount >= 10 && (
+                  <p className="text-sm text-amber-600">
+                    {text[currentLanguage].maxLimitReached}
+                  </p>
+                )}
+              </div>
             </div>
+            <Button
+              onClick={handleRefreshCount}
+              disabled={loading}
+              variant="ghost"
+              size="sm"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
 
         <div className="flex space-x-2">
           <Button
             onClick={handleGenerateSeeds}
-            disabled={isGenerating}
+            disabled={isGenerating || seedCount >= 10}
             className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
           >
             <Rocket className="h-4 w-4 mr-2" />
