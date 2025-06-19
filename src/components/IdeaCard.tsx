@@ -1,14 +1,12 @@
 
 import React, { useState } from 'react';
-import { Award } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import IdeaCardHeader from './IdeaCardHeader';
 import IdeaAnalysisSection from './IdeaAnalysisSection';
 import GlobalAnalysisSection from './GlobalAnalysisSection';
 import IdeaCardActions from './IdeaCardActions';
+import IdeaFinalVerdict from './IdeaFinalVerdict';
 
 interface Idea {
   id: string;
@@ -51,25 +49,8 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingGlobal, setIsGeneratingGlobal] = useState(false);
-  const [finalVerdict, setFinalVerdict] = useState(idea.finalVerdict || '');
-  const [isSavingVerdict, setIsSavingVerdict] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-
-  const text = {
-    ko: {
-      finalVerdict: 'VC 최종 평가',
-      saveVerdict: '평가 저장',
-      savingVerdict: '저장 중...',
-      verdictPlaceholder: 'VC로서 이 아이디어에 대한 최종 평가를 작성해주세요...'
-    },
-    en: {
-      finalVerdict: 'VC Final Verdict',
-      saveVerdict: 'Save Verdict',
-      savingVerdict: 'Saving...',
-      verdictPlaceholder: 'Write your final verdict on this idea as a VC...'
-    }
-  };
 
   const handleGenerateAnalysis = async () => {
     if (!isAuthenticated) {
@@ -97,17 +78,6 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     }
   };
 
-  const handleSaveVerdict = async () => {
-    if (!onSaveFinalVerdict || !finalVerdict.trim()) return;
-    
-    setIsSavingVerdict(true);
-    try {
-      await onSaveFinalVerdict(idea.id, finalVerdict.trim());
-    } finally {
-      setIsSavingVerdict(false);
-    }
-  };
-
   const handleLikeClick = () => {
     if (!isAuthenticated) {
       navigate('/auth');
@@ -117,7 +87,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   };
 
   const showGenerateButton = (!idea.improvements || !idea.marketPotential);
-  const showGlobalButton = !idea.globalAnalysis && (idea.improvements && idea.marketPotential);
+  const showGlobalButton = !idea.globalAnalysis && !!(idea.improvements && idea.marketPotential);
 
   return (
     <div className={`bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.01] ${
@@ -175,39 +145,13 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         />
       )}
 
-      {/* Final Verdict Section */}
-      {idea.finalVerdict && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 mb-4 border-l-4 border-yellow-400 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <Award className="h-5 w-5 text-yellow-600" />
-            <span className="font-semibold text-slate-800">{text[currentLanguage].finalVerdict}</span>
-          </div>
-          <p className="text-slate-700">{idea.finalVerdict}</p>
-        </div>
-      )}
-
-      {/* Admin Final Verdict Input */}
-      {isAuthenticated && isAdmin && !idea.finalVerdict && !idea.seed && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 mb-4 border-l-4 border-yellow-400 shadow-sm">
-          <div className="flex items-center space-x-2 mb-3">
-            <Award className="h-5 w-5 text-yellow-600" />
-            <span className="font-semibold text-slate-800">{text[currentLanguage].finalVerdict}</span>
-          </div>
-          <Textarea
-            value={finalVerdict}
-            onChange={(e) => setFinalVerdict(e.target.value)}
-            placeholder={text[currentLanguage].verdictPlaceholder}
-            className="mb-3 min-h-[80px] border-yellow-200 focus:border-yellow-400"
-          />
-          <Button
-            onClick={handleSaveVerdict}
-            disabled={!finalVerdict.trim() || isSavingVerdict}
-            className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 shadow-sm"
-          >
-            {isSavingVerdict ? text[currentLanguage].savingVerdict : text[currentLanguage].saveVerdict}
-          </Button>
-        </div>
-      )}
+      <IdeaFinalVerdict
+        idea={idea}
+        currentLanguage={currentLanguage}
+        isAdmin={isAdmin}
+        isAuthenticated={isAuthenticated}
+        onSaveFinalVerdict={onSaveFinalVerdict}
+      />
 
       <IdeaCardActions
         likes={idea.likes}
