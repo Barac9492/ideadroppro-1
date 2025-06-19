@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -75,7 +74,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           text: idea.text,
           score: parseFloat(idea.score?.toString() || '0'),
           tags: idea.tags || [],
-          likes: lik
+          likes: likesData?.length || 0,
           hasLiked,
           timestamp: new Date(idea.created_at),
           aiAnalysis: idea.ai_analysis,
