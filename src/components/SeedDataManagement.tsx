@@ -55,24 +55,31 @@ const SeedDataManagement: React.FC<SeedDataManagementProps> = ({ currentLanguage
 
     setIsDeleting(true);
     try {
-      // Delete likes for seed ideas first
-      await supabase
-        .from('idea_likes')
-        .delete()
-        .in('idea_id', 
-          supabase
-            .from('ideas')
-            .select('id')
-            .eq('seed', true)
-        );
-
-      // Delete seed ideas
-      const { error } = await supabase
+      // First, get all seed idea IDs
+      const { data: seedIdeas, error: fetchError } = await supabase
         .from('ideas')
-        .delete()
+        .select('id')
         .eq('seed', true);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+
+      if (seedIdeas && seedIdeas.length > 0) {
+        const seedIdeaIds = seedIdeas.map(idea => idea.id);
+
+        // Delete likes for seed ideas first
+        await supabase
+          .from('idea_likes')
+          .delete()
+          .in('idea_id', seedIdeaIds);
+
+        // Delete seed ideas
+        const { error } = await supabase
+          .from('ideas')
+          .delete()
+          .eq('seed', true);
+
+        if (error) throw error;
+      }
 
       toast({
         title: text[currentLanguage].deleteSuccess,
