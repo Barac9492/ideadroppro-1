@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Flame, Award, Trophy } from 'lucide-react';
+import { Flame, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
@@ -29,24 +29,22 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({ currentLanguage }) => {
 
   const text = {
     ko: {
-      currentStreak: '현재 연속기록',
-      maxStreak: '최고 기록',
-      days: '일',
-      streakBroken: '연속기록이 끊어졌습니다!',
-      keepGoing: '계속해보세요!',
-      badges: '획득한 배지',
-      noBadges: '아직 배지가 없습니다.',
-      todaySubmission: '오늘 제출 완료!',
+      streakCounter: '연속 아이디어 제출',
+      days: '일째',
+      maxRecord: '최고',
+      todayDone: '오늘 완료!',
+      badges: '획득 배지',
+      noBadges: '배지 없음',
+      streakDescription: '매일 아이디어를 제출하여 연속기록을 쌓아보세요!',
     },
     en: {
-      currentStreak: 'Current Streak',
-      maxStreak: 'Max Streak',
+      streakCounter: 'Daily Idea Streak',
       days: 'days',
-      streakBroken: 'Streak broken!',
-      keepGoing: 'Keep going!',
-      badges: 'Earned Badges',
-      noBadges: 'No badges yet.',
-      todaySubmission: 'Today submitted!',
+      maxRecord: 'Best',
+      todayDone: 'Today done!',
+      badges: 'Badges',
+      noBadges: 'No badges',
+      streakDescription: 'Submit ideas daily to build your streak!',
     }
   };
 
@@ -65,7 +63,7 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({ currentLanguage }) => {
         .from('user_streaks')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       setStreak(streakData);
 
@@ -95,46 +93,44 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({ currentLanguage }) => {
   }
 
   return (
-    <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-2xl shadow-xl p-4 mb-6 text-white">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-gradient-to-r from-orange-400 to-red-400 rounded-xl shadow-lg p-3 mb-4 text-white">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Flame className="h-5 w-5" />
-          <h3 className="font-bold">{text[currentLanguage].currentStreak}</h3>
+          <Flame className="h-4 w-4" />
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-lg font-bold">{streak?.current_streak || 0}</span>
+              <span className="text-xs opacity-80">{text[currentLanguage].days}</span>
+              {isSubmittedToday() && (
+                <Badge variant="secondary" className="bg-white/20 text-white text-xs px-2 py-0">
+                  ✅
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs opacity-80">{text[currentLanguage].streakDescription}</p>
+          </div>
         </div>
-        <div className="flex items-center space-x-1">
-          <span className="text-2xl font-bold">{streak?.current_streak || 0}</span>
-          <span className="text-sm opacity-80">{text[currentLanguage].days}</span>
+        
+        <div className="text-right">
+          <div className="text-xs opacity-80">{text[currentLanguage].maxRecord}</div>
+          <div className="text-sm font-semibold">{streak?.max_streak || 0}</div>
         </div>
-      </div>
-
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center space-x-2 text-sm opacity-80">
-          <Trophy className="h-4 w-4" />
-          <span>{text[currentLanguage].maxStreak}: {streak?.max_streak || 0}</span>
-        </div>
-        {isSubmittedToday() && (
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            ✅ {text[currentLanguage].todaySubmission}
-          </Badge>
-        )}
       </div>
 
       {badges.length > 0 && (
-        <div className="border-t border-white/20 pt-3">
-          <div className="flex items-center space-x-2 mb-2">
-            <Award className="h-4 w-4" />
-            <span className="text-sm font-medium">{text[currentLanguage].badges}</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {badges.map((badge) => (
-              <Badge
-                key={badge.badge_type}
-                variant="outline"
-                className="bg-white/10 border-white/30 text-white"
-              >
-                {badge.badge_emoji} {badge.badge_type.replace('streak_', '')}일
-              </Badge>
-            ))}
+        <div className="mt-2 pt-2 border-t border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Award className="h-3 w-3" />
+              <span className="text-xs">{text[currentLanguage].badges}</span>
+            </div>
+            <div className="flex space-x-1">
+              {badges.slice(0, 3).map((badge) => (
+                <span key={badge.badge_type} className="text-sm">
+                  {badge.badge_emoji}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       )}
