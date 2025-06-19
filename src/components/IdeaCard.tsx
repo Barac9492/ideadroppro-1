@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { Heart, Star, Clock, Zap, TrendingUp, Users } from 'lucide-react';
+import { Heart, Star, Clock, Zap, TrendingUp, Users, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Idea {
   id: string;
@@ -16,6 +17,7 @@ interface Idea {
   marketPotential?: string[];
   similarIdeas?: string[];
   pitchPoints?: string[];
+  finalVerdict?: string;
 }
 
 interface IdeaCardProps {
@@ -23,10 +25,21 @@ interface IdeaCardProps {
   currentLanguage: 'ko' | 'en';
   onLike: (ideaId: string) => void;
   onGenerateAnalysis: (ideaId: string) => Promise<void>;
+  onSaveFinalVerdict?: (ideaId: string, verdict: string) => void;
+  isAdmin?: boolean;
 }
 
-const IdeaCard: React.FC<IdeaCardProps> = ({ idea, currentLanguage, onLike, onGenerateAnalysis }) => {
+const IdeaCard: React.FC<IdeaCardProps> = ({ 
+  idea, 
+  currentLanguage, 
+  onLike, 
+  onGenerateAnalysis,
+  onSaveFinalVerdict,
+  isAdmin = false
+}) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [finalVerdict, setFinalVerdict] = useState(idea.finalVerdict || '');
+  const [isSavingVerdict, setIsSavingVerdict] = useState(false);
 
   const text = {
     ko: {
@@ -38,7 +51,12 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, currentLanguage, onLike, onGe
       improvements: '개선 피드백',
       marketPotential: '시장 잠재력',
       similarIdeas: '유사 아이디어',
-      pitchPoints: '피치덱 포인트'
+      pitchPoints: '피치덱 포인트',
+      aiAnalysis: 'AI 분석',
+      finalVerdict: 'VC 최종 평가',
+      saveVerdict: '평가 저장',
+      savingVerdict: '저장 중...',
+      verdictPlaceholder: 'VC로서 이 아이디어에 대한 최종 평가를 작성해주세요...'
     },
     en: {
       score: 'Score',
@@ -49,7 +67,12 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, currentLanguage, onLike, onGe
       improvements: 'Improvement Feedback',
       marketPotential: 'Market Potential',
       similarIdeas: 'Similar Ideas',
-      pitchPoints: 'Pitch Points'
+      pitchPoints: 'Pitch Points',
+      aiAnalysis: 'AI Analysis',
+      finalVerdict: 'VC Final Verdict',
+      saveVerdict: 'Save Verdict',
+      savingVerdict: 'Saving...',
+      verdictPlaceholder: 'Write your final verdict on this idea as a VC...'
     }
   };
 
@@ -59,6 +82,17 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, currentLanguage, onLike, onGe
       await onGenerateAnalysis(idea.id);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveVerdict = async () => {
+    if (!onSaveFinalVerdict || !finalVerdict.trim()) return;
+    
+    setIsSavingVerdict(true);
+    try {
+      await onSaveFinalVerdict(idea.id, finalVerdict.trim());
+    } finally {
+      setIsSavingVerdict(false);
     }
   };
 
@@ -111,7 +145,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, currentLanguage, onLike, onGe
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-4">
           <div className="flex items-center space-x-2 mb-2">
             <Zap className="h-5 w-5 text-purple-600" />
-            <span className="font-semibold text-gray-800">AI Analysis</span>
+            <span className="font-semibold text-gray-800">{text[currentLanguage].aiAnalysis}</span>
           </div>
           <p className="text-gray-700">{idea.aiAnalysis}</p>
         </div>
@@ -146,6 +180,68 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, currentLanguage, onLike, onGe
         </div>
       )}
 
+      {idea.similarIdeas && (
+        <div className="mb-4">
+          <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
+            <Users className="h-4 w-4 mr-2 text-indigo-600" />
+            {text[currentLanguage].similarIdeas}
+          </h4>
+          <ul className="space-y-1">
+            {idea.similarIdeas.map((similarIdea, index) => (
+              <li key={index} className="text-gray-600 text-sm">• {similarIdea}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {idea.pitchPoints && (
+        <div className="mb-4">
+          <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
+            <Star className="h-4 w-4 mr-2 text-yellow-600" />
+            {text[currentLanguage].pitchPoints}
+          </h4>
+          <ul className="space-y-1">
+            {idea.pitchPoints.map((point, index) => (
+              <li key={index} className="text-gray-600 text-sm">• {point}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Final Verdict Section */}
+      {idea.finalVerdict && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border-l-4 border-yellow-400">
+          <div className="flex items-center space-x-2 mb-2">
+            <Award className="h-5 w-5 text-yellow-600" />
+            <span className="font-semibold text-gray-800">{text[currentLanguage].finalVerdict}</span>
+          </div>
+          <p className="text-gray-700">{idea.finalVerdict}</p>
+        </div>
+      )}
+
+      {/* Admin Final Verdict Input */}
+      {isAdmin && !idea.finalVerdict && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border-l-4 border-yellow-400">
+          <div className="flex items-center space-x-2 mb-3">
+            <Award className="h-5 w-5 text-yellow-600" />
+            <span className="font-semibold text-gray-800">{text[currentLanguage].finalVerdict}</span>
+          </div>
+          <Textarea
+            value={finalVerdict}
+            onChange={(e) => setFinalVerdict(e.target.value)}
+            placeholder={text[currentLanguage].verdictPlaceholder}
+            className="mb-3 min-h-[80px]"
+          />
+          <Button
+            onClick={handleSaveVerdict}
+            disabled={!finalVerdict.trim() || isSavingVerdict}
+            className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+          >
+            {isSavingVerdict ? text[currentLanguage].savingVerdict : text[currentLanguage].saveVerdict}
+          </Button>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <button
@@ -160,7 +256,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, currentLanguage, onLike, onGe
           <span>{idea.likes} {text[currentLanguage].likes}</span>
         </button>
 
-        {!idea.aiAnalysis && (
+        {(!idea.improvements || !idea.marketPotential) && (
           <Button
             onClick={handleGenerateAnalysis}
             disabled={isGenerating}
