@@ -19,6 +19,8 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
       verdictSaved: 'VC 평가가 저장되었습니다!',
       verdictError: 'VC 평가 저장 중 오류가 발생했습니다.',
       contentBlocked: '부적절한 콘텐츠가 감지되어 아이디어를 제출할 수 없습니다.',
+      analysisWithFallback: 'AI 분석이 부분적으로 완료되었습니다.',
+      lowScoreNotice: '점수가 낮게 나왔습니다. 더 구체적인 아이디어를 고려해보세요.',
     },
     en: {
       submitSuccess: 'Idea submitted successfully!',
@@ -28,6 +30,8 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
       verdictSaved: 'VC verdict saved successfully!',
       verdictError: 'Error occurred while saving VC verdict.',
       contentBlocked: 'Inappropriate content detected. Idea cannot be submitted.',
+      analysisWithFallback: 'AI analysis partially completed.',
+      lowScoreNotice: 'Low score received. Consider a more specific idea.',
     }
   };
 
@@ -60,13 +64,14 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
       if (analysisError) {
         console.error('Analysis error:', analysisError);
         // 분석 실패 시 기본값으로 아이디어만 저장
+        const fallbackScore = Math.round((Math.random() * 2 + 4) * 10) / 10; // 4.0-6.0 range
         const { data, error } = await supabase
           .from('ideas')
           .insert([{
             user_id: user.id,
             text: ideaText,
-            score: Math.round((Math.random() * 3 + 7) * 10) / 10,
-            tags: ['일반'],
+            score: fallbackScore,
+            tags: [currentLanguage === 'ko' ? '일반' : 'general'],
             ai_analysis: currentLanguage === 'ko' 
               ? 'AI 분석을 불러올 수 없어 기본 분석으로 대체되었습니다.' 
               : 'AI analysis failed, replaced with default analysis.',
@@ -82,9 +87,7 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
 
         toast({
           title: text[currentLanguage].submitSuccess,
-          description: currentLanguage === 'ko' 
-            ? 'AI 분석은 실패했지만 아이디어가 저장되었습니다.' 
-            : 'AI analysis failed but idea was saved.',
+          description: text[currentLanguage].analysisWithFallback,
           duration: 3000,
         });
 
@@ -100,7 +103,7 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
         .insert([{
           user_id: user.id,
           text: ideaText,
-          score: analysisData.score || Math.round((Math.random() * 3 + 7) * 10) / 10,
+          score: analysisData.score || Math.round((Math.random() * 2 + 4) * 10) / 10,
           tags: analysisData.tags || [],
           ai_analysis: analysisData.analysis,
           improvements: analysisData.improvements,
@@ -113,8 +116,14 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
 
       if (error) throw error;
 
+      // Show different messages based on score
+      const score = analysisData.score || 5;
+      const toastMessage = score < 5 
+        ? text[currentLanguage].lowScoreNotice
+        : text[currentLanguage].submitSuccess;
+
       toast({
-        title: text[currentLanguage].submitSuccess,
+        title: toastMessage,
         duration: 3000,
       });
 
@@ -163,8 +172,13 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
 
       if (error) throw error;
 
+      const score = analysisData.score || 5;
+      const toastMessage = score < 5 
+        ? text[currentLanguage].lowScoreNotice
+        : text[currentLanguage].analysisGenerated;
+
       toast({
-        title: text[currentLanguage].analysisGenerated,
+        title: toastMessage,
         duration: 3000,
       });
 
