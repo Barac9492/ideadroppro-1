@@ -1,6 +1,9 @@
 
 import React from 'react';
-import { Globe, Lightbulb } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Globe, Lightbulb, LogOut, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
   currentLanguage: 'ko' | 'en';
@@ -8,15 +11,27 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
   const text = {
     ko: {
       title: 'IdeaDrop Pro',
-      subtitle: '혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요'
+      subtitle: '혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요',
+      signIn: '로그인',
+      signOut: '로그아웃'
     },
     en: {
       title: 'IdeaDrop Pro',
-      subtitle: 'Share innovative ideas and get instant AI feedback'
+      subtitle: 'Share innovative ideas and get instant AI feedback',
+      signIn: 'Sign In',
+      signOut: 'Sign Out'
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
   };
 
   return (
@@ -33,13 +48,42 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
             </div>
           </div>
           
-          <button
-            onClick={onLanguageToggle}
-            className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105"
-          >
-            <Globe className="h-4 w-4" />
-            <span className="font-medium">{currentLanguage === 'ko' ? '한국어' : 'English'}</span>
-          </button>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onLanguageToggle}
+              className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105"
+            >
+              <Globe className="h-4 w-4" />
+              <span className="font-medium">{currentLanguage === 'ko' ? '한국어' : 'English'}</span>
+            </button>
+
+            {user ? (
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 bg-white/20 px-3 py-2 rounded-full">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm">{user.email}</span>
+                </div>
+                <Button
+                  onClick={handleSignOut}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {text[currentLanguage].signOut}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => navigate('/auth')}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20"
+              >
+                {text[currentLanguage].signIn}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </header>
