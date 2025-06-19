@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ideaOperationsText } from './constants';
 
 interface UseGlobalAnalysisProps {
   currentLanguage: 'ko' | 'en';
@@ -10,17 +9,29 @@ interface UseGlobalAnalysisProps {
 }
 
 export const useGlobalAnalysis = ({ currentLanguage, user, fetchIdeas }: UseGlobalAnalysisProps) => {
-  const text = ideaOperationsText[currentLanguage];
-
-  const generateGlobalAnalysis = async (ideaId: string, ideaText: string) => {
+  const generateGlobalAnalysis = async (ideaId: string) => {
     if (!user) return;
 
     try {
-      console.log('Generating global analysis for idea:', ideaText);
+      console.log('Generating global analysis for idea ID:', ideaId);
+      
+      // First, get the idea text from the database
+      const { data: ideaData, error: ideaError } = await supabase
+        .from('ideas')
+        .select('text')
+        .eq('id', ideaId)
+        .single();
+
+      if (ideaError) {
+        console.error('Error fetching idea:', ideaError);
+        throw new Error('아이디어를 불러오는 중 오류가 발생했습니다.');
+      }
+
+      console.log('Fetched idea text:', ideaData.text);
       
       const { data: globalAnalysisData, error: globalAnalysisError } = await supabase.functions.invoke('analyze-global-market', {
         body: { 
-          ideaText: ideaText,
+          ideaText: ideaData.text,
           language: currentLanguage 
         }
       });

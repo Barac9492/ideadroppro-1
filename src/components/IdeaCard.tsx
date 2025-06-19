@@ -24,11 +24,13 @@ interface Idea {
   finalVerdict?: string;
   globalAnalysis?: any;
   seed?: boolean;
+  user_id: string;
 }
 
 interface IdeaCardProps {
   idea: Idea;
   currentLanguage: 'ko' | 'en';
+  currentUserId?: string;
   onLike: (ideaId: string) => void;
   onGenerateAnalysis: (ideaId: string) => Promise<void>;
   onGenerateGlobalAnalysis?: (ideaId: string) => Promise<void>;
@@ -39,7 +41,8 @@ interface IdeaCardProps {
 
 const IdeaCard: React.FC<IdeaCardProps> = ({ 
   idea, 
-  currentLanguage, 
+  currentLanguage,
+  currentUserId,
   onLike, 
   onGenerateAnalysis,
   onGenerateGlobalAnalysis,
@@ -70,6 +73,13 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       navigate('/auth');
       return;
     }
+    
+    // Check ownership
+    if (currentUserId !== idea.user_id) {
+      console.log('User is not the owner of this idea');
+      return;
+    }
+
     setIsGeneratingGlobal(true);
     try {
       await onGenerateGlobalAnalysis?.(idea.id);
@@ -87,7 +97,8 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   };
 
   const showGenerateButton = (!idea.improvements || !idea.marketPotential);
-  const showGlobalButton = !idea.globalAnalysis && !!(idea.improvements && idea.marketPotential);
+  const isOwner = currentUserId === idea.user_id;
+  const showGlobalButton = !idea.globalAnalysis && !!(idea.improvements && idea.marketPotential) && isOwner;
 
   return (
     <div className={`bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.01] ${

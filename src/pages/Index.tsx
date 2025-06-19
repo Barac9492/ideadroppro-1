@@ -152,6 +152,7 @@ const Index = () => {
                 key={idea.id}
                 idea={idea}
                 currentLanguage={currentLanguage}
+                currentUserId={user?.id}
                 onLike={handleLike}
                 onGenerateAnalysis={handleGenerateAnalysis}
                 onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
