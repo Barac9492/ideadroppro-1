@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +22,7 @@ export const useInvitations = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const subscriptionRef = useRef<any>(null);
+  const channelRef = useRef<any>(null);
   const hookInstanceId = useRef(Math.random().toString(36).substring(7));
 
   const generateInvitationCode = () => {
@@ -170,22 +171,17 @@ export const useInvitations = () => {
 
     console.log('Setting up invitation subscription for user:', user.id, 'instance:', hookInstanceId.current);
     
-    // Clean up any existing subscription
-    const cleanup = () => {
-      if (subscriptionRef.current) {
-        console.log('Unsubscribing from existing channel for instance:', hookInstanceId.current);
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
-    };
-
-    cleanup();
+    // Clean up any existing channel completely
+    if (channelRef.current) {
+      console.log('Removing existing channel for instance:', hookInstanceId.current);
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
     
-    // Create a unique channel name per hook instance to avoid conflicts
-    const uniqueChannelName = `invitation-changes-${user.id}-${hookInstanceId.current}`;
+    // Create a completely new channel with unique name
+    const uniqueChannelName = `invitation-changes-${user.id}-${hookInstanceId.current}-${Date.now()}`;
     
-    // Set up new subscription
-    const subscription = supabase
+    const channel = supabase
       .channel(uniqueChannelName)
       .on(
         'postgres_changes',
@@ -204,10 +200,16 @@ export const useInvitations = () => {
         console.log('Subscription status for instance:', hookInstanceId.current, status);
       });
 
-    // Store the subscription reference
-    subscriptionRef.current = subscription;
+    // Store the channel reference
+    channelRef.current = channel;
 
-    return cleanup;
+    return () => {
+      console.log('Cleaning up subscription for instance:', hookInstanceId.current);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [user?.id]);
 
   return {
