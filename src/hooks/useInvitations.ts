@@ -167,8 +167,11 @@ export const useInvitations = () => {
   useEffect(() => {
     if (!user) return;
 
+    // Create a unique channel name to avoid conflicts
+    const channelName = `invitation-changes-${user.id}`;
+    
     const channel = supabase
-      .channel('invitation-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -184,9 +187,10 @@ export const useInvitations = () => {
       .subscribe();
 
     return () => {
+      // Properly cleanup the channel
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id to avoid unnecessary re-subscriptions
 
   return {
     invitations,
