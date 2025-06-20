@@ -7,6 +7,7 @@ import IdeaCard from '@/components/IdeaCard';
 import DailyPromptCard from '@/components/DailyPromptCard';
 import StreakBadge from '@/components/StreakBadge';
 import WelcomeBanner from '@/components/WelcomeBanner';
+import MonthlyRanking from '@/components/MonthlyRanking';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -133,6 +134,9 @@ const Index = () => {
         />
         
         {user && <StreakBadge currentLanguage={currentLanguage} />}
+        
+        {/* Monthly Ranking */}
+        <MonthlyRanking currentLanguage={currentLanguage} />
         
         {/* Login encouragement banner for non-authenticated users */}
         {!user && !showWelcomeBanner && (

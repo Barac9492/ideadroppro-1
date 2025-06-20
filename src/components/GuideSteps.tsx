@@ -28,12 +28,12 @@ const GuideSteps: React.FC<GuideStepsProps> = ({ currentLanguage }) => {
           desc: '"글로벌 분석 생성" 버튼으로 전 세계 시장에서의 아이디어 잠재력을 확인하세요.'
         },
         step5: {
-          title: '5. 고득점 시 VC 추가 조언',
-          desc: 'AI 평가에서 8.5점 이상을 받은 최우수 아이디어는 실제 VC들로부터 추가적인 전문가 조언을 받을 기회가 주어집니다.'
+          title: '5. VC 전문가 조언 자격 획득',
+          desc: 'AI 평가에서 8점 이상을 받거나 월간 최다 하트를 받은 아이디어는 실제 VC들로부터 추가적인 전문가 조언을 받을 기회가 주어집니다.'
         },
         step6: {
           title: '6. 다른 아이디어와 소통',
-          desc: '마음에 드는 아이디어에 좋아요를 누르고 다른 사용자들과 소통하세요.'
+          desc: '마음에 드는 아이디어에 좋아요를 누르고 다른 사용자들과 소통하세요. 월간 최다 하트를 받으면 VC 조언 자격을 얻을 수 있습니다!'
         },
         step7: {
           title: '7. 연속 제출로 스트릭 쌓기',
@@ -61,12 +61,12 @@ const GuideSteps: React.FC<GuideStepsProps> = ({ currentLanguage }) => {
           desc: 'Use "Generate Global Analysis" to check your idea\'s potential in global markets.'
         },
         step5: {
-          title: '5. VC Expert Advice for Top Scores',
-          desc: 'Ideas scoring 8.5+ points in AI evaluation get additional expert advice from real VCs.'
+          title: '5. VC Expert Advice Qualification',
+          desc: 'Ideas scoring 8+ points in AI evaluation OR receiving the most monthly hearts get additional expert advice from real VCs.'
         },
         step6: {
           title: '6. Engage with Community',
-          desc: 'Like ideas you enjoy and engage with other users in the community.'
+          desc: 'Like ideas you enjoy and engage with other users. Get the most monthly hearts to qualify for VC advice!'
         },
         step7: {
           title: '7. Build Streaks',
