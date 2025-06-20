@@ -12,7 +12,12 @@ export const ideaOperationsText = {
     globalAnalysisSuccess: '글로벌 시장 분석이 완료되었습니다.',
     globalAnalysisError: '글로벌 시장 분석 중 오류가 발생했습니다.',
     networkError: '네트워크 연결을 확인해주세요.',
-    retryLater: '잠시 후 다시 시도해주세요.'
+    retryLater: '잠시 후 다시 시도해주세요.',
+    rateLimitError: '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.',
+    duplicateDetected: '유사한 아이디어가 이미 존재합니다.',
+    qualityCheckFailed: '아이디어의 품질이 기준에 미달합니다.',
+    analysisGenerated: 'AI 분석이 완료되었습니다.',
+    highScoreNotice: '🎉 고품질 아이디어로 평가되었습니다! 투자자들에게 어필할 수 있는 아이디어입니다.'
   },
   en: {
     submitSuccess: 'Idea submitted successfully!',
@@ -26,6 +31,11 @@ export const ideaOperationsText = {
     globalAnalysisSuccess: 'Global market analysis completed.',
     globalAnalysisError: 'An error occurred during global market analysis.',
     networkError: 'Please check your network connection.',
-    retryLater: 'Please try again later.'
+    retryLater: 'Please try again later.',
+    rateLimitError: 'Too many requests. Please try again later.',
+    duplicateDetected: 'A similar idea already exists.',
+    qualityCheckFailed: 'The idea quality does not meet our standards.',
+    analysisGenerated: 'AI analysis completed.',
+    highScoreNotice: '🎉 Rated as high-quality idea! This could appeal to investors.'
   }
 };
