@@ -1,8 +1,8 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { subscriptionManager } from '@/utils/subscriptionManager';
 
 interface InfluenceScore {
   id: string;
@@ -25,6 +25,8 @@ export const useInfluenceScore = () => {
   const [logs, setLogs] = useState<ScoreLog[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const componentId = useRef(`influence-${Math.random().toString(36).substring(7)}`);
+  const subscriptionKeys = useRef<string[]>([]);
 
   const fetchInfluenceScore = async () => {
     if (!user) {
@@ -131,36 +133,49 @@ export const useInfluenceScore = () => {
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('influence-score-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_influence_scores',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchInfluenceScore();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'influence_score_logs',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchScoreLogs();
-        }
-      )
-      .subscribe();
+    // Clean up existing subscriptions
+    subscriptionKeys.current.forEach(key => {
+      subscriptionManager.unsubscribe(key);
+    });
+    subscriptionKeys.current = [];
+
+    // Set up score subscription
+    const scoreKey = subscriptionManager.subscribe(
+      'influence-score-changes',
+      componentId.current,
+      {
+        event: '*',
+        schema: 'public',
+        table: 'user_influence_scores',
+        filter: `user_id=eq.${user.id}`
+      },
+      () => {
+        fetchInfluenceScore();
+      }
+    );
+
+    // Set up logs subscription
+    const logsKey = subscriptionManager.subscribe(
+      'influence-logs-changes',
+      componentId.current,
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'influence_score_logs',
+        filter: `user_id=eq.${user.id}`
+      },
+      () => {
+        fetchScoreLogs();
+      }
+    );
+
+    subscriptionKeys.current = [scoreKey, logsKey];
 
     return () => {
-      supabase.removeChannel(channel);
+      subscriptionKeys.current.forEach(key => {
+        subscriptionManager.unsubscribe(key);
+      });
+      subscriptionKeys.current = [];
     };
   }, [user]);
 

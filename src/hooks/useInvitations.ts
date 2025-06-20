@@ -1,8 +1,8 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { subscriptionManager } from '@/utils/subscriptionManager';
 
 interface Invitation {
   id: string;
@@ -22,6 +22,8 @@ export const useInvitations = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const componentId = useRef(`invitations-${Math.random().toString(36).substring(7)}`);
+  const subscriptionKey = useRef<string | null>(null);
 
   const generateInvitationCode = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -122,7 +124,6 @@ export const useInvitations = () => {
         return;
       }
 
-      // Type assertion to ensure status is properly typed
       const typedInvitations = (data || []).map(invitation => ({
         ...invitation,
         status: invitation.status as 'pending' | 'accepted' | 'expired'
@@ -161,7 +162,42 @@ export const useInvitations = () => {
   };
 
   useEffect(() => {
-    fetchInvitations();
+    if (user) {
+      fetchInvitations();
+
+      // Clean up existing subscription
+      if (subscriptionKey.current) {
+        subscriptionManager.unsubscribe(subscriptionKey.current);
+        subscriptionKey.current = null;
+      }
+
+      // Set up new subscription
+      const newSubscriptionKey = subscriptionManager.subscribe(
+        'invitation-changes',
+        componentId.current,
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_invitations',
+          filter: `inviter_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Invitation change detected:', payload);
+          fetchInvitations();
+        }
+      );
+
+      subscriptionKey.current = newSubscriptionKey;
+    } else {
+      setLoading(false);
+    }
+
+    return () => {
+      if (subscriptionKey.current) {
+        subscriptionManager.unsubscribe(subscriptionKey.current);
+        subscriptionKey.current = null;
+      }
+    };
   }, [user]);
 
   return {

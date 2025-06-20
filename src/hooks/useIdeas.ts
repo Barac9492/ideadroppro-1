@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeaOperations } from './useIdeaOperations';
 import { useSeedIdeas } from './useSeedIdeas';
 import { useIdeaLikes } from './useIdeaLikes';
+import { subscriptionManager } from '@/utils/subscriptionManager';
 
 interface Idea {
   id: string;
@@ -29,6 +30,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const componentId = useRef(`ideas-${Math.random().toString(36).substring(7)}`);
+  const subscriptionKey = useRef<string | null>(null);
 
   const fetchIdeas = async () => {
     console.log('🔄 Fetching ideas for main app...');
@@ -85,47 +88,53 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
   // Set up real-time subscription for ideas
   useEffect(() => {
+    // Initial fetch
     fetchIdeas();
 
-    const channel = supabase
-      .channel('ideas-main-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ideas'
-        },
-        (payload) => {
-          console.log('🔄 Real-time ideas change on main:', payload);
-          
-          if (payload.eventType === 'DELETE') {
-            // Remove deleted idea from state immediately
-            console.log('🗑️ Removing deleted idea from main state:', payload.old.id);
-            setIdeas(prev => {
-              const filtered = prev.filter(idea => idea.id !== payload.old.id);
-              console.log('📊 Main app ideas updated. Remaining:', filtered.length);
-              return filtered;
-            });
-          } else if (payload.eventType === 'INSERT') {
-            // Add new idea and refetch to get complete data with likes
-            console.log('➕ New idea inserted, refetching...');
-            fetchIdeas();
-          } else if (payload.eventType === 'UPDATE') {
-            // Update existing idea or refetch for complex updates
-            console.log('✏️ Idea updated, refetching...');
-            fetchIdeas();
-          }
+    // Clean up any existing subscription
+    if (subscriptionKey.current) {
+      subscriptionManager.unsubscribe(subscriptionKey.current);
+      subscriptionKey.current = null;
+    }
+
+    // Set up new subscription
+    const newSubscriptionKey = subscriptionManager.subscribe(
+      'ideas-main-changes',
+      componentId.current,
+      {
+        event: '*',
+        schema: 'public',
+        table: 'ideas'
+      },
+      (payload) => {
+        console.log('🔄 Real-time ideas change on main:', payload);
+        
+        if (payload.eventType === 'DELETE') {
+          console.log('🗑️ Removing deleted idea from main state:', payload.old.id);
+          setIdeas(prev => {
+            const filtered = prev.filter(idea => idea.id !== payload.old.id);
+            console.log('📊 Main app ideas updated. Remaining:', filtered.length);
+            return filtered;
+          });
+        } else {
+          // For INSERT and UPDATE, refetch to get complete data
+          console.log('➕/✏️ Idea changed, refetching...');
+          fetchIdeas();
         }
-      )
-      .subscribe();
+      }
+    );
+
+    subscriptionKey.current = newSubscriptionKey;
 
     return () => {
-      supabase.removeChannel(channel);
+      if (subscriptionKey.current) {
+        subscriptionManager.unsubscribe(subscriptionKey.current);
+        subscriptionKey.current = null;
+      }
     };
-  }, []); // Remove user dependency to avoid unnecessary re-subscriptions
+  }, []); // Remove user dependency to avoid re-subscriptions
 
-  // Refetch ideas when user changes to update like status
+  // Update like status when user changes
   useEffect(() => {
     if (ideas.length > 0) {
       console.log('👤 User changed, updating like status...');
@@ -139,21 +148,21 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
   const generateAnalysis = async (ideaId: string) => {
     const idea = ideas.find(i => i.id === ideaId);
-    if (!idea || idea.seed) return; // Prevent analysis generation for seed ideas
+    if (!idea || idea.seed) return;
     
     return ideaOperations.generateAnalysis(ideaId, idea.text);
   };
 
   const generateGlobalAnalysis = async (ideaId: string) => {
     const idea = ideas.find(i => i.id === ideaId);
-    if (!idea || idea.seed) return; // Prevent global analysis generation for seed ideas
+    if (!idea || idea.seed) return;
     
     return ideaOperations.generateGlobalAnalysis(ideaId);
   };
 
   const saveFinalVerdict = async (ideaId: string, verdict: string) => {
     const idea = ideas.find(i => i.id === ideaId);
-    if (idea?.seed) return; // Prevent verdict saving for seed ideas
+    if (idea?.seed) return;
     
     return ideaOperations.saveFinalVerdict(ideaId, verdict);
   };
