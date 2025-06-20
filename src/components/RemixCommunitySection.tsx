@@ -11,38 +11,28 @@ interface RemixCommunitySectionProps {
 const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLanguage }) => {
   const text = {
     ko: {
-      title: '커뮤니티와 함께 성장하는 아이디어',
-      subtitle: '리믹스를 통해 아이디어가 진화하고 네트워크 효과가 확산됩니다',
+      title: '커뮤니티 리믹스 현황',
+      subtitle: '실시간으로 아이디어가 진화하고 있습니다',
       featuredIdea: '가장 많이 리믹스된 아이디어',
       ideaText: '배달 음식 포장 쓰레기를 줄이는 구독형 다회용 용기 서비스',
       remixCount: '12명이 리믹스',
       influenceScore: '영향력 점수 400+',
-      autoReportUnlock: 'GPT 자동 브리핑 생성 해제!',
-      myCollection: '나의 아이디어 모아보기',
-      otherRemixes: '다른 유저의 리믹스 보기',
+      viewAllRemixes: '모든 리믹스 보기',
       topRemixer: '이번 주 톱 리믹서',
       remixMaster: 'remix_master_kim',
-      remixStats: '23개 리믹스 생성',
-      networkEffect: '네트워크 효과',
-      growthBonus: '성장 보너스',
-      viewAllRemixes: '모든 리믹스 보기'
+      remixStats: '23개 리믹스 생성'
     },
     en: {
-      title: 'Ideas Growing with Community',
-      subtitle: 'Ideas evolve through remixes and network effects spread',
+      title: 'Community Remix Status',
+      subtitle: 'Ideas are evolving in real-time',
       featuredIdea: 'Most Remixed Idea',
       ideaText: 'Subscription-based reusable container service to reduce food delivery packaging waste',
       remixCount: 'Remixed by 12 people',
       influenceScore: 'Influence Score 400+',
-      autoReportUnlock: 'GPT Auto Briefing Generated!',
-      myCollection: 'View My Idea Collection',
-      otherRemixes: 'View Other Users\' Remixes',
+      viewAllRemixes: 'View All Remixes',
       topRemixer: 'Top Remixer This Week',
       remixMaster: 'remix_master_kim',
-      remixStats: '23 remixes created',
-      networkEffect: 'Network Effect',
-      growthBonus: 'Growth Bonus',
-      viewAllRemixes: 'View All Remixes'
+      remixStats: '23 remixes created'
     }
   };
 
@@ -68,18 +58,15 @@ const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLa
   ];
 
   return (
-    <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 py-16">
+    <div className="bg-white py-16">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <div className="flex justify-center items-center space-x-2 mb-4">
-            <Repeat className="w-6 h-6 text-purple-600" />
-            <Badge className="bg-purple-600 text-white px-3 py-1">
-              REMIX COMMUNITY
-            </Badge>
-          </div>
+          <Badge className="bg-purple-600 text-white px-3 py-1 mb-4">
+            REMIX COMMUNITY
+          </Badge>
           
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            🧲 {text[currentLanguage].title}
+            {text[currentLanguage].title}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             {text[currentLanguage].subtitle}
@@ -88,9 +75,7 @@ const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLa
 
         {/* Featured Remix Idea */}
         <div className="max-w-4xl mx-auto mb-12">
-          <div className="bg-white rounded-2xl p-8 shadow-xl border-2 border-purple-200 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-200 rounded-full opacity-20 transform translate-x-12 -translate-y-12"></div>
-            
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 border-2 border-purple-200">
             <div className="flex items-start justify-between mb-6">
               <div>
                 <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white mb-4">
@@ -106,8 +91,8 @@ const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLa
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white rounded-lg p-4 border border-purple-200">
                 <div className="flex items-center space-x-2 mb-2">
                   <Repeat className="w-5 h-5 text-purple-600" />
                   <span className="font-semibold text-purple-800">
@@ -119,7 +104,7 @@ const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLa
                 </div>
               </div>
 
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="bg-white rounded-lg p-4 border border-green-200">
                 <div className="flex items-center space-x-2 mb-2">
                   <TrendingUp className="w-5 h-5 text-green-600" />
                   <span className="font-semibold text-green-800">
@@ -130,37 +115,21 @@ const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLa
                   네트워크 효과 발생
                 </div>
               </div>
-
-              <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Star className="w-5 h-5 text-yellow-600" />
-                  <span className="font-semibold text-yellow-800">
-                    {text[currentLanguage].autoReportUnlock}
-                  </span>
-                </div>
-                <div className="text-sm text-yellow-600">
-                  특별 보상 달성
-                </div>
-              </div>
             </div>
 
-            <div className="flex justify-center space-x-4">
-              <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+            <div className="text-center">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                 <Eye className="w-4 h-4 mr-2" />
-                {text[currentLanguage].myCollection}
-              </Button>
-              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                <Users className="w-4 h-4 mr-2" />
-                {text[currentLanguage].otherRemixes}
+                {text[currentLanguage].viewAllRemixes}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Remix Examples */}
+        {/* Remix Examples - Simplified */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           {remixExamples.map((remix, index) => (
-            <div key={index} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div key={index} className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
@@ -195,8 +164,8 @@ const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLa
           ))}
         </div>
 
-        {/* Top Remixer Spotlight */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white mb-8">
+        {/* Top Remixer Spotlight - Simplified */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
@@ -214,41 +183,6 @@ const RemixCommunitySection: React.FC<RemixCommunitySectionProps> = ({ currentLa
               <div className="text-3xl font-bold mb-1">856</div>
               <div className="text-purple-200">총 영향력 점수</div>
             </div>
-          </div>
-        </div>
-
-        {/* Network Effects Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl p-6 text-center shadow-md">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Repeat className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="text-2xl font-bold text-purple-600 mb-1">342</div>
-            <div className="text-sm text-gray-600">총 리믹스 수</div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 text-center shadow-md">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="text-2xl font-bold text-blue-600 mb-1">156</div>
-            <div className="text-sm text-gray-600">활성 리믹서</div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 text-center shadow-md">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="text-2xl font-bold text-green-600 mb-1">89%</div>
-            <div className="text-sm text-gray-600">개선률</div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 text-center shadow-md">
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Star className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="text-2xl font-bold text-yellow-600 mb-1">23</div>
-            <div className="text-sm text-gray-600">VC 관심 아이디어</div>
           </div>
         </div>
       </div>

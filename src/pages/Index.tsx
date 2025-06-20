@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
+import BetaAnnouncementBanner from '@/components/BetaAnnouncementBanner';
 import HeroSection from '@/components/HeroSection';
 import LiveFeedSection from '@/components/LiveFeedSection';
+import RemixExplanationSection from '@/components/RemixExplanationSection';
+import RemixCommunitySection from '@/components/RemixCommunitySection';
 import VCVerificationSection from '@/components/VCVerificationSection';
 import FinalCTASection from '@/components/FinalCTASection';
 import SocialProofSection from '@/components/SocialProofSection';
@@ -88,18 +91,21 @@ const Index = () => {
         onLanguageToggle={handleLanguageToggle}
       />
       
-      {/* 1️⃣ Hero Section - Focused submission flow */}
+      {/* Beta Announcement Banner */}
+      <BetaAnnouncementBanner currentLanguage={currentLanguage} />
+      
+      {/* Hero Section - Focused submission flow */}
       <HeroSection 
         currentLanguage={currentLanguage}
         onIdeaDrop={handleIdeaDrop}
       />
       
-      {/* 2️⃣ Social Proof - Light persuasion */}
+      {/* Social Proof - Light persuasion */}
       <SocialProofSection 
         currentLanguage={currentLanguage}
       />
 
-      {/* 2.5️⃣ Top Influencers Board - Gamification */}
+      {/* Top Influencers Board - Gamification */}
       <div className="bg-white py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
@@ -108,7 +114,7 @@ const Index = () => {
         </div>
       </div>
       
-      {/* 3️⃣ Live Feed - Social evidence with section marker */}
+      {/* Live Feed - Social evidence with section marker */}
       <div data-section="live-feed">
         <LiveFeedSection
           ideas={ideas}
@@ -117,13 +123,19 @@ const Index = () => {
           isAuthenticated={!!user}
         />
       </div>
+
+      {/* Remix Explanation - New section */}
+      <RemixExplanationSection currentLanguage={currentLanguage} />
       
-      {/* 4️⃣ VC Verification - Trust indicators */}
+      {/* Remix Community - Updated section */}
+      <RemixCommunitySection currentLanguage={currentLanguage} />
+      
+      {/* VC Verification - Trust indicators */}
       <VCVerificationSection 
         currentLanguage={currentLanguage}
       />
       
-      {/* 5️⃣ Final CTA - Single focused call to action */}
+      {/* Final CTA - Single focused call to action */}
       <FinalCTASection 
         currentLanguage={currentLanguage}
         onDropIdea={scrollToHero}
