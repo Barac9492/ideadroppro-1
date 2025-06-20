@@ -87,7 +87,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     fetchIdeas();
 
     const channel = supabase
-      .channel('ideas-changes')
+      .channel('ideas-main-changes')
       .on(
         'postgres_changes',
         {
@@ -96,9 +96,20 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           table: 'ideas'
         },
         (payload) => {
-          console.log('Real-time ideas change:', payload);
-          // Refetch ideas when any change occurs
-          fetchIdeas();
+          console.log('Real-time ideas change on main:', payload);
+          
+          if (payload.eventType === 'DELETE') {
+            // Remove deleted idea from state immediately
+            console.log('Removing deleted idea from main state:', payload.old.id);
+            setIdeas(prev => prev.filter(idea => idea.id !== payload.old.id));
+          } else if (payload.eventType === 'INSERT') {
+            // Add new idea and refetch to get complete data with likes
+            console.log('New idea inserted, refetching...');
+            fetchIdeas();
+          } else if (payload.eventType === 'UPDATE') {
+            // Update existing idea or refetch for complex updates
+            fetchIdeas();
+          }
         }
       )
       .subscribe();

@@ -7,7 +7,7 @@ import { useGlobalAnalysis } from './useGlobalAnalysis';
 interface IdeaOperationsProps {
   currentLanguage: 'ko' | 'en';
   user: any;
-  fetchIdeas: () => void;
+  fetchIdeas: () => Promise<void>;
 }
 
 export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOperationsProps) => {

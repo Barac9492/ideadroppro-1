@@ -72,8 +72,15 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
           table: 'ideas'
         },
         (payload) => {
-          console.log('Real-time idea change:', payload);
-          fetchIdeas(); // Refresh the list when changes occur
+          console.log('Real-time idea change in management:', payload);
+          
+          if (payload.eventType === 'DELETE') {
+            // Remove deleted idea from state immediately
+            setIdeas(prev => prev.filter(idea => idea.id !== payload.old.id));
+          } else {
+            // For other changes, refetch to ensure consistency
+            fetchIdeas();
+          }
         }
       )
       .subscribe();
@@ -104,6 +111,7 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
         throw error;
       }
       
+      console.log('Fetched ideas in management:', data?.length);
       setIdeas(data || []);
     } catch (error) {
       console.error('Error fetching ideas:', error);
@@ -126,11 +134,9 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
 
     setDeletingId(ideaId);
     
-    // Optimistic update - remove from UI immediately
-    const originalIdeas = [...ideas];
-    setIdeas(prev => prev.filter(idea => idea.id !== ideaId));
-
     try {
+      console.log('Attempting to delete idea:', ideaId);
+      
       // Delete related likes first
       const { error: likesError } = await supabase
         .from('idea_likes')
@@ -150,25 +156,21 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
 
       if (ideaError) {
         console.error('Error deleting idea:', ideaError);
-        // Revert optimistic update
-        setIdeas(originalIdeas);
         throw ideaError;
       }
 
-      console.log('✅ Idea deleted successfully:', ideaId);
+      console.log('✅ Idea deleted successfully in management:', ideaId);
+      
+      // Remove from local state immediately (real-time will also handle this)
+      setIdeas(prev => prev.filter(idea => idea.id !== ideaId));
       
       toast({
         title: text[currentLanguage].deleted,
         duration: 3000,
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error deleting idea:', error);
-      
-      // Revert optimistic update if not already reverted
-      if (ideas.length < originalIdeas.length) {
-        setIdeas(originalIdeas);
-      }
       
       toast({
         title: text[currentLanguage].deleteError,
