@@ -44,6 +44,14 @@ const promptTopics: PromptTopic[] = [
   {
     ko: "가상현실: VR/AR이 일상생활을 어떻게 바꿀 수 있을까요?",
     en: "Virtual Reality: How can VR/AR transform our daily lives?"
+  },
+  {
+    ko: "블록체인: 탈중앙화 기술이 만들어갈 새로운 비즈니스는?",
+    en: "Blockchain: What new businesses can decentralized technology create?"
+  },
+  {
+    ko: "로봇공학: 일상에서 활용할 수 있는 로봇 아이디어는?",
+    en: "Robotics: What robot ideas can be utilized in daily life?"
   }
 ];
 
@@ -71,10 +79,20 @@ serve(async (req) => {
       .from('daily_prompts')
       .select('id')
       .eq('date', dateString)
-      .single();
+      .maybeSingle();
 
     if (existingPrompt) {
       console.log('Prompt already exists for today');
+      
+      // Log the attempt
+      await supabaseClient
+        .from('daily_prompt_logs')
+        .insert([{
+          date: dateString,
+          status: 'success',
+          error_message: 'Prompt already exists'
+        }]);
+
       return new Response(
         JSON.stringify({ message: 'Prompt already exists for today' }),
         { 
@@ -84,9 +102,12 @@ serve(async (req) => {
       );
     }
 
-    // Select a random prompt topic
-    const randomIndex = Math.floor(Math.random() * promptTopics.length);
-    const selectedTopic = promptTopics[randomIndex];
+    // Select a topic based on day of year to ensure variety
+    const dayOfYear = Math.floor((kstDate.getTime() - new Date(kstDate.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    const topicIndex = dayOfYear % promptTopics.length;
+    const selectedTopic = promptTopics[topicIndex];
+
+    console.log('Selected topic index:', topicIndex, 'Topic:', selectedTopic);
 
     // Insert new daily prompt
     const { data, error } = await supabaseClient
@@ -101,8 +122,26 @@ serve(async (req) => {
 
     if (error) {
       console.error('Error inserting prompt:', error);
+      
+      // Log the error
+      await supabaseClient
+        .from('daily_prompt_logs')
+        .insert([{
+          date: dateString,
+          status: 'error',
+          error_message: error.message
+        }]);
+      
       throw error;
     }
+
+    // Log successful creation
+    await supabaseClient
+      .from('daily_prompt_logs')
+      .insert([{
+        date: dateString,
+        status: 'success'
+      }]);
 
     console.log('Daily prompt generated successfully:', data);
 
@@ -119,6 +158,28 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-daily-prompt function:', error);
+    
+    // Try to log the error if possible
+    try {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      const kstDate = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+      const dateString = kstDate.toISOString().split('T')[0];
+      
+      await supabaseClient
+        .from('daily_prompt_logs')
+        .insert([{
+          date: dateString,
+          status: 'error',
+          error_message: error.message
+        }]);
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
