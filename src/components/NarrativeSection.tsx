@@ -120,10 +120,6 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({ currentLanguage, on
                 <Zap className="w-6 h-6 mr-3" />
                 {text[currentLanguage].cta}
               </Button>
-              
-              <p className="text-sm text-gray-400 mt-4">
-                * 실제 투자 연결 사례 多수 보유
-              </p>
             </div>
           </div>
         </div>
