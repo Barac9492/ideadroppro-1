@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +22,7 @@ export const useInvitations = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const subscriptionRef = useRef<any>(null);
+  const hookInstanceId = useRef(Math.random().toString(36).substring(7));
 
   const generateInvitationCode = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -168,12 +168,12 @@ export const useInvitations = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log('Setting up invitation subscription for user:', user.id);
+    console.log('Setting up invitation subscription for user:', user.id, 'instance:', hookInstanceId.current);
     
     // Clean up any existing subscription
     const cleanup = () => {
       if (subscriptionRef.current) {
-        console.log('Unsubscribing from existing channel');
+        console.log('Unsubscribing from existing channel for instance:', hookInstanceId.current);
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
       }
@@ -181,9 +181,12 @@ export const useInvitations = () => {
 
     cleanup();
     
+    // Create a unique channel name per hook instance to avoid conflicts
+    const uniqueChannelName = `invitation-changes-${user.id}-${hookInstanceId.current}`;
+    
     // Set up new subscription
     const subscription = supabase
-      .channel(`invitation-changes-${user.id}`)
+      .channel(uniqueChannelName)
       .on(
         'postgres_changes',
         {
@@ -193,12 +196,12 @@ export const useInvitations = () => {
           filter: `inviter_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Invitation change detected:', payload);
+          console.log('Invitation change detected for instance:', hookInstanceId.current, payload);
           fetchInvitations();
         }
       )
       .subscribe((status) => {
-        console.log('Subscription status:', status);
+        console.log('Subscription status for instance:', hookInstanceId.current, status);
       });
 
     // Store the subscription reference
