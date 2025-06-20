@@ -1,8 +1,9 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Repeat, Clock, TrendingUp, Zap, Users } from 'lucide-react';
+import { useRemixLeverage } from '@/hooks/useRemixLeverage';
+import { useNetworkActivity } from '@/hooks/useNetworkActivity';
 
 interface Idea {
   id: string;
@@ -31,6 +32,8 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
   isAuthenticated 
 }) => {
   const [remixingIdea, setRemixingIdea] = useState<string | null>(null);
+  const { processRemixLeverage, userRemixStats } = useRemixLeverage({ currentLanguage });
+  const { addActivity } = useNetworkActivity({ currentLanguage });
 
   const text = {
     ko: {
@@ -46,7 +49,9 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
       discussion: '토론',
       topRemixer: '오늘의 리믹서',
       networkEffect: '네트워크 효과',
-      influence: '영향력 점수'
+      influence: '영향력 점수',
+      coOwnership: '공동소유권',
+      leverageEarned: '레버리지 획득!'
     },
     en: {
       title: 'Just Dropped Ideas',
@@ -61,7 +66,9 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
       discussion: 'Discussion',
       topRemixer: 'Top Remixer Today',
       networkEffect: 'Network Effect',
-      influence: 'Influence Score'
+      influence: 'Influence Score',
+      coOwnership: 'Co-ownership',
+      leverageEarned: 'Leverage Earned!'
     }
   };
 
@@ -71,13 +78,45 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
     return diffMinutes < 1 ? '방금' : `${diffMinutes}${text[currentLanguage].timeAgo}`;
   };
 
-  const handleRemix = (ideaId: string) => {
+  const handleRemix = async (ideaId: string) => {
+    if (!isAuthenticated) return;
+    
     setRemixingIdea(ideaId);
-    // Here you would typically open a remix modal or navigate to remix page
-    setTimeout(() => {
-      setRemixingIdea(null);
-      // Simulate adding remix bonus likes
-    }, 2000);
+    
+    try {
+      // Simulate remix creation
+      const originalIdea = ideas.find(idea => idea.id === ideaId);
+      if (!originalIdea) return;
+      
+      // Mock remix with score improvement
+      const scoreImprovement = Math.random() * 4 + 1; // 1-5 points
+      
+      // Process remix leverage
+      await processRemixLeverage(ideaId, `Remix of: ${originalIdea.text}`, scoreImprovement);
+      
+      // Add network activity
+      addActivity({
+        type: 'idea_chain',
+        actor: 'You',
+        action: currentLanguage === 'ko' ? '아이디어를 리믹스했습니다' : 'remixed an idea',
+        target_idea_id: ideaId,
+        impact_score: Math.floor(scoreImprovement * 5)
+      });
+      
+      // Show leverage earned notification if significant improvement
+      if (scoreImprovement >= 3) {
+        setTimeout(() => {
+          alert(`🎉 ${text[currentLanguage].leverageEarned} +${scoreImprovement.toFixed(1)} ${text[currentLanguage].coOwnership}`);
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error('Error creating remix:', error);
+    } finally {
+      setTimeout(() => {
+        setRemixingIdea(null);
+      }, 3000);
+    }
   };
 
   // Add remix count to ideas (simulated)
@@ -111,7 +150,7 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
           </p>
         </div>
 
-        {/* Top Remixer Spotlight */}
+        {/* Enhanced Top Remixer Spotlight with Leverage Stats */}
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 mb-8 border border-purple-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -123,18 +162,23 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
                   🏆 {text[currentLanguage].topRemixer}: @creative_minds
                 </h3>
                 <p className="text-sm text-gray-600">
-                  오늘 23개 리믹스 | {text[currentLanguage].influence}: 342점
+                  오늘 23개 리믹스 | {text[currentLanguage].influence}: 342점 | {text[currentLanguage].coOwnership}: 12건
                 </p>
               </div>
             </div>
-            <Badge className="bg-purple-100 text-purple-700 px-4 py-2">
-              <Zap className="w-4 h-4 mr-1" />
-              리믹스 마스터
-            </Badge>
+            <div className="text-center">
+              <Badge className="bg-purple-100 text-purple-700 px-4 py-2 mb-2">
+                <Zap className="w-4 h-4 mr-1" />
+                리믹스 마스터
+              </Badge>
+              <div className="text-xs text-gray-500">
+                AI 평가권 보유
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Ideas Grid */}
+        {/* Ideas Grid with Enhanced Remix Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {enhancedIdeas.map((idea) => (
             <div 
@@ -181,9 +225,9 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
                 </div>
               )}
 
-              {/* Network Stats */}
+              {/* Enhanced Network Stats with Leverage Indicators */}
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                <div className="flex justify-between items-center text-sm">
+                <div className="flex justify-between items-center text-sm mb-2">
                   <span className="text-gray-600">네트워크 효과</span>
                   <div className="flex items-center space-x-4">
                     <span className="text-purple-600 font-medium">
@@ -194,6 +238,10 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
                       영향력 +{idea.remixes * 5}
                     </span>
                   </div>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-green-600">공동소유권: {Math.floor(idea.remixes / 3)}건</span>
+                  <span className="text-orange-600">VC 관심: {Math.floor(idea.remixes / 5)}명</span>
                 </div>
               </div>
 
@@ -235,19 +283,19 @@ const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({
                       <Repeat className="w-4 h-4 mr-1" />
                       {text[currentLanguage].remix}
                       <Badge className="bg-green-500 text-white text-xs ml-1 px-1">
-                        +5
+                        +Co-Own
                       </Badge>
                     </>
                   )}
                 </Button>
               </div>
 
-              {/* Remix Bonus Indicator */}
+              {/* Remix Leverage Indicator */}
               {remixingIdea === idea.id && (
                 <div className="mt-2 text-center">
                   <Badge className="bg-green-100 text-green-700 animate-pulse">
                     <Zap className="w-3 h-3 mr-1" />
-                    {text[currentLanguage].remixBonus}
+                    레버리지 계산 중...
                   </Badge>
                 </div>
               )}

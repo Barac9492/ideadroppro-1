@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -11,6 +10,8 @@ import VCVerificationSection from '@/components/VCVerificationSection';
 import FinalCTASection from '@/components/FinalCTASection';
 import SocialProofSection from '@/components/SocialProofSection';
 import TopInfluencersBoard from '@/components/TopInfluencersBoard';
+import NetworkEffectVisualization from '@/components/NetworkEffectVisualization';
+import VCActivitySection from '@/components/VCActivitySection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -105,6 +106,9 @@ const Index = () => {
         currentLanguage={currentLanguage}
       />
 
+      {/* Network Effect Visualization - Real-time activity */}
+      <NetworkEffectVisualization currentLanguage={currentLanguage} />
+
       {/* Top Influencers Board - Gamification */}
       <div className="bg-white py-16">
         <div className="container mx-auto px-4">
@@ -123,6 +127,9 @@ const Index = () => {
           isAuthenticated={!!user}
         />
       </div>
+
+      {/* VC Activity Section - Show active investor engagement */}
+      <VCActivitySection currentLanguage={currentLanguage} />
 
       {/* Remix Explanation - New section */}
       <RemixExplanationSection currentLanguage={currentLanguage} />
