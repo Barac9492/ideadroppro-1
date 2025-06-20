@@ -52,8 +52,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, username?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    // Generate a meaningful username if not provided
-    const finalUsername = username || `user_${Date.now().toString().slice(-6)}`;
+    // Generate a more meaningful username if not provided
+    const generateUsername = () => {
+      if (username && username.trim()) return username.trim();
+      
+      // Extract name from email if possible
+      const emailPart = email.split('@')[0];
+      const cleanEmailPart = emailPart.replace(/[^a-zA-Z0-9]/g, '');
+      
+      if (cleanEmailPart.length >= 3) {
+        return `${cleanEmailPart}_${Date.now().toString().slice(-4)}`;
+      }
+      
+      return `user_${Date.now().toString().slice(-6)}`;
+    };
+    
+    const finalUsername = generateUsername();
     
     const { error } = await supabase.auth.signUp({
       email,

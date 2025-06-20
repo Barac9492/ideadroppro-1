@@ -31,7 +31,8 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   const { user } = useAuth();
 
   const fetchIdeas = async () => {
-    console.log('Fetching ideas...');
+    console.log('🔄 Fetching ideas for main app...');
+    
     try {
       const { data: ideasData, error } = await supabase
         .from('ideas')
@@ -39,11 +40,11 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching ideas:', error);
+        console.error('❌ Error fetching ideas:', error);
         throw error;
       }
 
-      console.log('Fetched ideas:', ideasData?.length);
+      console.log('✅ Fetched ideas for main app:', ideasData?.length);
 
       const ideasWithLikes = await Promise.all((ideasData || []).map(async (idea) => {
         const { data: likesData } = await supabase
@@ -76,7 +77,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
       setIdeas(ideasWithLikes);
     } catch (error) {
-      console.error('Error fetching ideas:', error);
+      console.error('❌ Error fetching ideas:', error);
     } finally {
       setLoading(false);
     }
@@ -96,18 +97,23 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           table: 'ideas'
         },
         (payload) => {
-          console.log('Real-time ideas change on main:', payload);
+          console.log('🔄 Real-time ideas change on main:', payload);
           
           if (payload.eventType === 'DELETE') {
             // Remove deleted idea from state immediately
-            console.log('Removing deleted idea from main state:', payload.old.id);
-            setIdeas(prev => prev.filter(idea => idea.id !== payload.old.id));
+            console.log('🗑️ Removing deleted idea from main state:', payload.old.id);
+            setIdeas(prev => {
+              const filtered = prev.filter(idea => idea.id !== payload.old.id);
+              console.log('📊 Main app ideas updated. Remaining:', filtered.length);
+              return filtered;
+            });
           } else if (payload.eventType === 'INSERT') {
             // Add new idea and refetch to get complete data with likes
-            console.log('New idea inserted, refetching...');
+            console.log('➕ New idea inserted, refetching...');
             fetchIdeas();
           } else if (payload.eventType === 'UPDATE') {
             // Update existing idea or refetch for complex updates
+            console.log('✏️ Idea updated, refetching...');
             fetchIdeas();
           }
         }
@@ -122,6 +128,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   // Refetch ideas when user changes to update like status
   useEffect(() => {
     if (ideas.length > 0) {
+      console.log('👤 User changed, updating like status...');
       fetchIdeas();
     }
   }, [user]);

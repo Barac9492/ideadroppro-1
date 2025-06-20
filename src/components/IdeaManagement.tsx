@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -76,6 +75,7 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
           
           if (payload.eventType === 'DELETE') {
             // Remove deleted idea from state immediately
+            console.log('Removing deleted idea from management state:', payload.old.id);
             setIdeas(prev => prev.filter(idea => idea.id !== payload.old.id));
           } else {
             // For other changes, refetch to ensure consistency
@@ -93,6 +93,8 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
   const fetchIdeas = async () => {
     try {
       setRefreshing(true);
+      console.log('Fetching ideas for management...');
+      
       const { data, error } = await supabase
         .from('ideas')
         .select(`
@@ -111,10 +113,10 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
         throw error;
       }
       
-      console.log('Fetched ideas in management:', data?.length);
+      console.log('✅ Fetched ideas in management:', data?.length);
       setIdeas(data || []);
     } catch (error) {
-      console.error('Error fetching ideas:', error);
+      console.error('❌ Error fetching ideas:', error);
       toast({
         title: currentLanguage === 'ko' ? '데이터 로드 오류' : 'Data Load Error',
         description: currentLanguage === 'ko' ? 
@@ -135,42 +137,59 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
     setDeletingId(ideaId);
     
     try {
-      console.log('Attempting to delete idea:', ideaId);
+      console.log('🗑️ Starting deletion process for idea:', ideaId);
       
-      // Delete related likes first
+      // Use a transaction-like approach with proper error handling
+      
+      // Step 1: Delete related likes first
+      console.log('🔗 Deleting related likes...');
       const { error: likesError } = await supabase
         .from('idea_likes')
         .delete()
         .eq('idea_id', ideaId);
 
       if (likesError) {
-        console.warn('Error deleting likes:', likesError);
+        console.warn('⚠️ Warning deleting likes (may not exist):', likesError);
         // Continue with idea deletion even if likes deletion fails
+      } else {
+        console.log('✅ Likes deleted successfully');
       }
 
-      // Delete the idea
-      const { error: ideaError } = await supabase
+      // Step 2: Delete the idea
+      console.log('💡 Deleting idea...');
+      const { error: ideaError, data: deletedData } = await supabase
         .from('ideas')
         .delete()
-        .eq('id', ideaId);
+        .eq('id', ideaId)
+        .select(); // Get deleted data to confirm deletion
 
       if (ideaError) {
-        console.error('Error deleting idea:', ideaError);
-        throw ideaError;
+        console.error('❌ Error deleting idea:', ideaError);
+        throw new Error(`Failed to delete idea: ${ideaError.message}`);
       }
 
-      console.log('✅ Idea deleted successfully in management:', ideaId);
+      console.log('✅ Idea deleted successfully:', { ideaId, deletedData });
+      
+      // Verify deletion by checking if data was actually deleted
+      if (!deletedData || deletedData.length === 0) {
+        console.warn('⚠️ Warning: No data returned from delete operation');
+      }
       
       // Remove from local state immediately (real-time will also handle this)
-      setIdeas(prev => prev.filter(idea => idea.id !== ideaId));
+      setIdeas(prev => {
+        const filtered = prev.filter(idea => idea.id !== ideaId);
+        console.log('🔄 Updated local state, removed idea. Remaining:', filtered.length);
+        return filtered;
+      });
       
       toast({
         title: text[currentLanguage].deleted,
+        description: `ID: ${ideaId.substring(0, 8)}...`,
         duration: 3000,
       });
 
     } catch (error: any) {
-      console.error('❌ Error deleting idea:', error);
+      console.error('❌ Deletion failed:', error);
       
       toast({
         title: text[currentLanguage].deleteError,
@@ -184,6 +203,7 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
   };
 
   const handleRefresh = () => {
+    console.log('🔄 Manual refresh requested');
     fetchIdeas();
   };
 
@@ -245,6 +265,9 @@ const IdeaManagement: React.FC<IdeaManagementProps> = ({ currentLanguage }) => {
                       <span className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />
                         <span>{text[currentLanguage].date}: {new Date(idea.created_at).toLocaleDateString()}</span>
+                      </span>
+                      <span className="text-xs font-mono bg-gray-100 px-1 rounded">
+                        ID: {idea.id.substring(0, 8)}...
                       </span>
                     </div>
                   </div>
