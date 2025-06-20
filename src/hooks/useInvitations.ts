@@ -23,7 +23,6 @@ export const useInvitations = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const channelRef = useRef<any>(null);
-  const isSubscribedRef = useRef(false);
 
   const generateInvitationCode = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -171,22 +170,16 @@ export const useInvitations = () => {
 
     console.log('Setting up invitation subscription for user:', user.id);
     
-    // Clean up any existing subscription first
-    const cleanup = () => {
-      if (channelRef.current && isSubscribedRef.current) {
-        console.log('Cleaning up existing channel');
-        try {
-          channelRef.current.unsubscribe();
-          supabase.removeChannel(channelRef.current);
-        } catch (error) {
-          console.error('Error during cleanup:', error);
-        }
-        channelRef.current = null;
-        isSubscribedRef.current = false;
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      console.log('Cleaning up existing channel');
+      try {
+        supabase.removeChannel(channelRef.current);
+      } catch (error) {
+        console.error('Error removing channel:', error);
       }
-    };
-
-    cleanup();
+      channelRef.current = null;
+    }
     
     // Create a unique channel name to avoid conflicts
     const channelName = `invitation-changes-${user.id}-${Date.now()}`;
@@ -205,23 +198,26 @@ export const useInvitations = () => {
           console.log('Invitation change detected:', payload);
           fetchInvitations();
         }
-      );
-
-    // Subscribe only if not already subscribed
-    if (!isSubscribedRef.current) {
-      channel.subscribe((status) => {
+      )
+      .subscribe((status) => {
         console.log('Subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isSubscribedRef.current = true;
-        }
       });
 
-      // Store the channel reference
-      channelRef.current = channel;
-    }
+    // Store the channel reference
+    channelRef.current = channel;
 
-    return cleanup;
-  }, [user?.id]); // Only depend on user.id to avoid unnecessary re-subscriptions
+    return () => {
+      console.log('Cleaning up invitation subscription');
+      if (channelRef.current) {
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (error) {
+          console.error('Error cleaning up channel:', error);
+        }
+        channelRef.current = null;
+      }
+    };
+  }, [user?.id]);
 
   return {
     invitations,
