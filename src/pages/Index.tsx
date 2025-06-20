@@ -17,6 +17,10 @@ import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useIsMobile } from '@/hooks/use-mobile';
+import DailyXPDashboard from '@/components/DailyXPDashboard';
+import VCDopamineEvents from '@/components/VCDopamineEvents';
+import IdeaReactionSystem from '@/components/IdeaReactionSystem';
+import { useDailyXP } from '@/hooks/useDailyXP';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -27,6 +31,7 @@ const Index = () => {
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const isMobile = useIsMobile();
+  const { updateMissionProgress, awardXP } = useDailyXP();
 
   // Handle auth state from login redirect
   useEffect(() => {
@@ -56,6 +61,10 @@ const Index = () => {
       
       // Award influence points for idea submission
       await scoreActions.keywordParticipation();
+      
+      // Update XP missions
+      updateMissionProgress('idea_submit');
+      await awardXP(50, '아이디어 제출');
     } catch (error) {
       console.error('Error submitting idea:', error);
     }
@@ -67,6 +76,9 @@ const Index = () => {
       return;
     }
     toggleLike(ideaId);
+    
+    // Update missions
+    updateMissionProgress('vote_participate');
   };
 
   const scrollToHero = () => {
@@ -101,6 +113,17 @@ const Index = () => {
         onIdeaDrop={handleIdeaDrop}
       />
       
+      {/* XP Dashboard for authenticated users */}
+      {user && (
+        <div className="bg-gray-50 py-8">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <DailyXPDashboard currentLanguage={currentLanguage} />
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Social Proof - Light persuasion */}
       <SocialProofSection 
         currentLanguage={currentLanguage}
@@ -130,6 +153,18 @@ const Index = () => {
 
       {/* VC Activity Section - Show active investor engagement */}
       <VCActivitySection currentLanguage={currentLanguage} />
+
+      {/* VC Dopamine Events - Show real-time VC activity */}
+      <div className="bg-white py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <VCDopamineEvents 
+              currentLanguage={currentLanguage}
+              onXPAwarded={(amount) => awardXP(amount, 'VC 상호작용')}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Remix Explanation - New section */}
       <RemixExplanationSection currentLanguage={currentLanguage} />
