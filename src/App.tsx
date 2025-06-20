@@ -10,6 +10,8 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import About from "./pages/About";
 import Guide from "./pages/Guide";
+import Ranking from "./pages/Ranking";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +29,8 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/about" element={<About />} />
             <Route path="/guide" element={<Guide />} />
+            <Route path="/ranking" element={<Ranking />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

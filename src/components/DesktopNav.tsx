@@ -2,6 +2,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import InfoDropdown from './InfoDropdown';
+import { Trophy, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -34,21 +36,47 @@ const DesktopNav: React.FC<DesktopNavProps> = ({
   onSignOut,
   onAdminClick
 }) => {
+  const navigate = useNavigate();
+  
   const text = {
     ko: {
       signIn: '로그인',
       signOut: '로그아웃',
       admin: '관리자',
+      ranking: '랭킹',
+      dashboard: '대시보드',
     },
     en: {
       signIn: 'Sign In',
       signOut: 'Sign Out',
       admin: 'Admin',
+      ranking: 'Rankings',
+      dashboard: 'Dashboard',
     }
   };
 
   return (
     <div className="hidden md:flex items-center space-x-4">
+      <Button
+        variant="ghost"
+        onClick={() => navigate('/ranking')}
+        className="flex items-center space-x-2 text-slate-700 hover:text-purple-600 hover:bg-purple-50"
+      >
+        <Trophy className="h-4 w-4" />
+        <span>{text[currentLanguage].ranking}</span>
+      </Button>
+
+      {user && (
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center space-x-2 text-slate-700 hover:text-purple-600 hover:bg-purple-50"
+        >
+          <BarChart3 className="h-4 w-4" />
+          <span>{text[currentLanguage].dashboard}</span>
+        </Button>
+      )}
+
       <InfoDropdown
         currentLanguage={currentLanguage}
         isOpen={isInfoDropdownOpen}

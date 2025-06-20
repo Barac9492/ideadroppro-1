@@ -5,14 +5,14 @@ import Header from '@/components/Header';
 import IdeaSubmissionForm from '@/components/IdeaSubmissionForm';
 import IdeaCard from '@/components/IdeaCard';
 import DailyPromptCard from '@/components/DailyPromptCard';
-import StreakBadge from '@/components/StreakBadge';
 import WelcomeBanner from '@/components/WelcomeBanner';
-import MonthlyRanking from '@/components/MonthlyRanking';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Trophy, BarChart3 } from 'lucide-react';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -40,14 +40,20 @@ const Index = () => {
     ko: {
       noIdeas: '아직 제출된 아이디어가 없습니다. 첫 번째 아이디어를 공유해보세요!',
       loadingIdeas: '아이디어를 불러오는 중...',
-      pleaseSignIn: '아이디어를 제출하려면 로그인이 필요합니다.',
-      loginForMoreFeatures: '💡 로그인하면 아이디어 좋아요, AI 분석 생성 등 더 많은 기능을 사용할 수 있습니다!'
+      loginForMoreFeatures: '💡 로그인하면 아이디어 좋아요, AI 분석 생성 등 더 많은 기능을 사용할 수 있습니다!',
+      latestIdeas: '최신 아이디어',
+      viewRanking: '랭킹 보기',
+      viewDashboard: '내 대시보드',
+      viewAllIdeas: '모든 아이디어 보기'
     },
     en: {
       noIdeas: 'No ideas submitted yet. Be the first to share your innovative idea!',
       loadingIdeas: 'Loading ideas...',
-      pleaseSignIn: 'Please sign in to submit ideas.',
-      loginForMoreFeatures: '💡 Sign in to access more features like liking ideas, generating AI analysis, and more!'
+      loginForMoreFeatures: '💡 Sign in to access more features like liking ideas, generating AI analysis, and more!',
+      latestIdeas: 'Latest Ideas',
+      viewRanking: 'View Rankings',
+      viewDashboard: 'My Dashboard',
+      viewAllIdeas: 'View All Ideas'
     }
   };
 
@@ -115,6 +121,9 @@ const Index = () => {
     );
   }
 
+  // Show only latest 8 ideas on main page
+  const latestIdeas = ideas.slice(0, 8);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50">
       <Header 
@@ -133,10 +142,36 @@ const Index = () => {
           onUsePrompt={handleUsePrompt}
         />
         
-        {user && <StreakBadge currentLanguage={currentLanguage} />}
-        
-        {/* Monthly Ranking */}
-        <MonthlyRanking currentLanguage={currentLanguage} />
+        {/* Quick Navigation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div 
+            className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-4 border border-purple-200 shadow-lg cursor-pointer hover:shadow-xl transition-all"
+            onClick={() => navigate('/ranking')}
+          >
+            <div className="flex items-center space-x-3">
+              <Trophy className="h-8 w-8 text-purple-600" />
+              <div>
+                <h3 className="font-semibold text-purple-800">{text[currentLanguage].viewRanking}</h3>
+                <p className="text-sm text-purple-600">월간 인기 아이디어 확인</p>
+              </div>
+            </div>
+          </div>
+          
+          {user && (
+            <div 
+              className="bg-gradient-to-r from-green-100 to-teal-100 rounded-2xl p-4 border border-green-200 shadow-lg cursor-pointer hover:shadow-xl transition-all"
+              onClick={() => navigate('/dashboard')}
+            >
+              <div className="flex items-center space-x-3">
+                <BarChart3 className="h-8 w-8 text-green-600" />
+                <div>
+                  <h3 className="font-semibold text-green-800">{text[currentLanguage].viewDashboard}</h3>
+                  <p className="text-sm text-green-600">내 활동 통계 확인</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* Login encouragement banner for non-authenticated users */}
         {!user && !showWelcomeBanner && (
@@ -156,35 +191,47 @@ const Index = () => {
           />
         </div>
         
-        <div className="space-y-4 md:space-y-6">
-          {ideasLoading ? (
-            <div className="text-center py-8 md:py-12">
-              <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-slate-500 text-base md:text-lg">{text[currentLanguage].loadingIdeas}</p>
-            </div>
-          ) : ideas.length === 0 ? (
-            <div className="text-center py-8 md:py-12">
-              <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8 border border-slate-200">
+        {/* Latest Ideas Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-slate-800">{text[currentLanguage].latestIdeas}</h2>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/ranking')}
+              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+            >
+              {text[currentLanguage].viewAllIdeas}
+            </Button>
+          </div>
+          
+          <div className="space-y-4 md:space-y-6">
+            {ideasLoading ? (
+              <div className="text-center py-8 md:py-12">
+                <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-slate-500 text-base md:text-lg">{text[currentLanguage].loadingIdeas}</p>
+              </div>
+            ) : latestIdeas.length === 0 ? (
+              <div className="text-center py-8 md:py-12">
                 <div className="text-6xl md:text-8xl mb-4">💡</div>
                 <p className="text-slate-500 text-base md:text-lg">{text[currentLanguage].noIdeas}</p>
               </div>
-            </div>
-          ) : (
-            ideas.map(idea => (
-              <IdeaCard
-                key={idea.id}
-                idea={idea}
-                currentLanguage={currentLanguage}
-                currentUserId={user?.id}
-                onLike={handleLike}
-                onGenerateAnalysis={handleGenerateAnalysis}
-                onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
-                onSaveFinalVerdict={saveFinalVerdict}
-                isAdmin={user && roleLoading === false ? isAdmin : false}
-                isAuthenticated={!!user}
-              />
-            ))
-          )}
+            ) : (
+              latestIdeas.map(idea => (
+                <IdeaCard
+                  key={idea.id}
+                  idea={idea}
+                  currentLanguage={currentLanguage}
+                  currentUserId={user?.id}
+                  onLike={handleLike}
+                  onGenerateAnalysis={handleGenerateAnalysis}
+                  onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
+                  onSaveFinalVerdict={saveFinalVerdict}
+                  isAdmin={user && roleLoading === false ? isAdmin : false}
+                  isAuthenticated={!!user}
+                />
+              ))
+            )}
+          </div>
         </div>
       </main>
     </div>

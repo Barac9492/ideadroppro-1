@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Trophy, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -32,6 +33,8 @@ const MobileNav: React.FC<MobileNavProps> = ({
   onSignOut,
   onAdminClick
 }) => {
+  const navigate = useNavigate();
+  
   const text = {
     ko: {
       menu: '메뉴',
@@ -40,6 +43,8 @@ const MobileNav: React.FC<MobileNavProps> = ({
       signIn: '로그인',
       signOut: '로그아웃',
       admin: '관리자',
+      ranking: '랭킹',
+      dashboard: '대시보드',
     },
     en: {
       menu: 'Menu',
@@ -48,7 +53,19 @@ const MobileNav: React.FC<MobileNavProps> = ({
       signIn: 'Sign In',
       signOut: 'Sign Out',
       admin: 'Admin',
+      ranking: 'Rankings',
+      dashboard: 'Dashboard',
     }
+  };
+
+  const handleRankingClick = () => {
+    navigate('/ranking');
+    onMenuToggle();
+  };
+
+  const handleDashboardClick = () => {
+    navigate('/dashboard');
+    onMenuToggle();
   };
 
   return (
@@ -72,6 +89,24 @@ const MobileNav: React.FC<MobileNavProps> = ({
       {isMenuOpen && (
         <div className="md:hidden mt-4 pt-4 border-t border-slate-200">
           <div className="flex flex-col space-y-3">
+            <button
+              onClick={handleRankingClick}
+              className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors font-medium text-slate-700 text-left flex items-center space-x-2"
+            >
+              <Trophy className="h-4 w-4" />
+              <span>{text[currentLanguage].ranking}</span>
+            </button>
+
+            {user && (
+              <button
+                onClick={handleDashboardClick}
+                className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors font-medium text-slate-700 text-left flex items-center space-x-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>{text[currentLanguage].dashboard}</span>
+              </button>
+            )}
+            
             <button
               onClick={onAboutClick}
               className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors font-medium text-slate-700 text-left"
