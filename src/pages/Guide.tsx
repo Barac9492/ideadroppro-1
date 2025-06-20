@@ -6,6 +6,7 @@ import GuideSteps from '@/components/GuideSteps';
 import GuideFeatures from '@/components/GuideFeatures';
 import GuideTips from '@/components/GuideTips';
 import GuideCallToAction from '@/components/GuideCallToAction';
+import CopyrightNotice from '@/components/CopyrightNotice';
 
 const Guide: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = React.useState<'ko' | 'en'>('ko');
@@ -22,6 +23,12 @@ const Guide: React.FC = () => {
         <GuideHeader currentLanguage={currentLanguage} />
         <GuideSteps currentLanguage={currentLanguage} />
         <GuideFeatures currentLanguage={currentLanguage} />
+        
+        {/* Copyright Notice in Guide */}
+        <div className="mb-8">
+          <CopyrightNotice currentLanguage={currentLanguage} />
+        </div>
+        
         <GuideTips currentLanguage={currentLanguage} />
         <GuideCallToAction currentLanguage={currentLanguage} />
       </div>

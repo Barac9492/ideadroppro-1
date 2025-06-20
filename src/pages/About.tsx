@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -56,6 +55,25 @@ const About: React.FC = () => {
           desc: 'AI 기반의 공정하고 객관적인 분석을 제공합니다.'
         }
       },
+      copyright: {
+        title: '저작권 및 지적재산권 정책',
+        ownership: {
+          title: '아이디어 소유권',
+          desc: '플랫폼에 제출된 모든 아이디어의 저작권과 지적재산권은 제출자에게 귀속됩니다.'
+        },
+        responsibility: {
+          title: '사용자 책임',
+          desc: '사용자는 타인의 저작권, 특허권, 상표권을 침해하지 않을 책임이 있습니다.'
+        },
+        protection: {
+          title: '보호 권고사항',
+          desc: '중요한 아이디어는 제출 전 특허 출원 등 별도의 지적재산권 보호 조치를 고려하시기 바랍니다.'
+        },
+        disclaimer: {
+          title: '면책 조항',
+          desc: '본 플랫폼은 아이디어의 독창성이나 지적재산권 침해 여부에 대해 보장하지 않으며, 관련 분쟁에 대한 책임을 지지 않습니다.'
+        }
+      },
       cta: {
         title: '지금 시작해보세요!',
         desc: '여러분의 혁신적인 아이디어를 AI와 함께 평가해보세요.',
@@ -102,6 +120,25 @@ const About: React.FC = () => {
         objectivity: {
           title: 'Objectivity',
           desc: 'We provide fair and objective AI-based analysis.'
+        }
+      },
+      copyright: {
+        title: 'Copyright & Intellectual Property Policy',
+        ownership: {
+          title: 'Idea Ownership',
+          desc: 'Copyright and intellectual property rights of all ideas submitted to the platform belong to the submitter.'
+        },
+        responsibility: {
+          title: 'User Responsibility',
+          desc: 'Users are responsible for ensuring their submissions do not infringe on others\' copyright, patents, or trademarks.'
+        },
+        protection: {
+          title: 'Protection Recommendations',
+          desc: 'For valuable ideas, consider additional IP protection measures such as patent applications before submission.'
+        },
+        disclaimer: {
+          title: 'Disclaimer',
+          desc: 'This platform does not guarantee the originality of ideas or non-infringement of intellectual property rights, and is not liable for related disputes.'
         }
       },
       cta: {
@@ -222,6 +259,60 @@ const About: React.FC = () => {
               </div>
               <h3 className="font-semibold text-slate-800 mb-2">{text[currentLanguage].values.objectivity.title}</h3>
               <p className="text-slate-600 text-sm">{text[currentLanguage].values.objectivity.desc}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Copyright Policy Section */}
+        <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-3xl shadow-lg p-6 md:p-8 mb-8 border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center">
+            <Shield className="h-6 w-6 mr-2 text-slate-600" />
+            {text[currentLanguage].copyright.title}
+          </h2>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                  {text[currentLanguage].copyright.ownership.title}
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {text[currentLanguage].copyright.ownership.desc}
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                  {text[currentLanguage].copyright.responsibility.title}
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {text[currentLanguage].copyright.responsibility.desc}
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  {text[currentLanguage].copyright.protection.title}
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {text[currentLanguage].copyright.protection.desc}
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                  {text[currentLanguage].copyright.disclaimer.title}
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {text[currentLanguage].copyright.disclaimer.desc}
+                </p>
+              </div>
             </div>
           </div>
         </div>

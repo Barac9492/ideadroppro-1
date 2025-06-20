@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { checkInappropriateContent, getContentWarning } from '@/utils/contentFilter';
 import { useNavigate } from 'react-router-dom';
+import CopyrightNotice from '@/components/CopyrightNotice';
 
 interface IdeaSubmissionFormProps {
   currentLanguage: 'ko' | 'en';
@@ -147,6 +148,9 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
           <AlertTriangle className="h-3 w-3 inline mr-1" />
           {text[currentLanguage].guidelines}
         </div>
+        
+        {/* Compact Copyright Notice */}
+        <CopyrightNotice currentLanguage={currentLanguage} variant="compact" />
         
         <Button
           type="submit"

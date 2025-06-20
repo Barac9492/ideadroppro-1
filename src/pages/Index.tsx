@@ -6,6 +6,7 @@ import IdeaSubmissionForm from '@/components/IdeaSubmissionForm';
 import IdeaCard from '@/components/IdeaCard';
 import DailyPromptCard from '@/components/DailyPromptCard';
 import WelcomeBanner from '@/components/WelcomeBanner';
+import CopyrightNotice from '@/components/CopyrightNotice';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
@@ -223,6 +224,9 @@ const Index = () => {
             </p>
           </div>
         )}
+        
+        {/* Copyright Notice */}
+        <CopyrightNotice currentLanguage={currentLanguage} />
         
         <div id="idea-submission-form">
           <IdeaSubmissionForm
