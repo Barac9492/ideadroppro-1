@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -22,6 +21,7 @@ export const useInvitations = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const channelRef = useRef<any>(null);
 
   const generateInvitationCode = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -169,6 +169,14 @@ export const useInvitations = () => {
 
     console.log('Setting up invitation subscription for user:', user.id);
     
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      console.log('Cleaning up existing channel');
+      channelRef.current.unsubscribe();
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    
     // Create a unique channel name to avoid conflicts
     const channelName = `invitation-changes-${user.id}-${Date.now()}`;
     
@@ -191,12 +199,16 @@ export const useInvitations = () => {
         console.log('Subscription status:', status);
       });
 
+    // Store the channel reference
+    channelRef.current = channel;
+
     return () => {
       console.log('Cleaning up invitation subscription');
-      // First unsubscribe, then remove the channel
-      channel.unsubscribe().then(() => {
-        supabase.removeChannel(channel);
-      });
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [user?.id]); // Only depend on user.id to avoid unnecessary re-subscriptions
 
