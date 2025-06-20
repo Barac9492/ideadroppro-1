@@ -12,6 +12,9 @@ import SocialProofSection from '@/components/SocialProofSection';
 import TopInfluencersBoard from '@/components/TopInfluencersBoard';
 import NetworkEffectVisualization from '@/components/NetworkEffectVisualization';
 import VCActivitySection from '@/components/VCActivitySection';
+import DailyChallengeSection from '@/components/DailyChallengeSection';
+import RemixBattleSystem from '@/components/RemixBattleSystem';
+import VCProfileSystem from '@/components/VCProfileSystem';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -81,6 +84,12 @@ const Index = () => {
     updateMissionProgress('vote_participate');
   };
 
+  const handleJoinChallenge = (keyword: string) => {
+    // Navigate to hero section with challenge keyword pre-filled
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Could also pre-fill the idea input with the challenge keyword
+  };
+
   const scrollToHero = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -107,6 +116,12 @@ const Index = () => {
       {/* Beta Announcement Banner */}
       <BetaAnnouncementBanner currentLanguage={currentLanguage} />
       
+      {/* Daily Challenge Section - NEW: Daily Novelty Engine */}
+      <DailyChallengeSection 
+        currentLanguage={currentLanguage}
+        onJoinChallenge={handleJoinChallenge}
+      />
+      
       {/* Hero Section - Focused submission flow */}
       <HeroSection 
         currentLanguage={currentLanguage}
@@ -128,6 +143,24 @@ const Index = () => {
       <SocialProofSection 
         currentLanguage={currentLanguage}
       />
+
+      {/* Remix Battle System - NEW: Gamified Competition */}
+      <div className="bg-gray-50 py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <RemixBattleSystem currentLanguage={currentLanguage} />
+          </div>
+        </div>
+      </div>
+
+      {/* VC Profile System - NEW: Enhanced VC Interaction */}
+      <div className="bg-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <VCProfileSystem currentLanguage={currentLanguage} />
+          </div>
+        </div>
+      </div>
 
       {/* Network Effect Visualization - Real-time activity */}
       <NetworkEffectVisualization currentLanguage={currentLanguage} />
