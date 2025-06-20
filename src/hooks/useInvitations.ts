@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -22,8 +22,6 @@ export const useInvitations = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const channelRef = useRef<any>(null);
-  const hookInstanceId = useRef(Math.random().toString(36).substring(7));
 
   const generateInvitationCode = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -69,6 +67,7 @@ export const useInvitations = () => {
         duration: 3000,
       });
 
+      // Refresh the invitations list after creating a new one
       fetchInvitations();
       return data;
     } catch (error) {
@@ -164,53 +163,6 @@ export const useInvitations = () => {
   useEffect(() => {
     fetchInvitations();
   }, [user]);
-
-  // Set up real-time subscription for invitation changes
-  useEffect(() => {
-    if (!user?.id) return;
-
-    console.log('Setting up invitation subscription for user:', user.id, 'instance:', hookInstanceId.current);
-    
-    // Clean up any existing channel completely
-    if (channelRef.current) {
-      console.log('Removing existing channel for instance:', hookInstanceId.current);
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    
-    // Create a completely new channel with unique name
-    const uniqueChannelName = `invitation-changes-${user.id}-${hookInstanceId.current}-${Date.now()}`;
-    
-    const channel = supabase
-      .channel(uniqueChannelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_invitations',
-          filter: `inviter_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Invitation change detected for instance:', hookInstanceId.current, payload);
-          fetchInvitations();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Subscription status for instance:', hookInstanceId.current, status);
-      });
-
-    // Store the channel reference
-    channelRef.current = channel;
-
-    return () => {
-      console.log('Cleaning up subscription for instance:', hookInstanceId.current);
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [user?.id]);
 
   return {
     invitations,
