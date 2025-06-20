@@ -1,241 +1,158 @@
+
+import { useState } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { checkInappropriateContent, checkTextQuality, getContentWarning } from '@/utils/contentFilter';
-import { ideaOperationsText } from './constants';
+import { checkTextQuality, checkInappropriateContent, getContentWarning } from '@/utils/contentFilter';
 
 interface UseIdeaSubmissionProps {
   currentLanguage: 'ko' | 'en';
-  user: any;
-  fetchIdeas: () => void;
+  user: User | null;
+  fetchIdeas: () => Promise<void>;
 }
 
-// Helper function to safely convert data to arrays
-const ensureArray = (data: any): string[] => {
-  if (Array.isArray(data)) {
-    return data.map(item => String(item));
+const text = {
+  ko: {
+    submitting: '제출 중...',
+    success: '아이디어가 성공적으로 제출되었습니다!',
+    loginRequired: '아이디어를 제출하려면 로그인이 필요합니다',
+    submissionError: '아이디어 제출 중 오류가 발생했습니다',
+    analysisError: 'AI 분석 중 오류가 발생했습니다',
+    tryAgain: '다시 시도해주세요'
+  },
+  en: {
+    submitting: 'Submitting...',
+    success: 'Idea submitted successfully!',
+    loginRequired: 'Please login to submit ideas',
+    submissionError: 'Error submitting idea',
+    analysisError: 'Error during AI analysis',
+    tryAgain: 'Please try again'
   }
-  if (typeof data === 'string') {
-    if (data.trim().startsWith('[') && data.trim().endsWith(']')) {
-      try {
-        const parsed = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed.map(item => String(item)) : [data];
-      } catch {
-        return [data];
-      }
-    }
-    return data.split(/[,\n;]/).map(item => item.trim()).filter(item => item.length > 0);
-  }
-  if (data === null || data === undefined) {
-    return [];
-  }
-  return [String(data)];
-};
-
-const ensureMarketPotential = (data: any): string[] => {
-  if (typeof data === 'string' && data.length > 0) {
-    return [data];
-  }
-  return ensureArray(data);
 };
 
 export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdeaSubmissionProps) => {
-  const text = ideaOperationsText[currentLanguage];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitIdea = async (ideaText: string) => {
-    console.log('=== IDEA SUBMISSION START ===');
-    console.log('User ID:', user?.id);
-    console.log('Idea text length:', ideaText.length);
-
-    // User validation
-    if (!user || !user.id) {
-      console.error('❌ User authentication failed');
+    // Strict authentication check
+    if (!user) {
       toast({
-        title: currentLanguage === 'ko' ? '로그인이 필요합니다' : 'Login required',
-        description: currentLanguage === 'ko' ? '아이디어를 제출하려면 로그인해주세요.' : 'Please log in to submit ideas.',
+        title: text[currentLanguage].loginRequired,
         variant: 'destructive',
         duration: 3000,
       });
-      throw new Error('User not authenticated');
+      return false;
     }
 
-    // Enhanced content filtering
-    try {
-      // Check text quality first
-      const qualityCheck = checkTextQuality(ideaText, currentLanguage);
-      if (!qualityCheck.isValid) {
-        console.log('❌ Text quality check failed:', qualityCheck.reason);
-        toast({
-          title: currentLanguage === 'ko' ? '텍스트 품질 검사' : 'Text Quality Check',
-          description: qualityCheck.reason,
-          variant: 'destructive',
-          duration: 5000,
-        });
-        throw new Error('Text quality check failed');
-      }
-
-      // Check for inappropriate content
-      if (checkInappropriateContent(ideaText, currentLanguage)) {
-        const warning = getContentWarning(currentLanguage);
-        toast({
-          title: warning[currentLanguage].title,
-          description: warning[currentLanguage].message,
-          variant: 'destructive',
-          duration: 5000,
-        });
-        throw new Error('Content flagged as inappropriate');
-      }
-    } catch (contentFilterError) {
-      if (contentFilterError.message === 'Content flagged as inappropriate' || 
-          contentFilterError.message === 'Text quality check failed') {
-        throw contentFilterError;
-      }
-      console.warn('⚠️ Content filter error (proceeding):', contentFilterError);
+    // Validate text quality on frontend
+    const qualityCheck = checkTextQuality(ideaText, currentLanguage);
+    if (!qualityCheck.isValid) {
+      toast({
+        title: qualityCheck.reason,
+        variant: 'destructive',
+        duration: 3000,
+      });
+      return false;
     }
 
-    console.log('✅ Content and quality checks passed, starting submission...');
+    // Check for inappropriate content
+    if (checkInappropriateContent(ideaText, currentLanguage)) {
+      const warning = getContentWarning(currentLanguage);
+      toast({
+        title: warning[currentLanguage].title,
+        description: warning[currentLanguage].message,
+        variant: 'destructive',
+        duration: 5000,
+      });
+      return false;
+    }
 
-    // Show loading toast
-    const loadingToast = toast({
-      title: currentLanguage === 'ko' ? 'AI 분석 중...' : 'AI analyzing...',
-      description: currentLanguage === 'ko' ? '잠시만 기다려주세요.' : 'Please wait a moment.',
-      duration: 30000,
-    });
-
-    let analysisData: any = null;
-    let usesFallback = false;
+    setIsSubmitting(true);
 
     try {
-      // Try AI analysis
-      console.log('📡 Calling AI analysis function');
-      const { data, error } = await supabase.functions.invoke('analyze-idea', {
-        body: { 
-          ideaText: ideaText,
+      console.log('Submitting idea for user:', user.id);
+      
+      // Get current session to include authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
+      // Call the analyze-idea edge function with proper authorization
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-idea', {
+        body: {
+          ideaText,
           language: currentLanguage,
           userId: user.id
-        }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
-      if (error) {
-        console.warn('⚠️ AI Analysis failed, using fallback:', error);
-        usesFallback = true;
-      } else if (data && typeof data.score !== 'undefined') {
-        analysisData = data;
-        console.log('✅ AI Analysis successful');
-      } else {
-        console.warn('⚠️ Invalid AI response, using fallback');
-        usesFallback = true;
+      if (analysisError) {
+        console.error('Analysis error:', analysisError);
+        throw new Error(analysisError.message || 'Analysis failed');
       }
-    } catch (analysisError) {
-      console.warn('⚠️ AI Analysis error, using fallback:', analysisError);
-      usesFallback = true;
-    }
 
-    // Dismiss loading toast
-    if (loadingToast.dismiss) {
-      loadingToast.dismiss();
-    }
+      if (!analysisData) {
+        throw new Error('No analysis data received');
+      }
 
-    // Prepare final analysis data
-    let finalAnalysisData: any;
-    if (usesFallback || !analysisData) {
-      console.log('📝 Using fallback analysis');
-      const fallbackScore = Math.round((Math.random() * 2.5 + 4.5) * 10) / 10;
-      finalAnalysisData = {
-        score: fallbackScore,
-        tags: [currentLanguage === 'ko' ? '일반' : 'general'],
-        analysis: currentLanguage === 'ko' 
-          ? '아이디어가 성공적으로 저장되었습니다. AI 분석은 일시적으로 사용할 수 없어 기본 분석으로 대체되었습니다.' 
-          : 'Your idea has been saved successfully. AI analysis is temporarily unavailable and has been replaced with default analysis.',
-        improvements: [currentLanguage === 'ko' ? '상세 분석 필요' : 'Detailed analysis needed'],
-        marketPotential: [currentLanguage === 'ko' ? '시장성 검토 예정' : 'Market potential to be reviewed'],
-        similarIdeas: [currentLanguage === 'ko' ? '유사 아이디어 조사 예정' : 'Similar ideas research pending'],
-        pitchPoints: [currentLanguage === 'ko' ? '피칭 포인트 개발 예정' : 'Pitch points development pending']
-      };
-    } else {
-      finalAnalysisData = {
-        score: analysisData.score || 5.0,
-        tags: ensureArray(analysisData.tags || []),
-        analysis: analysisData.analysis || '',
-        improvements: ensureArray(analysisData.improvements || []),
-        marketPotential: ensureMarketPotential(analysisData.marketPotential || []),
-        similarIdeas: ensureArray(analysisData.similarIdeas || []),
-        pitchPoints: ensureArray(analysisData.pitchPoints || [])
-      };
-    }
+      console.log('Analysis completed:', analysisData.score);
 
-    // Save to database - this is the critical step
-    try {
-      console.log('💾 Saving idea to database...');
-      const { data: savedIdea, error: saveError } = await supabase
+      // Insert the idea into the database with strict user_id check
+      const { error: insertError } = await supabase
         .from('ideas')
-        .insert([{
-          user_id: user.id,
+        .insert({
           text: ideaText,
-          score: finalAnalysisData.score || 5.0,
-          tags: finalAnalysisData.tags || [],
-          ai_analysis: finalAnalysisData.analysis || '',
-          improvements: finalAnalysisData.improvements || [],
-          market_potential: finalAnalysisData.marketPotential || [],
-          similar_ideas: finalAnalysisData.similarIdeas || [],
-          pitch_points: finalAnalysisData.pitchPoints || []
-        }])
-        .select()
-        .single();
-
-      if (saveError) {
-        console.error('❌ Database save failed:', saveError);
-        toast({
-          title: text.submitError,
-          description: currentLanguage === 'ko' ? 
-            '데이터베이스 저장 중 오류가 발생했습니다. 다시 시도해주세요.' : 
-            'Database save failed. Please try again.',
-          variant: 'destructive',
-          duration: 5000,
+          score: analysisData.score,
+          tags: analysisData.tags || [],
+          ai_analysis: analysisData.analysis,
+          improvements: analysisData.improvements || [],
+          market_potential: analysisData.marketPotential || [],
+          similar_ideas: analysisData.similarIdeas || [],
+          pitch_points: analysisData.pitchPoints || [],
+          user_id: user.id, // Explicitly set user_id
         });
-        throw new Error(`Database save failed: ${saveError.message}`);
+
+      if (insertError) {
+        console.error('Database insertion error:', insertError);
+        throw insertError;
       }
 
-      console.log('✅ Idea saved successfully:', savedIdea?.id);
-
-      // Show appropriate success message
-      let toastTitle = text.submitSuccess;
-      let toastDescription: string;
-
-      if (usesFallback) {
-        toastDescription = currentLanguage === 'ko' 
-          ? '아이디어가 저장되었습니다! AI 분석은 나중에 업데이트됩니다.' 
-          : 'Idea saved! AI analysis will be updated later.';
-      } else {
-        toastDescription = currentLanguage === 'ko' 
-          ? 'AI 분석이 완료되었습니다!' 
-          : 'AI analysis completed!';
-      }
-
+      console.log('✅ Idea submitted successfully');
+      
       toast({
-        title: toastTitle,
-        description: toastDescription,
-        duration: 4000,
+        title: text[currentLanguage].success,
+        duration: 3000,
       });
 
-      fetchIdeas();
-      console.log('=== IDEA SUBMISSION COMPLETE ===');
+      // Refresh ideas list
+      await fetchIdeas();
+      return true;
 
-    } catch (dbError) {
-      console.error('❌ Critical database error:', dbError);
+    } catch (error: any) {
+      console.error('❌ Error submitting idea:', error);
       
-      // Only show user error if it's a real database failure
+      const errorMessage = error.message || text[currentLanguage].submissionError;
+      const isAuthError = error.message?.includes('Authentication') || error.message?.includes('sign in');
+      
       toast({
-        title: text.submitError,
-        description: currentLanguage === 'ko' ? 
-          '아이디어 저장에 실패했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.' :
-          'Failed to save idea. Please check your connection and try again.',
+        title: isAuthError ? text[currentLanguage].loginRequired : text[currentLanguage].submissionError,
+        description: isAuthError ? 'Please sign in and try again' : `${errorMessage}. ${text[currentLanguage].tryAgain}`,
         variant: 'destructive',
         duration: 5000,
       });
       
-      throw dbError;
+      return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return { submitIdea };
+  return {
+    submitIdea,
+    isSubmitting
+  };
 };

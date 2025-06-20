@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -200,12 +201,47 @@ serve(async (req) => {
   }
 
   try {
-    const { ideaText, language, userId }: IdeaAnalysisRequest = await req.json();
+    // Get authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Authentication required',
+          message: 'Please sign in to submit ideas'
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      console.error('Authentication failed:', authError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Authentication failed',
+          message: 'Please sign in to submit ideas'
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const { ideaText, language }: IdeaAnalysisRequest = await req.json();
     
     console.log('Analysis request:', { 
       ideaLength: ideaText?.length, 
       language, 
-      userId: userId ? 'provided' : 'missing' 
+      userId: user.id
     });
 
     if (!ideaText || !language) {
@@ -240,7 +276,8 @@ serve(async (req) => {
     console.log('Analysis completed successfully:', { 
       score: analysisResult.score,
       hasAnalysis: !!analysisResult.analysis,
-      tagsCount: analysisResult.tags?.length || 0
+      tagsCount: analysisResult.tags?.length || 0,
+      userId: user.id
     });
 
     return new Response(

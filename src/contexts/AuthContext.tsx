@@ -52,12 +52,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, username?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
+    // Generate a meaningful username if not provided
+    const finalUsername = username || `user_${Date.now().toString().slice(-6)}`;
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: username ? { username } : {}
+        data: { username: finalUsername }
       }
     });
     return { error };

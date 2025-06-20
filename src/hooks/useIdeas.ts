@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -81,10 +82,31 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     }
   };
 
-  // Fetch ideas immediately on mount, and refetch when user changes (for like status)
+  // Set up real-time subscription for ideas
   useEffect(() => {
     fetchIdeas();
-  }, []); // Remove user dependency to fetch ideas regardless of auth state
+
+    const channel = supabase
+      .channel('ideas-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ideas'
+        },
+        (payload) => {
+          console.log('Real-time ideas change:', payload);
+          // Refetch ideas when any change occurs
+          fetchIdeas();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []); // Remove user dependency to avoid unnecessary re-subscriptions
 
   // Refetch ideas when user changes to update like status
   useEffect(() => {
