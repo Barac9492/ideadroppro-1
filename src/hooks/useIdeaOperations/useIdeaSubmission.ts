@@ -15,10 +15,13 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
 
   const submitIdea = async (ideaText: string) => {
     console.log('=== IDEA SUBMISSION START ===');
-    console.log('User:', user ? { id: user.id, email: user.email } : 'No user');
+    console.log('User object:', user);
+    console.log('User ID:', user?.id);
+    console.log('User email:', user?.email);
     console.log('Idea text length:', ideaText.length);
     console.log('Language:', currentLanguage);
 
+    // Enhanced user validation
     if (!user) {
       console.error('❌ No user found for idea submission');
       toast({
@@ -27,7 +30,18 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
         variant: 'destructive',
         duration: 3000,
       });
-      return;
+      throw new Error('User not authenticated');
+    }
+
+    if (!user.id) {
+      console.error('❌ User ID is missing');
+      toast({
+        title: currentLanguage === 'ko' ? '사용자 인증 오류' : 'User authentication error',
+        description: currentLanguage === 'ko' ? '사용자 정보를 확인할 수 없습니다. 다시 로그인해주세요.' : 'Unable to verify user information. Please log in again.',
+        variant: 'destructive',
+        duration: 3000,
+      });
+      throw new Error('User ID missing');
     }
 
     // Content filter check with error handling
@@ -45,10 +59,13 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
           variant: 'destructive',
           duration: 5000,
         });
-        return;
+        throw new Error('Content flagged as inappropriate');
       }
     } catch (contentFilterError) {
       console.error('⚠️ Content filter error:', contentFilterError);
+      if (contentFilterError.message === 'Content flagged as inappropriate') {
+        throw contentFilterError;
+      }
       // Continue with submission even if content filter fails
     }
 
@@ -62,13 +79,14 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
         duration: 30000, // 30 seconds
       });
 
-      console.log('📡 Calling AI analysis function...');
+      console.log('📡 Calling AI analysis function with user ID:', user.id);
       
-      // AI 분석 요청 with detailed error handling
+      // AI 분석 요청 with detailed error handling and proper user ID
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-idea', {
         body: { 
           ideaText: ideaText,
-          language: currentLanguage 
+          language: currentLanguage,
+          userId: user.id // Ensure user ID is properly passed
         }
       });
 
@@ -81,7 +99,8 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
         hasData: !!analysisData,
         hasError: !!analysisError,
         error: analysisError,
-        dataKeys: analysisData ? Object.keys(analysisData) : []
+        dataKeys: analysisData ? Object.keys(analysisData) : [],
+        userId: user.id
       });
 
       let finalAnalysisData = analysisData;
@@ -89,6 +108,18 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
 
       if (analysisError) {
         console.error('❌ Analysis API error:', analysisError);
+        
+        // Handle specific error types
+        if (analysisError.message?.includes('User not authenticated') || analysisError.message?.includes('User ID missing')) {
+          toast({
+            title: text.submitError,
+            description: currentLanguage === 'ko' ? '사용자 인증에 실패했습니다. 다시 로그인해주세요.' : 'User authentication failed. Please log in again.',
+            variant: 'destructive',
+            duration: 5000,
+          });
+          throw new Error('Authentication failed during analysis');
+        }
+        
         usesFallback = true;
         
         // Enhanced fallback with better randomization
@@ -128,7 +159,8 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
         score: finalAnalysisData.score,
         hasAnalysis: !!finalAnalysisData.analysis,
         tagsCount: finalAnalysisData.tags?.length || 0,
-        usesFallback
+        usesFallback,
+        userId: user.id
       });
 
       // 분석 결과와 함께 저장
@@ -150,6 +182,12 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
 
       if (saveError) {
         console.error('❌ Database save error:', saveError);
+        toast({
+          title: text.submitError,
+          description: currentLanguage === 'ko' ? '데이터베이스 저장에 실패했습니다.' : 'Failed to save to database.',
+          variant: 'destructive',
+          duration: 5000,
+        });
         throw new Error(`Database save failed: ${saveError.message}`);
       }
 
@@ -162,13 +200,9 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
 
       if (usesFallback) {
         toastTitle = text.submitSuccess;
-        toastDescription = text.analysisWithFallback || (currentLanguage === 'ko' 
-          ? '아이디어가 저장되었지만 AI 분석이 일시적으로 제한됩니다.' 
-          : 'Idea saved but AI analysis is temporarily limited.');
+        toastDescription = text.analysisWithFallback;
       } else if (score < 5) {
-        toastTitle = text.lowScoreNotice || (currentLanguage === 'ko' 
-          ? '아이디어가 제출되었습니다' 
-          : 'Idea submitted');
+        toastTitle = text.lowScoreNotice;
         toastDescription = currentLanguage === 'ko' 
           ? '더 구체적인 아이디어로 점수를 높여보세요!' 
           : 'Try to improve your score with more specific ideas!';
@@ -191,28 +225,35 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
 
     } catch (error) {
       console.error('❌ Critical error in idea submission:', error);
+      console.error('User ID at error time:', user?.id);
       console.error('Error details:', {
         name: error.name,
         message: error.message,
         stack: error.stack
       });
 
-      // Show user-friendly error message
+      // Don't show error if already handled (authentication errors, inappropriate content)
+      if (error.message === 'User not authenticated' || 
+          error.message === 'User ID missing' || 
+          error.message === 'Authentication failed during analysis' ||
+          error.message === 'Content flagged as inappropriate') {
+        throw error;
+      }
+
+      // Show user-friendly error message for other errors
       const errorMessage = error.message || 'Unknown error occurred';
       const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('connection');
       
       toast({
-        title: text.submitError || (currentLanguage === 'ko' ? '제출 오류' : 'Submission Error'),
+        title: text.submitError,
         description: isNetworkError 
-          ? (currentLanguage === 'ko' 
-              ? '네트워크 연결을 확인하고 다시 시도해주세요.' 
-              : 'Please check your network connection and try again.')
-          : (currentLanguage === 'ko' 
-              ? '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' 
-              : 'A temporary error occurred. Please try again in a moment.'),
+          ? text.networkError
+          : text.retryLater,
         variant: 'destructive',
         duration: 5000,
       });
+      
+      throw error;
     }
   };
 

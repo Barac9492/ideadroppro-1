@@ -25,6 +25,7 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
 
   // Update idea text when initialText prop changes
@@ -46,7 +47,9 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       loginDescription: '로그인하여 혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요!',
       viewOnly: '로그인 후 아이디어를 제출할 수 있습니다',
       retryButton: '다시 시도',
-      submitSuccess: '제출 완료!'
+      submitSuccess: '제출 완료!',
+      authError: '인증 오류가 발생했습니다. 다시 로그인해주세요.',
+      generalError: '오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
     },
     en: {
       placeholder: 'Share your innovative idea in 500 characters or less...',
@@ -59,13 +62,15 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       loginDescription: 'Sign in to share your innovative ideas and get instant AI feedback!',
       viewOnly: 'Sign in to submit ideas',
       retryButton: 'Try Again',
-      submitSuccess: 'Submitted!'
+      submitSuccess: 'Submitted!',
+      authError: 'Authentication error occurred. Please log in again.',
+      generalError: 'An error occurred. Please try again later.'
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submit triggered');
+    console.log('Form submit triggered, authenticated:', isAuthenticated);
     
     if (!isAuthenticated) {
       console.log('User not authenticated, redirecting to auth');
@@ -99,9 +104,26 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       await onSubmit(idea.trim());
       console.log('onSubmit completed successfully');
       setIdea(''); // Clear form on success
+      setRetryCount(0); // Reset retry count on success
     } catch (error) {
       console.error('Submit error in form:', error);
-      setSubmitError(error.message || 'Submission failed');
+      
+      // Handle different types of errors
+      let errorMessage = text[currentLanguage].generalError;
+      
+      if (error.message === 'User not authenticated' || 
+          error.message === 'User ID missing' || 
+          error.message?.includes('authentication')) {
+        errorMessage = text[currentLanguage].authError;
+        // Redirect to login after short delay
+        setTimeout(() => navigate('/auth'), 2000);
+      } else if (error.message === 'Content flagged as inappropriate') {
+        setShowWarning(true);
+        return;
+      }
+      
+      setSubmitError(errorMessage);
+      setRetryCount(prev => prev + 1);
     } finally {
       setIsSubmitting(false);
     }
@@ -168,12 +190,16 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
               <div>
                 <p className="font-medium">제출 오류</p>
                 <p className="text-sm mt-1">{submitError}</p>
+                {retryCount > 0 && (
+                  <p className="text-xs mt-1 opacity-75">시도 횟수: {retryCount}</p>
+                )}
               </div>
               <Button
                 onClick={handleRetry}
                 variant="outline"
                 size="sm"
                 className="ml-4"
+                disabled={isSubmitting}
               >
                 {text[currentLanguage].retryButton}
               </Button>
