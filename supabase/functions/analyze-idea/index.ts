@@ -76,7 +76,7 @@ async function performSecurityChecks(ideaText: string, userId: string): Promise<
   }
 }
 
-// Enhanced AI analysis with stricter scoring
+// Enhanced AI analysis with stricter scoring and proper data formatting
 async function analyzeIdeaWithAI(ideaText: string, language: 'ko' | 'en') {
   const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
   if (!geminiApiKey) {
@@ -97,12 +97,14 @@ async function analyzeIdeaWithAI(ideaText: string, language: 'ko' | 'en') {
 
 아이디어: "${ideaText}"
 
+**중요: 모든 배열 필드는 반드시 배열 형태로 반환해야 합니다. 문자열이 아닌 배열로 응답하세요.**
+
 다음 JSON 형식으로 응답해주세요:
 {
   "score": [1-10 점수],
   "analysis": "상세한 분석 (300자 이상)",
   "improvements": ["개선점1", "개선점2", "개선점3"],
-  "marketPotential": "시장 잠재력 분석 (200자 이상)",
+  "marketPotential": ["시장 잠재력 분석 포인트1", "시장 잠재력 분석 포인트2"],
   "tags": ["태그1", "태그2", "태그3"],
   "pitchPoints": ["핵심 피칭 포인트1", "핵심 피칭 포인트2"],
   "similarIdeas": ["유사 아이디어/서비스1", "유사 아이디어/서비스2"]
@@ -120,12 +122,14 @@ Only award 8.5+ points in truly exceptional cases. Most ideas should fall in the
 
 Idea: "${ideaText}"
 
+**Important: All array fields must be returned as arrays, not strings. Please respond with arrays for all list fields.**
+
 Please respond in the following JSON format:
 {
   "score": [1-10 score],
   "analysis": "Detailed analysis (300+ characters)",
   "improvements": ["Improvement1", "Improvement2", "Improvement3"],
-  "marketPotential": "Market potential analysis (200+ characters)",
+  "marketPotential": ["Market potential analysis point1", "Market potential analysis point2"],
   "tags": ["Tag1", "Tag2", "Tag3"],
   "pitchPoints": ["Key pitch point1", "Key pitch point2"],
   "similarIdeas": ["Similar idea/service1", "Similar idea/service2"]
@@ -166,19 +170,49 @@ Please respond in the following JSON format:
     const cleanedText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
     const parsedResult = JSON.parse(cleanedText);
     
+    // Ensure all array fields are actually arrays
+    const ensureArray = (value: any): string[] => {
+      if (Array.isArray(value)) {
+        return value.map(item => String(item));
+      }
+      if (typeof value === 'string') {
+        return [value];
+      }
+      return [];
+    };
+
+    const validatedResult = {
+      score: parsedResult.score || 5.0,
+      analysis: parsedResult.analysis || '',
+      tags: ensureArray(parsedResult.tags),
+      improvements: ensureArray(parsedResult.improvements),
+      marketPotential: ensureArray(parsedResult.marketPotential),
+      similarIdeas: ensureArray(parsedResult.similarIdeas),
+      pitchPoints: ensureArray(parsedResult.pitchPoints)
+    };
+    
     // Additional score validation - prevent gaming
-    if (parsedResult.score > 8.5) {
+    if (validatedResult.score > 8.5) {
       // Double-check high scores with additional criteria
       const ideaLength = ideaText.length;
       const hasBusinessModel = ideaText.toLowerCase().includes('수익') || ideaText.toLowerCase().includes('revenue') || ideaText.toLowerCase().includes('비즈니스');
       const hasMarketAnalysis = ideaText.toLowerCase().includes('시장') || ideaText.toLowerCase().includes('market') || ideaText.toLowerCase().includes('고객');
       
       if (ideaLength < 200 || !hasBusinessModel || !hasMarketAnalysis) {
-        parsedResult.score = Math.min(parsedResult.score, 7.5);
+        validatedResult.score = Math.min(validatedResult.score, 7.5);
       }
     }
     
-    return parsedResult;
+    console.log('Validated analysis result:', {
+      score: validatedResult.score,
+      tagsLength: validatedResult.tags.length,
+      improvementsLength: validatedResult.improvements.length,
+      marketPotentialLength: validatedResult.marketPotential.length,
+      similarIdeasLength: validatedResult.similarIdeas.length,
+      pitchPointsLength: validatedResult.pitchPoints.length
+    });
+    
+    return validatedResult;
   } catch (parseError) {
     console.error('Failed to parse AI response as JSON:', parseError);
     console.log('Raw response:', generatedText);
@@ -238,7 +272,14 @@ serve(async (req) => {
     
     console.log('Analysis completed:', { 
       score: analysisResult.score, 
-      analysisLength: analysisResult.analysis?.length 
+      analysisLength: analysisResult.analysis?.length,
+      allFieldsValid: {
+        tags: Array.isArray(analysisResult.tags),
+        improvements: Array.isArray(analysisResult.improvements),
+        marketPotential: Array.isArray(analysisResult.marketPotential),
+        similarIdeas: Array.isArray(analysisResult.similarIdeas),
+        pitchPoints: Array.isArray(analysisResult.pitchPoints)
+      }
     });
 
     return new Response(

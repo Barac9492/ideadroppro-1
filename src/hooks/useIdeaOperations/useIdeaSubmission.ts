@@ -10,6 +10,39 @@ interface UseIdeaSubmissionProps {
   fetchIdeas: () => void;
 }
 
+// Helper function to safely convert data to arrays
+const ensureArray = (data: any): string[] => {
+  if (Array.isArray(data)) {
+    return data.map(item => String(item));
+  }
+  if (typeof data === 'string') {
+    // Try to parse if it looks like JSON array
+    if (data.trim().startsWith('[') && data.trim().endsWith(']')) {
+      try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed.map(item => String(item)) : [data];
+      } catch {
+        return [data];
+      }
+    }
+    // Split by common delimiters if it's a string
+    return data.split(/[,\n;]/).map(item => item.trim()).filter(item => item.length > 0);
+  }
+  if (data === null || data === undefined) {
+    return [];
+  }
+  return [String(data)];
+};
+
+// Helper function to safely convert market potential (can be string or array)
+const ensureMarketPotential = (data: any): string[] => {
+  if (typeof data === 'string' && data.length > 0) {
+    // If it's a single long string, treat it as one market potential item
+    return [data];
+  }
+  return ensureArray(data);
+};
+
 export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdeaSubmissionProps) => {
   const text = ideaOperationsText[currentLanguage];
 
@@ -71,6 +104,9 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
 
     console.log('✅ Content check passed, proceeding with AI analysis...');
 
+    let finalAnalysisData: any;
+    let usesFallback = false;
+
     try {
       // Show loading toast
       const loadingToast = toast({
@@ -103,9 +139,6 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
         userId: user.id
       });
 
-      let finalAnalysisData = analysisData;
-      let usesFallback = false;
-
       if (analysisError) {
         console.error('❌ Analysis API error:', analysisError);
         
@@ -121,8 +154,14 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
         }
         
         usesFallback = true;
-        
-        // Enhanced fallback with better randomization
+      } else if (!analysisData || typeof analysisData.score === 'undefined') {
+        console.warn('⚠️ Invalid analysis data received:', analysisData);
+        usesFallback = true;
+      }
+
+      // Process analysis data with proper type conversion
+      if (usesFallback || !analysisData) {
+        console.log('Using fallback analysis data');
         const fallbackScore = Math.round((Math.random() * 2.5 + 4.5) * 10) / 10; // 4.5-7.0 range
         finalAnalysisData = {
           score: fallbackScore,
@@ -135,35 +174,34 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
           similarIdeas: [currentLanguage === 'ko' ? '유사 아이디어 조사 예정' : 'Similar ideas research pending'],
           pitchPoints: [currentLanguage === 'ko' ? '피칭 포인트 개발 예정' : 'Pitch points development pending']
         };
-      } else if (!analysisData || typeof analysisData.score === 'undefined') {
-        console.warn('⚠️ Invalid analysis data received:', analysisData);
-        usesFallback = true;
-        
-        // Handle invalid response data
-        const fallbackScore = Math.round((Math.random() * 2 + 5) * 10) / 10; // 5.0-7.0 range
+      } else {
+        // Convert received data to proper formats
+        console.log('Converting analysis data to proper formats');
         finalAnalysisData = {
-          score: fallbackScore,
-          tags: analysisData?.tags || [currentLanguage === 'ko' ? '일반' : 'general'],
-          analysis: analysisData?.analysis || (currentLanguage === 'ko' 
-            ? '분석 결과를 완전히 불러오지 못했습니다. 기본 분석으로 처리되었습니다.' 
-            : 'Analysis results could not be fully loaded. Processed with default analysis.'),
-          improvements: analysisData?.improvements || [currentLanguage === 'ko' ? '추가 분석 필요' : 'Additional analysis needed'],
-          marketPotential: analysisData?.marketPotential || [currentLanguage === 'ko' ? '시장 잠재력 검토 필요' : 'Market potential review needed'],
-          similarIdeas: analysisData?.similarIdeas || [currentLanguage === 'ko' ? '유사 아이디어 조사 필요' : 'Similar ideas research needed'],
-          pitchPoints: analysisData?.pitchPoints || [currentLanguage === 'ko' ? '피칭 포인트 개발 필요' : 'Pitch points development needed']
+          score: analysisData.score || 5.0,
+          tags: ensureArray(analysisData.tags || []),
+          analysis: analysisData.analysis || '',
+          improvements: ensureArray(analysisData.improvements || []),
+          marketPotential: ensureMarketPotential(analysisData.marketPotential || []),
+          similarIdeas: ensureArray(analysisData.similarIdeas || []),
+          pitchPoints: ensureArray(analysisData.pitchPoints || [])
         };
       }
 
       console.log('💾 Saving idea to database...');
-      console.log('Final analysis data:', {
+      console.log('Final analysis data after conversion:', {
         score: finalAnalysisData.score,
         hasAnalysis: !!finalAnalysisData.analysis,
         tagsCount: finalAnalysisData.tags?.length || 0,
+        improvementsCount: finalAnalysisData.improvements?.length || 0,
+        marketPotentialCount: finalAnalysisData.marketPotential?.length || 0,
+        similarIdeasCount: finalAnalysisData.similarIdeas?.length || 0,
+        pitchPointsCount: finalAnalysisData.pitchPoints?.length || 0,
         usesFallback,
         userId: user.id
       });
 
-      // 분석 결과와 함께 저장
+      // 분석 결과와 함께 저장 - with proper data validation
       const { data: savedIdea, error: saveError } = await supabase
         .from('ideas')
         .insert([{
@@ -171,7 +209,7 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
           text: ideaText,
           score: finalAnalysisData.score || 5.0,
           tags: finalAnalysisData.tags || [],
-          ai_analysis: finalAnalysisData.analysis,
+          ai_analysis: finalAnalysisData.analysis || '',
           improvements: finalAnalysisData.improvements || [],
           market_potential: finalAnalysisData.marketPotential || [],
           similar_ideas: finalAnalysisData.similarIdeas || [],
@@ -182,9 +220,19 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
 
       if (saveError) {
         console.error('❌ Database save error:', saveError);
+        console.error('Save error details:', {
+          message: saveError.message,
+          details: saveError.details,
+          hint: saveError.hint,
+          code: saveError.code
+        });
+        
+        // Show user-friendly error message
         toast({
           title: text.submitError,
-          description: currentLanguage === 'ko' ? '데이터베이스 저장에 실패했습니다.' : 'Failed to save to database.',
+          description: currentLanguage === 'ko' ? 
+            '데이터베이스 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' : 
+            'An error occurred while saving to database. Please try again later.',
           variant: 'destructive',
           duration: 5000,
         });
@@ -243,12 +291,20 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
       // Show user-friendly error message for other errors
       const errorMessage = error.message || 'Unknown error occurred';
       const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('connection');
+      const isDatabaseError = errorMessage.includes('Database save failed') || errorMessage.includes('malformed array');
+      
+      let userMessage = text.retryLater;
+      if (isNetworkError) {
+        userMessage = text.networkError;
+      } else if (isDatabaseError) {
+        userMessage = currentLanguage === 'ko' ? 
+          '데이터 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' :
+          'A data processing error occurred. Please try again later.';
+      }
       
       toast({
         title: text.submitError,
-        description: isNetworkError 
-          ? text.networkError
-          : text.retryLater,
+        description: userMessage,
         variant: 'destructive',
         duration: 5000,
       });
