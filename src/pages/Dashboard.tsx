@@ -1,70 +1,32 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
-import StreakBadge from '@/components/StreakBadge';
-import IdeaCard from '@/components/IdeaCard';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Header from '@/components/Header';
+import InfluenceScoreDisplay from '@/components/InfluenceScoreDisplay';
+import InvitationManager from '@/components/InvitationManager';
+import TopInfluencersBoard from '@/components/TopInfluencersBoard';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIdeas } from '@/hooks/useIdeas';
-import { User, BarChart3, Heart, Lightbulb, TrendingUp } from 'lucide-react';
+import { useInfluenceScore } from '@/hooks/useInfluenceScore';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, Users, Zap, Gift } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const { user, loading: authLoading } = useAuth();
-  const { ideas, loading: ideasLoading, toggleLike, generateAnalysis, generateGlobalAnalysis, saveFinalVerdict } = useIdeas(currentLanguage);
+  const { logs, loading: scoreLoading } = useInfluenceScore();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
-  const text = {
-    ko: {
-      title: '내 대시보드',
-      subtitle: '나의 아이디어 활동을 확인해보세요',
-      myIdeas: '내 아이디어',
-      statistics: '통계',
-      totalIdeas: '총 아이디어',
-      totalHearts: '받은 하트',
-      avgScore: '평균 점수',
-      topIdea: '최고 아이디어',
-      noIdeas: '아직 제출한 아이디어가 없습니다.',
-      loadingIdeas: '아이디어를 불러오는 중...',
-      submitFirst: '첫 번째 아이디어를 제출해보세요!'
-    },
-    en: {
-      title: 'My Dashboard',
-      subtitle: 'Track your idea activity',
-      myIdeas: 'My Ideas',
-      statistics: 'Statistics',
-      totalIdeas: 'Total Ideas',
-      totalHearts: 'Hearts Received',
-      avgScore: 'Average Score',
-      topIdea: 'Top Idea',
-      noIdeas: 'No ideas submitted yet.',
-      loadingIdeas: 'Loading ideas...',
-      submitFirst: 'Submit your first idea!'
-    }
-  };
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  const handleLike = (ideaId: string) => {
-    toggleLike(ideaId);
-  };
-
-  const handleGenerateAnalysis = (ideaId: string) => {
-    return generateAnalysis(ideaId);
-  };
-
-  const handleGenerateGlobalAnalysis = (ideaId: string) => {
-    return generateGlobalAnalysis(ideaId);
-  };
+  // Redirect if not authenticated
+  if (!authLoading && !user) {
+    navigate('/auth');
+    return null;
+  }
 
   if (authLoading) {
     return (
@@ -77,134 +39,130 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
-  const myIdeas = ideas.filter(idea => idea.user_id === user.id);
-  const totalHearts = myIdeas.reduce((sum, idea) => sum + idea.likes, 0);
-  const totalScores = myIdeas.filter(idea => idea.score && idea.score > 0).map(idea => idea.score);
-  const avgScore = totalScores.length > 0 ? totalScores.reduce((sum, score) => sum + score, 0) / totalScores.length : 0;
-  const topIdea = myIdeas.reduce((max, idea) => 
-    idea.likes > (max?.likes || 0) ? idea : max, myIdeas[0]
-  );
+  const getActionIcon = (actionType: string) => {
+    switch (actionType) {
+      case '친구 초대 성공': return <Users className="w-4 h-4 text-green-500" />;
+      case '초대 친구 리믹스': return <TrendingUp className="w-4 h-4 text-blue-500" />;
+      case 'VC 관심 표시': return <Gift className="w-4 h-4 text-purple-500" />;
+      default: return <Zap className="w-4 h-4 text-yellow-500" />;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50">
+    <div className="min-h-screen bg-gray-50">
       <Header 
         currentLanguage={currentLanguage}
         onLanguageToggle={handleLanguageToggle}
       />
       
-      <main className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-3 rounded-2xl">
-              <User className="h-8 w-8 text-white" />
-            </div>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
-            {text[currentLanguage].title}
-          </h1>
-          <p className="text-slate-600 text-lg">
-            {text[currentLanguage].subtitle}
-          </p>
-        </div>
-
+      <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <StreakBadge currentLanguage={currentLanguage} />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">대시보드</h1>
+          <p className="text-gray-600">영향력 점수를 관리하고 친구를 초대해보세요</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Lightbulb className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{myIdeas.length}</p>
-                  <p className="text-sm text-slate-600">{text[currentLanguage].totalIdeas}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">개요</TabsTrigger>
+            <TabsTrigger value="invitations">초대 관리</TabsTrigger>
+            <TabsTrigger value="rankings">순위</TabsTrigger>
+            <TabsTrigger value="history">활동 기록</TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Heart className="h-8 w-8 text-red-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{totalHearts}</p>
-                  <p className="text-sm text-slate-600">{text[currentLanguage].totalHearts}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InfluenceScoreDisplay variant="detailed" />
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Gift className="w-5 h-5 text-purple-500" />
+                    <span>영향력 혜택</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-3">
+                    <h4 className="font-semibold text-yellow-700 mb-2">🎯 노출 우선순위</h4>
+                    <p className="text-sm text-yellow-600">영향력이 높을수록 아이디어가 상단에 노출됩니다</p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3">
+                    <h4 className="font-semibold text-purple-700 mb-2">💎 GPT 점수 보정</h4>
+                    <p className="text-sm text-purple-600">영향력에 따라 GPT 점수에 최대 +0.5점 보정</p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3">
+                    <h4 className="font-semibold text-green-700 mb-2">🚀 VC 추천 우선권</h4>
+                    <p className="text-sm text-green-600">투자자에게 우선적으로 추천됩니다</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{avgScore.toFixed(1)}</p>
-                  <p className="text-sm text-slate-600">{text[currentLanguage].avgScore}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="invitations">
+            <InvitationManager />
+          </TabsContent>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-8 w-8 text-purple-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{topIdea?.likes || 0}</p>
-                  <p className="text-sm text-slate-600">{text[currentLanguage].topIdea}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="rankings">
+            <TopInfluencersBoard />
+          </TabsContent>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Lightbulb className="h-6 w-6" />
-              <span>{text[currentLanguage].myIdeas}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {ideasLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                <p className="mt-2 text-gray-500">{text[currentLanguage].loadingIdeas}</p>
-              </div>
-            ) : myIdeas.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">💡</div>
-                <p className="text-slate-500 mb-4">{text[currentLanguage].noIdeas}</p>
-                <p className="text-slate-400">{text[currentLanguage].submitFirst}</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {myIdeas.map(idea => (
-                  <IdeaCard
-                    key={idea.id}
-                    idea={idea}
-                    currentLanguage={currentLanguage}
-                    currentUserId={user.id}
-                    onLike={handleLike}
-                    onGenerateAnalysis={handleGenerateAnalysis}
-                    onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
-                    onSaveFinalVerdict={saveFinalVerdict}
-                    isAdmin={false}
-                    isAuthenticated={true}
-                  />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5" />
+                  <span>최근 활동 기록</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {scoreLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-500">로딩중...</p>
+                  </div>
+                ) : logs.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Zap className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>아직 활동 기록이 없습니다.</p>
+                    <p className="text-sm">아이디어를 제출하거나 친구를 초대해보세요!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {logs.map((log) => (
+                      <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {getActionIcon(log.action_type)}
+                          <div>
+                            <div className="font-medium text-gray-900">{log.action_type}</div>
+                            {log.description && (
+                              <div className="text-sm text-gray-500">{log.description}</div>
+                            )}
+                            <div className="text-xs text-gray-400">
+                              {new Date(log.created_at).toLocaleDateString('ko-KR', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        <Badge 
+                          className={log.points > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
+                        >
+                          {log.points > 0 ? '+' : ''}{log.points}점
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

@@ -1,20 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import LiveFeedSection from '@/components/LiveFeedSection';
-import DailyMissionSection from '@/components/DailyMissionSection';
-import VCRadarSection from '@/components/VCRadarSection';
-import RemixCommunitySection from '@/components/RemixCommunitySection';
 import VCVerificationSection from '@/components/VCVerificationSection';
-import ImpactBoardSection from '@/components/ImpactBoardSection';
-import SpectatorZone from '@/components/SpectatorZone';
 import FinalCTASection from '@/components/FinalCTASection';
+import SocialProofSection from '@/components/SocialProofSection';
+import TopInfluencersBoard from '@/components/TopInfluencersBoard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
+import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useIsMobile } from '@/hooks/use-mobile';
-import SocialProofSection from '@/components/SocialProofSection';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -23,6 +21,7 @@ const Index = () => {
   const location = useLocation();
   const { ideas, loading: ideasLoading, submitIdea, toggleLike } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
+  const { scoreActions } = useInfluenceScore();
   const isMobile = useIsMobile();
 
   // Handle auth state from login redirect
@@ -50,6 +49,9 @@ const Index = () => {
     try {
       await submitIdea(ideaText);
       await updateStreak();
+      
+      // Award influence points for idea submission
+      await scoreActions.keywordParticipation();
     } catch (error) {
       console.error('Error submitting idea:', error);
     }
@@ -96,6 +98,15 @@ const Index = () => {
       <SocialProofSection 
         currentLanguage={currentLanguage}
       />
+
+      {/* 2.5️⃣ Top Influencers Board - Gamification */}
+      <div className="bg-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <TopInfluencersBoard />
+          </div>
+        </div>
+      </div>
       
       {/* 3️⃣ Live Feed - Social evidence with section marker */}
       <div data-section="live-feed">

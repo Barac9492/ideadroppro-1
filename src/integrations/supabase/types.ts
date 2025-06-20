@@ -70,6 +70,7 @@ export type Database = {
           global_analysis: Json | null
           id: string
           improvements: string[] | null
+          influence_boost: number | null
           likes_count: number | null
           market_potential: string[] | null
           pitch_points: string[] | null
@@ -88,6 +89,7 @@ export type Database = {
           global_analysis?: Json | null
           id?: string
           improvements?: string[] | null
+          influence_boost?: number | null
           likes_count?: number | null
           market_potential?: string[] | null
           pitch_points?: string[] | null
@@ -106,6 +108,7 @@ export type Database = {
           global_analysis?: Json | null
           id?: string
           improvements?: string[] | null
+          influence_boost?: number | null
           likes_count?: number | null
           market_potential?: string[] | null
           pitch_points?: string[] | null
@@ -120,6 +123,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_ideas_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      influence_score_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          description: string | null
+          id: string
+          points: number
+          reference_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points: number
+          reference_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influence_score_logs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -174,6 +215,101 @@ export type Database = {
           {
             foreignKeyName: "user_badges_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_influence_scores: {
+        Row: {
+          created_at: string
+          id: string
+          last_monthly_reset: string | null
+          last_weekly_reset: string | null
+          monthly_score: number
+          total_score: number
+          updated_at: string
+          user_id: string
+          weekly_score: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_monthly_reset?: string | null
+          last_weekly_reset?: string | null
+          monthly_score?: number
+          total_score?: number
+          updated_at?: string
+          user_id: string
+          weekly_score?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_monthly_reset?: string | null
+          last_weekly_reset?: string | null
+          monthly_score?: number
+          total_score?: number
+          updated_at?: string
+          user_id?: string
+          weekly_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_influence_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          invitation_code: string
+          invitee_id: string | null
+          inviter_id: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          invitation_code: string
+          invitee_id?: string | null
+          inviter_id: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          invitation_code?: string
+          invitee_id?: string | null
+          inviter_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invitations_inviter_id_fkey"
+            columns: ["inviter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -254,6 +390,20 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      reset_periodic_scores: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_influence_score: {
+        Args: {
+          p_user_id: string
+          p_action_type: string
+          p_points: number
+          p_description?: string
+          p_reference_id?: string
+        }
+        Returns: undefined
       }
       update_user_streak: {
         Args: { p_user_id: string }
