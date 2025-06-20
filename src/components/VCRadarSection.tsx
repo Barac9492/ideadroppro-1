@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, TrendingUp, Briefcase, Zap, Star, ArrowRight, Fire, Crown, MessageCircle } from 'lucide-react';
+import { Eye, TrendingUp, Briefcase, Zap, Star, ArrowRight, Flame, Crown, MessageCircle } from 'lucide-react';
 
 interface VCRadarSectionProps {
   currentLanguage: 'ko' | 'en';
@@ -117,7 +116,7 @@ const VCRadarSection: React.FC<VCRadarSectionProps> = ({ currentLanguage }) => {
       case 'hot':
         return (
           <Badge className="bg-red-500 text-white animate-pulse">
-            <Fire className="w-3 h-3 mr-1" />
+            <Flame className="w-3 h-3 mr-1" />
             {text[currentLanguage].hotDeal}
           </Badge>
         );
