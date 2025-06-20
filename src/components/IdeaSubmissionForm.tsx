@@ -24,6 +24,7 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
   const [idea, setIdea] = useState(initialText);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Update idea text when initialText prop changes
@@ -43,7 +44,9 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       loginRequired: '아이디어를 제출하려면 로그인이 필요합니다',
       loginButton: '로그인 / 회원가입',
       loginDescription: '로그인하여 혁신적인 아이디어를 공유하고 AI 피드백을 받아보세요!',
-      viewOnly: '로그인 후 아이디어를 제출할 수 있습니다'
+      viewOnly: '로그인 후 아이디어를 제출할 수 있습니다',
+      retryButton: '다시 시도',
+      submitSuccess: '제출 완료!'
     },
     en: {
       placeholder: 'Share your innovative idea in 500 characters or less...',
@@ -54,29 +57,51 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       loginRequired: 'Login required to submit ideas',
       loginButton: 'Sign In / Sign Up',
       loginDescription: 'Sign in to share your innovative ideas and get instant AI feedback!',
-      viewOnly: 'Sign in to submit ideas'
+      viewOnly: 'Sign in to submit ideas',
+      retryButton: 'Try Again',
+      submitSuccess: 'Submitted!'
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submit triggered');
+    
     if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to auth');
       navigate('/auth');
       return;
     }
-    if (idea.trim().length === 0 || idea.length > 500) return;
+    
+    if (idea.trim().length === 0 || idea.length > 500) {
+      console.log('Invalid idea length:', idea.length);
+      return;
+    }
 
     // Check for inappropriate content before submission
-    if (checkInappropriateContent(idea.trim(), currentLanguage)) {
-      setShowWarning(true);
-      return;
+    try {
+      if (checkInappropriateContent(idea.trim(), currentLanguage)) {
+        console.log('Content flagged by filter');
+        setShowWarning(true);
+        return;
+      }
+    } catch (filterError) {
+      console.error('Content filter error:', filterError);
+      // Continue with submission if filter fails
     }
 
     setIsSubmitting(true);
     setShowWarning(false);
+    setSubmitError(null);
+    
     try {
+      console.log('Calling onSubmit with idea:', idea.trim().substring(0, 50) + '...');
       await onSubmit(idea.trim());
-      setIdea('');
+      console.log('onSubmit completed successfully');
+      setIdea(''); // Clear form on success
+    } catch (error) {
+      console.error('Submit error in form:', error);
+      setSubmitError(error.message || 'Submission failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -85,6 +110,12 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setIdea(e.target.value);
     setShowWarning(false);
+    setSubmitError(null);
+  };
+
+  const handleRetry = () => {
+    setSubmitError(null);
+    handleSubmit({ preventDefault: () => {} } as React.FormEvent);
   };
 
   const remainingChars = 500 - idea.length;
@@ -124,6 +155,28 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
             <div>
               <p className="font-medium">{warning[currentLanguage].title}</p>
               <p className="text-sm mt-1">{warning[currentLanguage].message}</p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {submitError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">제출 오류</p>
+                <p className="text-sm mt-1">{submitError}</p>
+              </div>
+              <Button
+                onClick={handleRetry}
+                variant="outline"
+                size="sm"
+                className="ml-4"
+              >
+                {text[currentLanguage].retryButton}
+              </Button>
             </div>
           </AlertDescription>
         </Alert>
