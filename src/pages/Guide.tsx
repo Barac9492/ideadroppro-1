@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Lightbulb, Heart, BarChart3, Globe, Zap } from 'lucide-react';
+import { ArrowLeft, Lightbulb, Heart, BarChart3, Globe, Zap, TrendingUp } from 'lucide-react';
 
 const Guide: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = React.useState<'ko' | 'en'>('ko');
@@ -29,31 +29,39 @@ const Guide: React.FC = () => {
           desc: '메인 페이지의 텍스트 상자에 여러분의 아이디어를 입력하고 "아이디어 제출" 버튼을 클릭하세요.'
         },
         step3: {
-          title: '3. AI 분석 받기',
-          desc: '제출된 아이디어 카드에서 "AI 분석 생성" 버튼을 클릭하여 상세한 분석을 받아보세요.'
+          title: '3. VC 기반 AI 1차 평가',
+          desc: '제출된 아이디어 카드에서 "AI 분석 생성" 버튼을 클릭하여 현직 VC들의 평가 기준을 학습한 AI의 상세한 분석을 받아보세요.'
         },
         step4: {
           title: '4. 글로벌 시장 분석',
           desc: '"글로벌 분석 생성" 버튼으로 전 세계 시장에서의 아이디어 잠재력을 확인하세요.'
         },
         step5: {
-          title: '5. 다른 아이디어와 소통',
-          desc: '마음에 드는 아이디어에 좋아요를 누르고 다른 사용자들과 소통하세요.'
+          title: '5. 고득점 시 VC 추가 조언',
+          desc: 'AI 평가에서 7점 이상을 받은 우수 아이디어는 실제 VC들로부터 추가적인 전문가 조언을 받을 기회가 주어집니다.'
         },
         step6: {
-          title: '6. 연속 제출로 스트릭 쌓기',
+          title: '6. 다른 아이디어와 소통',
+          desc: '마음에 드는 아이디어에 좋아요를 누르고 다른 사용자들과 소통하세요.'
+        },
+        step7: {
+          title: '7. 연속 제출로 스트릭 쌓기',
           desc: '매일 아이디어를 제출하여 연속 제출 기록을 쌓고 특별한 배지를 획득하세요.'
         }
       },
       features: {
         title: '주요 기능',
         aiAnalysis: {
-          title: 'AI 분석',
-          desc: '아이디어의 강점, 개선점, 시장 잠재력을 AI가 분석해드립니다.'
+          title: 'VC 기반 AI 1차 평가',
+          desc: '현직 벤처캐피털리스트들의 평가 기준을 학습한 AI가 실시간으로 아이디어를 분석합니다.'
         },
         globalAnalysis: {
-          title: '글로벌 분석',
+          title: '글로벌 시장 분석',
           desc: '전 세계 시장 동향과 비교하여 아이디어의 글로벌 경쟁력을 평가합니다.'
+        },
+        vcAdvice: {
+          title: 'VC 전문가 조언',
+          desc: 'AI 고득점 아이디어에 대해 실제 VC들이 투자 관점의 추가적인 조언과 피드백을 제공합니다.'
         },
         community: {
           title: '커뮤니티',
@@ -63,8 +71,9 @@ const Guide: React.FC = () => {
       tips: {
         title: '💡 사용 팁',
         tip1: '구체적이고 상세한 아이디어일수록 더 정확한 AI 분석을 받을 수 있습니다.',
-        tip2: '일일 프롬프트를 활용하여 새로운 아이디어 영감을 얻어보세요.',
-        tip3: '다른 사용자들의 아이디어를 참고하여 새로운 관점을 발견해보세요.'
+        tip2: 'AI 평가에서 7점 이상을 받으면 실제 VC들의 전문가 조언을 받을 기회를 얻습니다.',
+        tip3: '구체적인 비즈니스 모델과 수익 계획을 포함하면 더 높은 점수를 받을 수 있습니다.',
+        tip4: '일일 프롬프트를 활용하여 새로운 아이디어 영감을 얻어보세요.'
       }
     },
     en: {
@@ -82,31 +91,39 @@ const Guide: React.FC = () => {
           desc: 'Enter your idea in the text box on the main page and click "Submit Idea".'
         },
         step3: {
-          title: '3. Get AI Analysis',
-          desc: 'Click "Generate AI Analysis" on your idea card to receive detailed analysis.'
+          title: '3. VC-Based AI Initial Evaluation',
+          desc: 'Click "Generate AI Analysis" on your idea card to receive detailed analysis from AI trained on real VC evaluation criteria.'
         },
         step4: {
           title: '4. Global Market Analysis',
           desc: 'Use "Generate Global Analysis" to check your idea\'s potential in global markets.'
         },
         step5: {
-          title: '5. Engage with Community',
-          desc: 'Like ideas you enjoy and engage with other users in the community.'
+          title: '5. VC Expert Advice for High Scores',
+          desc: 'Ideas scoring 7+ points in AI evaluation get additional expert advice from real VCs.'
         },
         step6: {
-          title: '6. Build Streaks',
+          title: '6. Engage with Community',
+          desc: 'Like ideas you enjoy and engage with other users in the community.'
+        },
+        step7: {
+          title: '7. Build Streaks',
           desc: 'Submit ideas daily to build streaks and earn special badges.'
         }
       },
       features: {
         title: 'Key Features',
         aiAnalysis: {
-          title: 'AI Analysis',
-          desc: 'AI analyzes your idea\'s strengths, improvements, and market potential.'
+          title: 'VC-Based AI Initial Evaluation',
+          desc: 'AI trained on real venture capitalist evaluation criteria analyzes your ideas in real-time.'
         },
         globalAnalysis: {
-          title: 'Global Analysis',
+          title: 'Global Market Analysis',
           desc: 'Evaluate your idea\'s global competitiveness against worldwide market trends.'
+        },
+        vcAdvice: {
+          title: 'VC Expert Advice',
+          desc: 'High-scoring ideas receive additional investment-focused advice and feedback from real VCs.'
         },
         community: {
           title: 'Community',
@@ -116,8 +133,9 @@ const Guide: React.FC = () => {
       tips: {
         title: '💡 Usage Tips',
         tip1: 'More specific and detailed ideas receive more accurate AI analysis.',
-        tip2: 'Use daily prompts to get inspiration for new ideas.',
-        tip3: 'Check out other users\' ideas to discover new perspectives.'
+        tip2: 'Score 7+ points in AI evaluation to qualify for expert VC advice.',
+        tip3: 'Include specific business models and revenue plans for higher scores.',
+        tip4: 'Use daily prompts to get inspiration for new ideas.'
       }
     }
   };
@@ -171,7 +189,7 @@ const Guide: React.FC = () => {
             {text[currentLanguage].features.title}
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-purple-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="h-8 w-8 text-purple-600" />
@@ -186,6 +204,14 @@ const Guide: React.FC = () => {
               </div>
               <h3 className="font-semibold text-slate-800 mb-2">{text[currentLanguage].features.globalAnalysis.title}</h3>
               <p className="text-slate-600 text-sm">{text[currentLanguage].features.globalAnalysis.desc}</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-100 to-green-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-slate-800 mb-2">{text[currentLanguage].features.vcAdvice.title}</h3>
+              <p className="text-slate-600 text-sm">{text[currentLanguage].features.vcAdvice.desc}</p>
             </div>
             
             <div className="text-center">
@@ -217,6 +243,10 @@ const Guide: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
               <p className="text-slate-700">{text[currentLanguage].tips.tip3}</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+              <p className="text-slate-700">{text[currentLanguage].tips.tip4}</p>
             </div>
           </div>
         </div>
