@@ -82,11 +82,11 @@ const Dashboard = () => {
   }
 
   const myIdeas = ideas.filter(idea => idea.user_id === user.id);
-  const totalHearts = myIdeas.reduce((sum, idea) => sum + idea.likes_count, 0);
-  const totalScores = myIdeas.filter(idea => idea.analysis?.score).map(idea => idea.analysis!.score!);
+  const totalHearts = myIdeas.reduce((sum, idea) => sum + idea.likes, 0);
+  const totalScores = myIdeas.filter(idea => idea.score && idea.score > 0).map(idea => idea.score);
   const avgScore = totalScores.length > 0 ? totalScores.reduce((sum, score) => sum + score, 0) / totalScores.length : 0;
   const topIdea = myIdeas.reduce((max, idea) => 
-    idea.likes_count > (max?.likes_count || 0) ? idea : max, myIdeas[0]
+    idea.likes > (max?.likes || 0) ? idea : max, myIdeas[0]
   );
 
   return (
@@ -157,7 +157,7 @@ const Dashboard = () => {
               <div className="flex items-center space-x-2">
                 <TrendingUp className="h-8 w-8 text-purple-500" />
                 <div>
-                  <p className="text-2xl font-bold text-slate-800">{topIdea?.likes_count || 0}</p>
+                  <p className="text-2xl font-bold text-slate-800">{topIdea?.likes || 0}</p>
                   <p className="text-sm text-slate-600">{text[currentLanguage].topIdea}</p>
                 </div>
               </div>

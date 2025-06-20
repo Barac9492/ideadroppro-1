@@ -42,7 +42,7 @@ const Ranking = () => {
 
   const topIdeas = ideas
     .filter(idea => !idea.seed)
-    .sort((a, b) => b.likes_count - a.likes_count)
+    .sort((a, b) => b.likes - a.likes)
     .slice(0, 20);
 
   return (
@@ -120,10 +120,10 @@ const Ranking = () => {
                                 {idea.text.length > 120 ? `${idea.text.substring(0, 120)}...` : idea.text}
                               </p>
                               <div className="flex items-center space-x-4 text-xs text-slate-600">
-                                <span>{text[currentLanguage].by}: {idea.profiles?.username || 'Anonymous'}</span>
+                                <span>{text[currentLanguage].by}: Anonymous</span>
                                 <span className="flex items-center space-x-1">
                                   <span>❤️</span>
-                                  <span>{idea.likes_count} {text[currentLanguage].hearts}</span>
+                                  <span>{idea.likes} {text[currentLanguage].hearts}</span>
                                 </span>
                               </div>
                             </div>
