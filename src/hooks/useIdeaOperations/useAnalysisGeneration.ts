@@ -17,10 +17,56 @@ export const useAnalysisGeneration = ({ currentLanguage, user, fetchIdeas }: Use
 
     try {
       console.log('Generating analysis for idea:', ideaText);
+      
+      // Pre-analysis security checks
+      const securityResponse = await supabase.functions.invoke('analyze-idea', {
+        body: { 
+          ideaText: ideaText,
+          language: currentLanguage,
+          securityCheck: true,
+          userId: user.id
+        }
+      });
+
+      if (securityResponse.error) {
+        console.error('Security check error:', securityResponse.error);
+        
+        // Handle specific security violations
+        if (securityResponse.error.message?.includes('RATE_LIMIT')) {
+          toast({
+            title: text.rateLimitError,
+            variant: 'destructive',
+            duration: 5000,
+          });
+          return;
+        }
+        
+        if (securityResponse.error.message?.includes('DUPLICATE')) {
+          toast({
+            title: text.duplicateDetected,
+            variant: 'destructive',
+            duration: 5000,
+          });
+          return;
+        }
+        
+        if (securityResponse.error.message?.includes('QUALITY')) {
+          toast({
+            title: text.qualityCheckFailed,
+            variant: 'destructive',
+            duration: 5000,
+          });
+          return;
+        }
+        
+        throw new Error(text.analysisError);
+      }
+
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-idea', {
         body: { 
           ideaText: ideaText,
-          language: currentLanguage 
+          language: currentLanguage,
+          userId: user.id
         }
       });
 
@@ -47,13 +93,17 @@ export const useAnalysisGeneration = ({ currentLanguage, user, fetchIdeas }: Use
       if (error) throw error;
 
       const score = analysisData.score || 5;
-      const toastMessage = score < 5 
-        ? text.lowScoreNotice
-        : text.analysisGenerated;
+      let toastMessage = text.analysisGenerated;
+      
+      if (score >= 8.5) {
+        toastMessage = text.highScoreNotice;
+      } else if (score < 5) {
+        toastMessage = text.lowScoreNotice;
+      }
 
       toast({
         title: toastMessage,
-        duration: 3000,
+        duration: score >= 8.5 ? 6000 : 3000,
       });
 
       fetchIdeas();

@@ -12,6 +12,10 @@ export const ideaOperationsText = {
     lowScoreNotice: '점수가 낮게 나왔습니다. 더 구체적인 아이디어를 고려해보세요.',
     globalAnalysisGenerated: '🌍 글로벌 시장 분석이 완료되었습니다!',
     globalAnalysisError: '글로벌 분석 생성 중 오류가 발생했습니다.',
+    highScoreNotice: '🎉 축하합니다! 8.5점 이상의 최우수 아이디어로 평가되어 VC 전문가 조언 자격을 획득했습니다!',
+    rateLimitError: '분석 요청 한도에 도달했습니다. 잠시 후 다시 시도해주세요.',
+    duplicateDetected: '유사한 아이디어가 이미 제출되었습니다. 더 독창적인 아이디어를 시도해보세요.',
+    qualityCheckFailed: '아이디어 품질 기준을 충족하지 않습니다. 더 구체적이고 상세한 아이디어를 작성해주세요.',
   },
   en: {
     submitSuccess: 'Idea submitted successfully!',
@@ -25,5 +29,9 @@ export const ideaOperationsText = {
     lowScoreNotice: 'Low score received. Consider a more specific idea.',
     globalAnalysisGenerated: '🌍 Global Market Analysis Completed!',
     globalAnalysisError: 'Error occurred while generating global analysis.',
+    highScoreNotice: '🎉 Congratulations! Your exceptional idea scored 8.5+ points and qualifies for VC expert advice!',
+    rateLimitError: 'Analysis request limit reached. Please try again later.',
+    duplicateDetected: 'Similar idea already submitted. Try a more original idea.',
+    qualityCheckFailed: 'Idea does not meet quality standards. Please write a more specific and detailed idea.',
   }
 };

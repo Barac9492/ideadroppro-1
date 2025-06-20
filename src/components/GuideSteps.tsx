@@ -29,7 +29,7 @@ const GuideSteps: React.FC<GuideStepsProps> = ({ currentLanguage }) => {
         },
         step5: {
           title: '5. 고득점 시 VC 추가 조언',
-          desc: 'AI 평가에서 7점 이상을 받은 우수 아이디어는 실제 VC들로부터 추가적인 전문가 조언을 받을 기회가 주어집니다.'
+          desc: 'AI 평가에서 8.5점 이상을 받은 최우수 아이디어는 실제 VC들로부터 추가적인 전문가 조언을 받을 기회가 주어집니다.'
         },
         step6: {
           title: '6. 다른 아이디어와 소통',
@@ -61,8 +61,8 @@ const GuideSteps: React.FC<GuideStepsProps> = ({ currentLanguage }) => {
           desc: 'Use "Generate Global Analysis" to check your idea\'s potential in global markets.'
         },
         step5: {
-          title: '5. VC Expert Advice for High Scores',
-          desc: 'Ideas scoring 7+ points in AI evaluation get additional expert advice from real VCs.'
+          title: '5. VC Expert Advice for Top Scores',
+          desc: 'Ideas scoring 8.5+ points in AI evaluation get additional expert advice from real VCs.'
         },
         step6: {
           title: '6. Engage with Community',
