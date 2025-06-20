@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -5,6 +6,7 @@ import IdeaSubmissionForm from '@/components/IdeaSubmissionForm';
 import IdeaCard from '@/components/IdeaCard';
 import DailyPromptCard from '@/components/DailyPromptCard';
 import StreakBadge from '@/components/StreakBadge';
+import WelcomeBanner from '@/components/WelcomeBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -14,12 +16,24 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [ideaFormText, setIdeaFormText] = useState('');
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { ideas, loading: ideasLoading, submitIdea, toggleLike, generateAnalysis, generateGlobalAnalysis, saveFinalVerdict } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
   const isMobile = useIsMobile();
+
+  // Show welcome banner for new visitors or non-authenticated users
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('hasVisited');
+    if (!hasVisited || !user) {
+      setShowWelcomeBanner(true);
+      if (!hasVisited) {
+        localStorage.setItem('hasVisited', 'true');
+      }
+    }
+  }, [user]);
 
   const text = {
     ko: {
@@ -108,6 +122,11 @@ const Index = () => {
       />
       
       <main className={`container mx-auto px-4 py-6 md:py-8 max-w-4xl ${isMobile ? 'space-y-4' : 'space-y-6'}`}>
+        {/* Welcome Banner for new users */}
+        {showWelcomeBanner && (
+          <WelcomeBanner currentLanguage={currentLanguage} />
+        )}
+        
         <DailyPromptCard 
           currentLanguage={currentLanguage}
           onUsePrompt={handleUsePrompt}
@@ -116,7 +135,7 @@ const Index = () => {
         {user && <StreakBadge currentLanguage={currentLanguage} />}
         
         {/* Login encouragement banner for non-authenticated users */}
-        {!user && (
+        {!user && !showWelcomeBanner && (
           <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-4 md:p-6 mb-4 md:mb-6 border border-purple-200 shadow-lg backdrop-blur-sm">
             <p className={`text-center text-purple-800 font-medium ${isMobile ? 'text-sm' : 'text-base'}`}>
               {text[currentLanguage].loginForMoreFeatures}
