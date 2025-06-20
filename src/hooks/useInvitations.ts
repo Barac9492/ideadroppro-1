@@ -22,7 +22,7 @@ export const useInvitations = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const channelRef = useRef<any>(null);
+  const subscriptionRef = useRef<any>(null);
 
   const generateInvitationCode = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -170,22 +170,20 @@ export const useInvitations = () => {
 
     console.log('Setting up invitation subscription for user:', user.id);
     
-    // Clean up any existing channel first
-    if (channelRef.current) {
-      console.log('Cleaning up existing channel');
-      try {
-        supabase.removeChannel(channelRef.current);
-      } catch (error) {
-        console.error('Error removing channel:', error);
+    // Clean up any existing subscription
+    const cleanup = () => {
+      if (subscriptionRef.current) {
+        console.log('Unsubscribing from existing channel');
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
       }
-      channelRef.current = null;
-    }
+    };
+
+    cleanup();
     
-    // Create a unique channel name to avoid conflicts
-    const channelName = `invitation-changes-${user.id}-${Date.now()}`;
-    
-    const channel = supabase
-      .channel(channelName)
+    // Set up new subscription
+    const subscription = supabase
+      .channel(`invitation-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -203,20 +201,10 @@ export const useInvitations = () => {
         console.log('Subscription status:', status);
       });
 
-    // Store the channel reference
-    channelRef.current = channel;
+    // Store the subscription reference
+    subscriptionRef.current = subscription;
 
-    return () => {
-      console.log('Cleaning up invitation subscription');
-      if (channelRef.current) {
-        try {
-          supabase.removeChannel(channelRef.current);
-        } catch (error) {
-          console.error('Error cleaning up channel:', error);
-        }
-        channelRef.current = null;
-      }
-    };
+    return cleanup;
   }, [user?.id]);
 
   return {
