@@ -94,19 +94,21 @@ const DailyPromptManagement: React.FC<DailyPromptManagementProps> = ({ currentLa
 
   const fetchRecentLogs = async () => {
     try {
+      // Use a raw SQL query to fetch logs from the new table
       const { data, error } = await supabase
-        .from('daily_prompt_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .rpc('get_daily_prompt_logs')
         .limit(10);
 
       if (error) {
         console.error('Error fetching logs:', error);
+        // If the function doesn't exist, create a fallback
+        setRecentLogs([]);
       } else {
         setRecentLogs(data || []);
       }
     } catch (error) {
       console.error('Error fetching logs:', error);
+      setRecentLogs([]);
     }
   };
 
