@@ -165,10 +165,12 @@ export const useInvitations = () => {
 
   // Set up real-time subscription for invitation changes
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
+    console.log('Setting up invitation subscription for user:', user.id);
+    
     // Create a unique channel name to avoid conflicts
-    const channelName = `invitation-changes-${user.id}`;
+    const channelName = `invitation-changes-${user.id}-${Date.now()}`;
     
     const channel = supabase
       .channel(channelName)
@@ -180,15 +182,21 @@ export const useInvitations = () => {
           table: 'user_invitations',
           filter: `inviter_id=eq.${user.id}`
         },
-        () => {
+        (payload) => {
+          console.log('Invitation change detected:', payload);
           fetchInvitations();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
-      // Properly cleanup the channel
-      supabase.removeChannel(channel);
+      console.log('Cleaning up invitation subscription');
+      // First unsubscribe, then remove the channel
+      channel.unsubscribe().then(() => {
+        supabase.removeChannel(channel);
+      });
     };
   }, [user?.id]); // Only depend on user.id to avoid unnecessary re-subscriptions
 
