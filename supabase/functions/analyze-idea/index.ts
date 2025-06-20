@@ -11,7 +11,6 @@ const corsHeaders = {
 interface IdeaAnalysisRequest {
   ideaText: string;
   language: 'ko' | 'en';
-  securityCheck?: boolean;
   userId?: string;
 }
 
@@ -20,63 +19,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 );
 
-// Security and anti-gaming measures
-async function performSecurityChecks(ideaText: string, userId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Rate limiting check - max 5 analyses per day per user
-    const today = new Date().toISOString().split('T')[0];
-    const { data: todayAnalyses, error: rateError } = await supabase
-      .from('ideas')
-      .select('id')
-      .eq('user_id', userId)
-      .gte('created_at', `${today}T00:00:00`)
-      .not('ai_analysis', 'is', null);
-
-    if (rateError) {
-      console.error('Rate limit check error:', rateError);
-      return { success: false, error: 'RATE_LIMIT_CHECK_FAILED' };
-    }
-
-    if (todayAnalyses && todayAnalyses.length >= 5) {
-      return { success: false, error: 'RATE_LIMIT' };
-    }
-
-    // Quality check - minimum character count and structure
-    if (ideaText.length < 50) {
-      return { success: false, error: 'QUALITY' };
-    }
-
-    // Simple duplicate detection using text similarity
-    const ideaHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ideaText.toLowerCase().trim()));
-    const hashArray = Array.from(new Uint8Array(ideaHash));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const { data: similarIdeas, error: duplicateError } = await supabase
-      .from('ideas')
-      .select('id')
-      .eq('user_id', userId)
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Last 24 hours
-
-    if (duplicateError) {
-      console.error('Duplicate check error:', duplicateError);
-    } else if (similarIdeas && similarIdeas.length > 0) {
-      // Check for similar content (basic check)
-      const words = ideaText.toLowerCase().split(/\s+/).filter(word => word.length > 3);
-      const uniqueWords = new Set(words);
-      
-      if (uniqueWords.size < Math.max(5, words.length * 0.3)) {
-        return { success: false, error: 'DUPLICATE' };
-      }
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Security check failed:', error);
-    return { success: false, error: 'SECURITY_CHECK_FAILED' };
-  }
-}
-
-// Enhanced AI analysis with stricter scoring and proper data formatting
+// Enhanced AI analysis
 async function analyzeIdeaWithAI(ideaText: string, language: 'ko' | 'en') {
   const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
   if (!geminiApiKey) {
@@ -96,8 +39,6 @@ async function analyzeIdeaWithAI(ideaText: string, language: 'ko' | 'en') {
 8.5점 이상은 극히 예외적인 경우에만 부여하세요. 대부분의 아이디어는 5-7점 범위에 있어야 합니다.
 
 아이디어: "${ideaText}"
-
-**중요: 모든 배열 필드는 반드시 배열 형태로 반환해야 합니다. 문자열이 아닌 배열로 응답하세요.**
 
 다음 JSON 형식으로 응답해주세요:
 {
@@ -122,8 +63,6 @@ Only award 8.5+ points in truly exceptional cases. Most ideas should fall in the
 
 Idea: "${ideaText}"
 
-**Important: All array fields must be returned as arrays, not strings. Please respond with arrays for all list fields.**
-
 Please respond in the following JSON format:
 {
   "score": [1-10 score],
@@ -135,38 +74,38 @@ Please respond in the following JSON format:
   "similarIdeas": ["Similar idea/service1", "Similar idea/service2"]
 }`;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.3, // Lower temperature for more consistent scoring
-        topK: 20,
-        topP: 0.8,
-        maxOutputTokens: 2048,
-      }
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!generatedText) {
-    throw new Error('No content generated from Gemini API');
-  }
-
   try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.3,
+          topK: 20,
+          topP: 0.8,
+          maxOutputTokens: 2048,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!generatedText) {
+      throw new Error('No content generated from Gemini API');
+    }
+
     const cleanedText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
     const parsedResult = JSON.parse(cleanedText);
     
@@ -181,8 +120,8 @@ Please respond in the following JSON format:
       return [];
     };
 
-    const validatedResult = {
-      score: parsedResult.score || 5.0,
+    return {
+      score: Number(parsedResult.score) || 5.0,
       analysis: parsedResult.analysis || '',
       tags: ensureArray(parsedResult.tags),
       improvements: ensureArray(parsedResult.improvements),
@@ -191,32 +130,9 @@ Please respond in the following JSON format:
       pitchPoints: ensureArray(parsedResult.pitchPoints)
     };
     
-    // Additional score validation - prevent gaming
-    if (validatedResult.score > 8.5) {
-      // Double-check high scores with additional criteria
-      const ideaLength = ideaText.length;
-      const hasBusinessModel = ideaText.toLowerCase().includes('수익') || ideaText.toLowerCase().includes('revenue') || ideaText.toLowerCase().includes('비즈니스');
-      const hasMarketAnalysis = ideaText.toLowerCase().includes('시장') || ideaText.toLowerCase().includes('market') || ideaText.toLowerCase().includes('고객');
-      
-      if (ideaLength < 200 || !hasBusinessModel || !hasMarketAnalysis) {
-        validatedResult.score = Math.min(validatedResult.score, 7.5);
-      }
-    }
-    
-    console.log('Validated analysis result:', {
-      score: validatedResult.score,
-      tagsLength: validatedResult.tags.length,
-      improvementsLength: validatedResult.improvements.length,
-      marketPotentialLength: validatedResult.marketPotential.length,
-      similarIdeasLength: validatedResult.similarIdeas.length,
-      pitchPointsLength: validatedResult.pitchPoints.length
-    });
-    
-    return validatedResult;
-  } catch (parseError) {
-    console.error('Failed to parse AI response as JSON:', parseError);
-    console.log('Raw response:', generatedText);
-    throw new Error('Failed to parse AI analysis result');
+  } catch (error) {
+    console.error('AI Analysis failed:', error);
+    throw error;
   }
 }
 
@@ -226,12 +142,11 @@ serve(async (req) => {
   }
 
   try {
-    const { ideaText, language, securityCheck, userId }: IdeaAnalysisRequest = await req.json();
+    const { ideaText, language, userId }: IdeaAnalysisRequest = await req.json();
     
     console.log('Analysis request:', { 
       ideaLength: ideaText?.length, 
       language, 
-      securityCheck, 
       userId: userId ? 'provided' : 'missing' 
     });
 
@@ -245,41 +160,13 @@ serve(async (req) => {
       );
     }
 
-    // Security check phase
-    if (securityCheck && userId) {
-      const securityResult = await performSecurityChecks(ideaText, userId);
-      if (!securityResult.success) {
-        return new Response(
-          JSON.stringify({ error: securityResult.error }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ success: true }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // AI Analysis phase
+    // Perform AI Analysis
     const analysisResult = await analyzeIdeaWithAI(ideaText, language);
     
-    console.log('Analysis completed:', { 
-      score: analysisResult.score, 
-      analysisLength: analysisResult.analysis?.length,
-      allFieldsValid: {
-        tags: Array.isArray(analysisResult.tags),
-        improvements: Array.isArray(analysisResult.improvements),
-        marketPotential: Array.isArray(analysisResult.marketPotential),
-        similarIdeas: Array.isArray(analysisResult.similarIdeas),
-        pitchPoints: Array.isArray(analysisResult.pitchPoints)
-      }
+    console.log('Analysis completed successfully:', { 
+      score: analysisResult.score,
+      hasAnalysis: !!analysisResult.analysis,
+      tagsCount: analysisResult.tags?.length || 0
     });
 
     return new Response(
