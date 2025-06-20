@@ -27,13 +27,13 @@ serve(async (req) => {
 "${ideaText}"
 
 주요 분석 영역:
-1. 시장별 수용성 (미국, 유럽, 중국, 일본, 동남아시아)
+1. 시장별 수용성 (미국, 유럽, 아시아)
 2. 문화적 적합성 및 현지화 필요성
 3. 글로벌 경쟁 환경 및 진입 장벽
 4. 우선 진출 시장 추천
 5. 현지화 전략 및 고려사항
 
-다음 JSON 형식으로 응답해주세요:
+다음 JSON 형식으로 응답해주세요 (아시아도 다른 지역과 동일한 구조로):
 {
   "marketAcceptance": {
     "northAmerica": {
@@ -48,8 +48,8 @@ serve(async (req) => {
     },
     "asia": {
       "score": 8,
-      "reasons": ["빠른 디지털 채택", "모바일 중심"],
-      "challenges": ["문화적 다양성", "현지 플레이어"]
+      "reasons": ["빠른 디지털 채택", "모바일 중심", "성장 시장"],
+      "challenges": ["문화적 다양성", "현지 플레이어", "규제 차이"]
     }
   },
   "culturalFit": {
@@ -81,13 +81,13 @@ serve(async (req) => {
 "${ideaText}"
 
 Key Analysis Areas:
-1. Market acceptance by region (North America, Europe, China, Japan, Southeast Asia)
+1. Market acceptance by region (North America, Europe, Asia)
 2. Cultural fit and localization needs
 3. Global competitive landscape and entry barriers
 4. Recommended priority markets
 5. Localization strategy and considerations
 
-Please provide a JSON response in this format:
+Please provide a JSON response in this format (Asia should have the same structure as other regions):
 {
   "marketAcceptance": {
     "northAmerica": {
@@ -102,8 +102,8 @@ Please provide a JSON response in this format:
     },
     "asia": {
       "score": 8,
-      "reasons": ["Fast digital adoption", "Mobile-first"],
-      "challenges": ["Cultural diversity", "Local players"]
+      "reasons": ["Fast digital adoption", "Mobile-first", "Growing markets"],
+      "challenges": ["Cultural diversity", "Local players", "Regulatory differences"]
     }
   },
   "culturalFit": {
@@ -179,12 +179,24 @@ Please provide a JSON response in this format:
       }
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
-      // Fallback response
+      // Fallback response with consistent structure
       globalAnalysisResult = {
         marketAcceptance: {
-          northAmerica: { score: 6, reasons: [language === 'ko' ? '분석 필요' : 'Analysis needed'], challenges: [language === 'ko' ? '시장 조사 필요' : 'Market research needed'] },
-          europe: { score: 5, reasons: [language === 'ko' ? '분석 필요' : 'Analysis needed'], challenges: [language === 'ko' ? '시장 조사 필요' : 'Market research needed'] },
-          asia: { score: 7, reasons: [language === 'ko' ? '아시아 시장 친화적' : 'Asia-friendly market'], challenges: [language === 'ko' ? '현지화 필요' : 'Localization needed'] }
+          northAmerica: { 
+            score: 6, 
+            reasons: [language === 'ko' ? '분석 필요' : 'Analysis needed'], 
+            challenges: [language === 'ko' ? '시장 조사 필요' : 'Market research needed'] 
+          },
+          europe: { 
+            score: 5, 
+            reasons: [language === 'ko' ? '분석 필요' : 'Analysis needed'], 
+            challenges: [language === 'ko' ? '시장 조사 필요' : 'Market research needed'] 
+          },
+          asia: { 
+            score: 7, 
+            reasons: [language === 'ko' ? '아시아 시장 친화적' : 'Asia-friendly market'], 
+            challenges: [language === 'ko' ? '현지화 필요' : 'Localization needed'] 
+          }
         },
         culturalFit: {
           adaptationNeeded: [language === 'ko' ? '현지화 전략 수립' : 'Localization strategy needed'],
