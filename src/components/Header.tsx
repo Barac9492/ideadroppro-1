@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Globe, Menu, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
@@ -101,7 +100,7 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
             {/* Info Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setIsInfoDropdown (!isInfoDropdownOpen)}
+                onClick={() => setIsInfoDropdownOpen(!isInfoDropdownOpen)}
                 onBlur={() => setTimeout(() => setIsInfoDropdownOpen(false), 200)}
                 className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors font-medium text-slate-700 flex items-center space-x-1"
               >
