@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -7,6 +6,7 @@ import LiveFeedSection from '@/components/LiveFeedSection';
 import VCRadarSection from '@/components/VCRadarSection';
 import ImpactBoardSection from '@/components/ImpactBoardSection';
 import NarrativeSection from '@/components/NarrativeSection';
+import SpectatorZone from '@/components/SpectatorZone';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -103,6 +103,11 @@ const Index = () => {
       
       {/* 4️⃣ Impact Board - Competition & Portfolio Building */}
       <ImpactBoardSection 
+        currentLanguage={currentLanguage}
+      />
+
+      {/* 🎮 Spectator Zone - Fun Just to Watch */}
+      <SpectatorZone 
         currentLanguage={currentLanguage}
       />
       
