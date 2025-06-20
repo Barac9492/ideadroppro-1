@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import HowItWorksSection from '@/components/HowItWorksSection';
 import LiveFeedSection from '@/components/LiveFeedSection';
 import DailyMissionSection from '@/components/DailyMissionSection';
 import VCRadarSection from '@/components/VCRadarSection';
@@ -16,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useIsMobile } from '@/hooks/use-mobile';
+import SocialProofSection from '@/components/SocialProofSection';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -87,56 +86,33 @@ const Index = () => {
         onLanguageToggle={handleLanguageToggle}
       />
       
-      {/* 1️⃣ Hero Section - 지금 뇌 속 아이디어를 드랍하세요 */}
+      {/* 1️⃣ Hero Section - Focused submission flow */}
       <HeroSection 
         currentLanguage={currentLanguage}
         onIdeaDrop={handleIdeaDrop}
       />
       
-      {/* 2️⃣ How It Works - 왜 '드랍'이 필요한가? */}
-      <HowItWorksSection 
+      {/* 2️⃣ Social Proof - Light persuasion */}
+      <SocialProofSection 
         currentLanguage={currentLanguage}
       />
       
-      {/* 3️⃣ Live Feed + Real Use Cases - 진짜가 온다 */}
-      <LiveFeedSection
-        ideas={ideas}
-        currentLanguage={currentLanguage}
-        onLike={handleLike}
-        isAuthenticated={!!user}
-      />
+      {/* 3️⃣ Live Feed - Social evidence with section marker */}
+      <div data-section="live-feed">
+        <LiveFeedSection
+          ideas={ideas}
+          currentLanguage={currentLanguage}
+          onLike={handleLike}
+          isAuthenticated={!!user}
+        />
+      </div>
       
-      {/* 4️⃣ Daily Mission - 오늘의 GPT 미션 */}
-      <DailyMissionSection 
-        currentLanguage={currentLanguage}
-      />
-      
-      {/* 5️⃣ VC Radar & GPT Pick - 실제 VC가 선택한 HOT 아이디어 */}
-      <VCRadarSection 
-        currentLanguage={currentLanguage}
-      />
-      
-      {/* 6️⃣ Remix Community - 커뮤니티와 함께 성장하는 아이디어 */}
-      <RemixCommunitySection 
-        currentLanguage={currentLanguage}
-      />
-      
-      {/* 7️⃣ VC Verification - VC 인증 마크 강조 */}
+      {/* 4️⃣ VC Verification - Trust indicators */}
       <VCVerificationSection 
         currentLanguage={currentLanguage}
       />
       
-      {/* 8️⃣ Impact Board - Competition & Portfolio Building */}
-      <ImpactBoardSection 
-        currentLanguage={currentLanguage}
-      />
-
-      {/* 🎮 Spectator Zone - Fun Just to Watch */}
-      <SpectatorZone 
-        currentLanguage={currentLanguage}
-      />
-      
-      {/* 9️⃣ Final CTA - 마무리 CTA */}
+      {/* 5️⃣ Final CTA - Single focused call to action */}
       <FinalCTASection 
         currentLanguage={currentLanguage}
         onDropIdea={scrollToHero}
