@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { checkInappropriateContent, getContentWarning } from '@/utils/contentFilter';
+import { checkInappropriateContent, checkTextQuality, getContentWarning } from '@/utils/contentFilter';
 import { ideaOperationsText } from './constants';
 
 interface UseIdeaSubmissionProps {
@@ -59,8 +58,22 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
       throw new Error('User not authenticated');
     }
 
-    // Content filter check
+    // Enhanced content filtering
     try {
+      // Check text quality first
+      const qualityCheck = checkTextQuality(ideaText, currentLanguage);
+      if (!qualityCheck.isValid) {
+        console.log('❌ Text quality check failed:', qualityCheck.reason);
+        toast({
+          title: currentLanguage === 'ko' ? '텍스트 품질 검사' : 'Text Quality Check',
+          description: qualityCheck.reason,
+          variant: 'destructive',
+          duration: 5000,
+        });
+        throw new Error('Text quality check failed');
+      }
+
+      // Check for inappropriate content
       if (checkInappropriateContent(ideaText, currentLanguage)) {
         const warning = getContentWarning(currentLanguage);
         toast({
@@ -72,12 +85,14 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
         throw new Error('Content flagged as inappropriate');
       }
     } catch (contentFilterError) {
-      if (contentFilterError.message === 'Content flagged as inappropriate') {
+      if (contentFilterError.message === 'Content flagged as inappropriate' || 
+          contentFilterError.message === 'Text quality check failed') {
         throw contentFilterError;
       }
+      console.warn('⚠️ Content filter error (proceeding):', contentFilterError);
     }
 
-    console.log('✅ Content check passed, starting submission...');
+    console.log('✅ Content and quality checks passed, starting submission...');
 
     // Show loading toast
     const loadingToast = toast({

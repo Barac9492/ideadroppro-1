@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -18,6 +17,65 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 );
+
+// Server-side text quality validation
+const validateTextQuality = (text: string, language: 'ko' | 'en'): { isValid: boolean; reason?: string } => {
+  const trimmedText = text.trim();
+  
+  // Check minimum length
+  if (trimmedText.length < 10) {
+    return {
+      isValid: false,
+      reason: language === 'ko' ? 
+        '아이디어는 최소 10자 이상 작성해주세요.' : 
+        'Please write at least 10 characters for your idea.'
+    };
+  }
+
+  // Korean patterns
+  if (language === 'ko') {
+    // Check for only consonants/vowels
+    if (/^[ㄱ-ㅎㅏ-ㅣ\s]{3,}$/.test(trimmedText)) {
+      return { isValid: false, reason: '의미 있는 한글 단어를 사용해주세요.' };
+    }
+    
+    // Check for keyboard patterns
+    if (/[ㅁㄴㅇㄹ]{3,}|[ㅂㅈㄷㄱ]{3,}|[ㅛㅕㅑㅐ]{3,}/.test(trimmedText)) {
+      return { isValid: false, reason: '키보드 연타가 아닌 의미 있는 내용을 작성해주세요.' };
+    }
+  }
+
+  // English patterns
+  if (language === 'en') {
+    // Check for keyboard rows
+    if (/[qwertyuiop]{4,}|[asdfghjkl]{4,}|[zxcvbnm]{4,}/i.test(trimmedText)) {
+      return { isValid: false, reason: 'Please write meaningful content instead of keyboard patterns.' };
+    }
+  }
+
+  // Check for same character repetition
+  if (/(.)\1{3,}/.test(trimmedText)) {
+    return { 
+      isValid: false, 
+      reason: language === 'ko' ? 
+        '같은 문자 반복이 아닌 구체적인 아이디어를 작성해주세요.' : 
+        'Please write specific ideas instead of repeating characters.'
+    };
+  }
+
+  // Check for meaningful words
+  const words = trimmedText.split(/\s+/).filter(word => word.length > 1);
+  if (words.length < (language === 'ko' ? 2 : 3)) {
+    return {
+      isValid: false,
+      reason: language === 'ko' ? 
+        '더 구체적이고 상세한 아이디어를 작성해주세요.' : 
+        'Please write a more detailed and specific idea.'
+    };
+  }
+
+  return { isValid: true };
+};
 
 // Enhanced AI analysis
 async function analyzeIdeaWithAI(ideaText: string, language: 'ko' | 'en') {
@@ -153,6 +211,22 @@ serve(async (req) => {
     if (!ideaText || !language) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Server-side text quality validation
+    const qualityCheck = validateTextQuality(ideaText, language);
+    if (!qualityCheck.isValid) {
+      console.log('Server-side quality check failed:', qualityCheck.reason);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Text quality validation failed',
+          reason: qualityCheck.reason 
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

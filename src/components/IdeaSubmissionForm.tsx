@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Send, Loader, Zap, AlertTriangle, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { checkInappropriateContent, getContentWarning } from '@/utils/contentFilter';
+import { checkInappropriateContent, checkTextQuality, getContentWarning, getQualityWarning } from '@/utils/contentFilter';
 import { useNavigate } from 'react-router-dom';
 import CopyrightNotice from '@/components/CopyrightNotice';
 
@@ -24,6 +23,7 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
   const [idea, setIdea] = useState(initialText);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
@@ -83,10 +83,22 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
       return;
     }
 
-    // Check for inappropriate content before submission
+    // Enhanced content filtering
     try {
+      // Check text quality first
+      const qualityCheck = checkTextQuality(idea.trim(), currentLanguage);
+      if (!qualityCheck.isValid) {
+        console.log('Text quality check failed:', qualityCheck.reason);
+        setWarningMessage(qualityCheck.reason || '');
+        setShowWarning(true);
+        return;
+      }
+
+      // Check for inappropriate content
       if (checkInappropriateContent(idea.trim(), currentLanguage)) {
-        console.log('Content flagged by filter');
+        console.log('Content flagged by inappropriate filter');
+        const warning = getContentWarning(currentLanguage);
+        setWarningMessage(warning[currentLanguage].message);
         setShowWarning(true);
         return;
       }
@@ -117,7 +129,10 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
         errorMessage = text[currentLanguage].authError;
         // Redirect to login after short delay
         setTimeout(() => navigate('/auth'), 2000);
-      } else if (error.message === 'Content flagged as inappropriate') {
+      } else if (error.message === 'Content flagged as inappropriate' || 
+                 error.message === 'Text quality check failed') {
+        const warning = getContentWarning(currentLanguage);
+        setWarningMessage(warning[currentLanguage].message);
         setShowWarning(true);
         return;
       }
@@ -133,6 +148,7 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
     setIdea(e.target.value);
     setShowWarning(false);
     setSubmitError(null);
+    setWarningMessage('');
   };
 
   const handleRetry = () => {
@@ -175,8 +191,25 @@ const IdeaSubmissionForm: React.FC<IdeaSubmissionFormProps> = ({
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div>
-              <p className="font-medium">{warning[currentLanguage].title}</p>
-              <p className="text-sm mt-1">{warning[currentLanguage].message}</p>
+              <p className="font-medium">
+                {warningMessage.includes('키보드') || warningMessage.includes('keystrokes') ? 
+                  (currentLanguage === 'ko' ? '텍스트 품질 검사' : 'Text Quality Check') :
+                  (currentLanguage === 'ko' ? '콘텐츠 검사' : 'Content Check')
+                }
+              </p>
+              <p className="text-sm mt-1">{warningMessage}</p>
+              {warningMessage.includes('키보드') || warningMessage.includes('keystrokes') ? (
+                <div className="mt-2">
+                  <p className="text-xs font-medium mb-1">
+                    {currentLanguage === 'ko' ? '좋은 아이디어 작성 팁:' : 'Tips for good ideas:'}
+                  </p>
+                  <ul className="text-xs space-y-1">
+                    {getQualityWarning(currentLanguage)[currentLanguage].suggestions.map((tip, index) => (
+                      <li key={index}>• {tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           </AlertDescription>
         </Alert>
