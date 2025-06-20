@@ -121,7 +121,13 @@ export const useInvitations = () => {
         return;
       }
 
-      setInvitations(data || []);
+      // Type assertion to ensure status is properly typed
+      const typedInvitations = (data || []).map(invitation => ({
+        ...invitation,
+        status: invitation.status as 'pending' | 'accepted' | 'expired'
+      })) as Invitation[];
+
+      setInvitations(typedInvitations);
     } catch (error) {
       console.error('Error fetching invitations:', error);
     } finally {
