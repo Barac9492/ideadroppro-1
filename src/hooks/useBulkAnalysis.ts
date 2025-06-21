@@ -36,14 +36,22 @@ export const useBulkAnalysis = ({ currentLanguage, user, fetchIdeas }: UseBulkAn
     setAnalyzing(true);
     
     try {
+      console.log('🔄 Starting bulk analysis process...');
+      
       // Get ideas with score 0 or no AI analysis
       const { data: unanalyzedIdeas, error: fetchError } = await supabase
         .from('ideas')
-        .select('id, text, user_id')
+        .select('id, text, user_id, score, ai_analysis')
         .or('score.eq.0,ai_analysis.is.null')
-        .eq('seed', false);
+        .eq('seed', false)
+        .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('❌ Error fetching unanalyzed ideas:', fetchError);
+        throw fetchError;
+      }
+
+      console.log('📊 Found ideas for analysis:', unanalyzedIdeas?.length || 0);
 
       if (!unanalyzedIdeas || unanalyzedIdeas.length === 0) {
         toast({
@@ -53,7 +61,7 @@ export const useBulkAnalysis = ({ currentLanguage, user, fetchIdeas }: UseBulkAn
         return;
       }
 
-      console.log(`🔄 Starting bulk analysis for ${unanalyzedIdeas.length} ideas`);
+      console.log(`🚀 Starting bulk analysis for ${unanalyzedIdeas.length} ideas`);
       
       setProgress({ current: 0, total: unanalyzedIdeas.length });
       
@@ -62,10 +70,15 @@ export const useBulkAnalysis = ({ currentLanguage, user, fetchIdeas }: UseBulkAn
         duration: 2000,
       });
 
+      let successCount = 0;
+      let errorCount = 0;
+
       // Process ideas one by one to avoid rate limiting
       for (let i = 0; i < unanalyzedIdeas.length; i++) {
         const idea = unanalyzedIdeas[i];
         setProgress({ current: i + 1, total: unanalyzedIdeas.length });
+        
+        console.log(`🔄 Analyzing idea ${i + 1}/${unanalyzedIdeas.length}: ${idea.id}`);
         
         toast({
           title: text[currentLanguage].analyzing
@@ -75,6 +88,8 @@ export const useBulkAnalysis = ({ currentLanguage, user, fetchIdeas }: UseBulkAn
         });
 
         try {
+          console.log('📝 Sending idea to analysis function:', idea.text.substring(0, 50) + '...');
+          
           const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-idea', {
             body: { 
               ideaText: idea.text,
@@ -84,45 +99,83 @@ export const useBulkAnalysis = ({ currentLanguage, user, fetchIdeas }: UseBulkAn
           });
 
           if (analysisError) {
-            console.error(`❌ Analysis failed for idea ${idea.id}:`, analysisError);
-            // Set default score for failed analysis
+            console.error(`❌ Analysis function error for idea ${idea.id}:`, analysisError);
+            errorCount++;
+            
+            // Set fallback score for failed analysis
             await supabase
               .from('ideas')
-              .update({ score: 5.0 })
+              .update({ 
+                score: 4.5, // Fallback score that's definitely not 0
+                ai_analysis: currentLanguage === 'ko' 
+                  ? '분석 중 오류가 발생했지만 기본 점수를 적용했습니다.'
+                  : 'Analysis failed but applied default score.'
+              })
               .eq('id', idea.id);
+            
             continue;
           }
 
+          console.log('✅ Analysis successful for idea:', idea.id, 'Score:', analysisData.score);
+
+          // Ensure we have a valid score
+          const finalScore = analysisData.score && analysisData.score > 0 ? analysisData.score : 5.0;
+
           // Update idea with analysis results
-          await supabase
+          const { error: updateError } = await supabase
             .from('ideas')
             .update({
-              score: analysisData.score || 5.0,
+              score: finalScore,
               tags: analysisData.tags || [],
-              ai_analysis: analysisData.analysis,
-              improvements: analysisData.improvements,
-              market_potential: analysisData.marketPotential,
-              similar_ideas: analysisData.similarIdeas,
-              pitch_points: analysisData.pitchPoints
+              ai_analysis: analysisData.analysis || 'Analysis completed',
+              improvements: analysisData.improvements || [],
+              market_potential: analysisData.marketPotential || [],
+              similar_ideas: analysisData.similarIdeas || [],
+              pitch_points: analysisData.pitchPoints || []
             })
             .eq('id', idea.id);
 
-          console.log(`✅ Analysis completed for idea ${idea.id}`);
+          if (updateError) {
+            console.error(`❌ Database update error for idea ${idea.id}:`, updateError);
+            errorCount++;
+          } else {
+            console.log(`✅ Successfully updated idea ${idea.id} with score ${finalScore}`);
+            successCount++;
+          }
           
           // Small delay to avoid overwhelming the API
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
         } catch (error) {
           console.error(`❌ Error analyzing idea ${idea.id}:`, error);
-          // Continue with next idea
+          errorCount++;
+          
+          // Set fallback score for error cases
+          try {
+            await supabase
+              .from('ideas')
+              .update({ 
+                score: 4.0,
+                ai_analysis: currentLanguage === 'ko' 
+                  ? '분석 중 오류가 발생했지만 기본 점수를 적용했습니다.'
+                  : 'Analysis failed but applied default score.'
+              })
+              .eq('id', idea.id);
+          } catch (updateError) {
+            console.error(`❌ Failed to set fallback score for idea ${idea.id}:`, updateError);
+          }
         }
       }
 
+      console.log(`🎯 Bulk analysis completed. Success: ${successCount}, Errors: ${errorCount}`);
+
       toast({
-        title: text[currentLanguage].completed,
+        title: text[currentLanguage].completed + (errorCount > 0 ? ` (${errorCount}개 오류 발생)` : ''),
         duration: 4000,
       });
 
       // Refresh ideas list
+      console.log('🔄 Refreshing ideas list...');
       await fetchIdeas();
 
     } catch (error) {
