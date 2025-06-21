@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useRemixOperations } from '@/hooks/useRemixOperations';
 import IdeaCardHeader from './IdeaCardHeader';
-import IdeaAnalysisSection from './IdeaAnalysisSection';
+import ImprovedIdeaAnalysis from './ImprovedIdeaAnalysis';
 import GlobalAnalysisSection from './GlobalAnalysisSection';
 import VCAnalysisSection from './VCAnalysisSection';
 import IdeaCardActions from './IdeaCardActions';
@@ -179,7 +179,8 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         ))}
       </div>
 
-      <IdeaAnalysisSection
+      {/* Improved Analysis Section */}
+      <ImprovedIdeaAnalysis
         aiAnalysis={idea.aiAnalysis}
         improvements={idea.improvements}
         marketPotential={idea.marketPotential}
