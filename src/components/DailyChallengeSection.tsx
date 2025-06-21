@@ -36,7 +36,7 @@ const DailyChallengeSection: React.FC<DailyChallengeSectionProps> = ({
                 <Flame className="w-8 h-8 animate-pulse" />
                 <div>
                   <CardTitle className="text-2xl font-bold">
-                    {text.urgentChallenge}
+                    {text[currentLanguage].urgentChallenge}
                   </CardTitle>
                   <p className="text-red-100">{todayChallenge.theme}</p>
                 </div>
@@ -76,7 +76,7 @@ const DailyChallengeSection: React.FC<DailyChallengeSectionProps> = ({
                     {liveParticipants}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600">{text.peopleWorking}</p>
+                <p className="text-sm text-gray-600">{text[currentLanguage].peopleWorking}</p>
               </div>
 
               <div className="text-center">
@@ -116,7 +116,7 @@ const DailyChallengeSection: React.FC<DailyChallengeSectionProps> = ({
             <div className="text-center">
               {hasParticipated ? (
                 <Badge className="bg-green-100 text-green-700 px-6 py-3 text-lg">
-                  ✅ {text.joined}
+                  ✅ {text[currentLanguage].joined}
                 </Badge>
               ) : (
                 <Button
@@ -128,7 +128,7 @@ const DailyChallengeSection: React.FC<DailyChallengeSectionProps> = ({
                   className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-4 text-lg font-bold shadow-lg transform hover:scale-105 transition-all"
                 >
                   <Flame className="w-5 h-5 mr-2" />
-                  {text.joinNow}
+                  {text[currentLanguage].joinNow}
                 </Button>
               )}
             </div>
