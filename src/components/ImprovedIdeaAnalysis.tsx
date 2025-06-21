@@ -58,10 +58,34 @@ const ImprovedIdeaAnalysis: React.FC<ImprovedIdeaAnalysisProps> = ({
     setExpandedSections(newExpanded);
   };
 
-  // Extract key insights from AI analysis (first 2 sentences)
+  // Improved key insights extraction - removes formatting and gets meaningful content
   const getKeyInsights = (analysis: string) => {
-    const sentences = analysis.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    return sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
+    if (!analysis || typeof analysis !== 'string') return '';
+    
+    // Remove markdown formatting, asterisks, colons, and numbers at the start
+    const cleanText = analysis
+      .replace(/\*\*/g, '') // Remove bold formatting
+      .replace(/^\d+\.\s*/gm, '') // Remove numbered lists
+      .replace(/^[\-\*]\s*/gm, '') // Remove bullet points
+      .replace(/^#+\s*/gm, '') // Remove headers
+      .replace(/:\s*$/gm, '') // Remove trailing colons
+      .trim();
+    
+    // Split into sentences and filter out empty ones
+    const sentences = cleanText
+      .split(/[.!?]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 10 && !s.match(/^[\d\s\-\*:#]+$/)); // Filter meaningful sentences
+    
+    // Get first 2 meaningful sentences
+    const meaningfulSentences = sentences.slice(0, 2);
+    
+    if (meaningfulSentences.length === 0) {
+      // Fallback: get first 150 characters
+      return cleanText.substring(0, 150) + (cleanText.length > 150 ? '...' : '');
+    }
+    
+    return meaningfulSentences.join('. ') + (meaningfulSentences.length > 0 ? '.' : '');
   };
 
   const analysisItems = [
@@ -107,9 +131,15 @@ const ImprovedIdeaAnalysis: React.FC<ImprovedIdeaAnalysisProps> = ({
     return null;
   }
 
+  // Debug logging for AI analysis
+  console.log('🔍 AI Analysis data:', {
+    aiAnalysis: aiAnalysis?.substring(0, 100),
+    keyInsights: getKeyInsights(aiAnalysis || '')?.substring(0, 100)
+  });
+
   return (
     <div className="space-y-3">
-      {/* AI Key Insights Summary */}
+      {/* AI Key Insights Summary - Improved extraction */}
       {aiAnalysis && (
         <div className={`rounded-lg p-4 border-2 ${
           isSeed 
@@ -127,7 +157,7 @@ const ImprovedIdeaAnalysis: React.FC<ImprovedIdeaAnalysisProps> = ({
             {expandedSections.has('aiAnalysis') ? aiAnalysis : getKeyInsights(aiAnalysis)}
           </div>
           
-          {aiAnalysis.length > 200 && (
+          {aiAnalysis.length > 150 && (
             <Button
               variant="ghost"
               size="sm"

@@ -29,7 +29,7 @@ const ScoreRefreshHandler: React.FC<ScoreRefreshHandlerProps> = ({
   useEffect(() => {
     // Listen for real-time score updates
     const channel = supabase
-      .channel('score-updates')
+      .channel(`score-updates-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -42,7 +42,7 @@ const ScoreRefreshHandler: React.FC<ScoreRefreshHandlerProps> = ({
           
           // Debounce updates to avoid excessive refreshes
           const now = Date.now();
-          if (now - lastUpdateRef.current > 2000) { // 2 second debounce
+          if (now - lastUpdateRef.current > 1000) { // 1 second debounce
             lastUpdateRef.current = now;
             
             // Clear any existing timeout
@@ -52,6 +52,9 @@ const ScoreRefreshHandler: React.FC<ScoreRefreshHandlerProps> = ({
             
             // Set a brief delay for UI updates
             updateTimeoutRef.current = setTimeout(() => {
+              // Clear all caches before updating
+              clearAllCaches();
+              
               toast({
                 title: text[currentLanguage].scoreUpdated,
                 duration: 2000,
@@ -59,7 +62,7 @@ const ScoreRefreshHandler: React.FC<ScoreRefreshHandlerProps> = ({
               
               // Force refresh
               onScoreUpdate();
-            }, 500);
+            }, 300);
           }
         }
       )
@@ -73,11 +76,11 @@ const ScoreRefreshHandler: React.FC<ScoreRefreshHandlerProps> = ({
     };
   }, [onScoreUpdate, currentLanguage]);
 
-  // Force cache clear function
-  const forceCacheClear = () => {
-    console.log('🧹 Forcing cache clear...');
+  // Enhanced cache clearing function
+  const clearAllCaches = () => {
+    console.log('🧹 Clearing all caches...');
     
-    // Clear browser cache for this domain
+    // Clear browser caches
     if ('caches' in window) {
       caches.keys().then((cacheNames) => {
         cacheNames.forEach((cacheName) => {
@@ -85,6 +88,34 @@ const ScoreRefreshHandler: React.FC<ScoreRefreshHandlerProps> = ({
         });
       });
     }
+    
+    // Clear localStorage entries related to ideas
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('idea') || key.includes('score') || key.includes('supabase'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    } catch (e) {
+      console.warn('Could not clear localStorage:', e);
+    }
+    
+    // Clear sessionStorage
+    try {
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Could not clear sessionStorage:', e);
+    }
+  };
+
+  // Force cache clear function
+  const forceCacheClear = () => {
+    console.log('🧹 Forcing complete cache clear...');
+    
+    clearAllCaches();
     
     // Force reload data
     onScoreUpdate();
@@ -98,9 +129,11 @@ const ScoreRefreshHandler: React.FC<ScoreRefreshHandlerProps> = ({
   // Expose force clear function globally for emergency use
   useEffect(() => {
     (window as any).forceCacheClear = forceCacheClear;
+    (window as any).clearAllCaches = clearAllCaches;
     
     return () => {
       delete (window as any).forceCacheClear;
+      delete (window as any).clearAllCaches;
     };
   }, []);
 

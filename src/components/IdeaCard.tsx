@@ -68,6 +68,15 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     fetchIdeas: async () => {} // This will be handled by parent component
   });
 
+  // Debug logging to catch any issues
+  console.log('🔍 IdeaCard rendering:', {
+    id: idea.id,
+    text: idea.text,
+    score: idea.score,
+    textType: typeof idea.text,
+    textLength: idea.text?.length
+  });
+
   const handleGenerateAnalysis = async () => {
     if (!isAuthenticated) {
       navigate('/auth');
@@ -119,6 +128,12 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     }
   };
 
+  // Ensure we have clean text without any prefixes
+  const cleanIdeaText = String(idea.text || '').trim();
+  
+  // Remove any leading "0" or numbers that might have been accidentally prepended
+  const sanitizedText = cleanIdeaText.replace(/^[0-9]+\s*/, '');
+  
   const showGenerateButton = (!idea.improvements || !idea.marketPotential);
   const isOwner = currentUserId === idea.user_id;
   const showGlobalButton = !idea.globalAnalysis && !!(idea.improvements && idea.marketPotential) && isOwner;
@@ -130,7 +145,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       isMobile ? 'p-4' : 'p-6'
     } mb-4 md:mb-6 border border-slate-200 ${
       idea.seed ? 'border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50' : ''
-    }`}>
+    }`} key={`idea-${idea.id}-${idea.score}-${Date.now()}`}>
       <IdeaCardHeader 
         score={idea.score}
         timestamp={idea.timestamp}
@@ -154,18 +169,18 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         </div>
       )}
 
-      {/* Idea Text */}
-      <p className={`text-slate-800 leading-relaxed mb-4 ${
+      {/* Idea Text - Fixed to prevent "0" prefix issue */}
+      <div className={`text-slate-800 leading-relaxed mb-4 ${
         isMobile ? 'text-base' : 'text-lg'
       }`}>
-        {idea.text}
-      </p>
+        {sanitizedText || '아이디어 내용을 불러올 수 없습니다.'}
+      </div>
 
       {/* Tags */}
       <div className={`flex flex-wrap gap-2 mb-4 ${isMobile ? 'gap-1' : 'gap-2'}`}>
-        {idea.tags.map((tag, index) => (
+        {idea.tags?.map((tag, index) => (
           <span
-            key={index}
+            key={`tag-${index}-${tag}`}
             className={`px-3 py-1 rounded-full font-medium ${
               isMobile ? 'text-xs' : 'text-sm'
             } ${
@@ -176,7 +191,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
           >
             #{tag}
           </span>
-        ))}
+        )) || []}
       </div>
 
       {/* Improved Analysis Section */}
@@ -227,7 +242,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         showRemixButton={showRemixButton}
         remixCount={idea.remix_count}
         chainDepth={idea.remix_chain_depth}
-        originalText={idea.text}
+        originalText={sanitizedText}
         originalScore={idea.score}
         onLike={handleLikeClick}
         onGenerateAnalysis={handleGenerateAnalysis}

@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import EmergencyZeroScoreFixer from '@/components/EmergencyZeroScoreFixer';
 import ScoreRefreshHandler from '@/components/ScoreRefreshHandler';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Trash2 } from 'lucide-react';
 
 const Explore: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = React.useState<'ko' | 'en'>('ko');
@@ -31,12 +31,15 @@ const Explore: React.FC = () => {
 
   const handleEmergencyFixComplete = () => {
     console.log('🔄 Emergency fix completed, refreshing ideas...');
+    // Clear all caches before fetching
+    clearAllCaches();
     fetchIdeas();
   };
 
-  const handleForceRefresh = () => {
-    console.log('🔄 Force refreshing ideas...');
-    // Clear any cached data and force refresh
+  const clearAllCaches = () => {
+    console.log('🧹 Comprehensive cache clearing...');
+    
+    // Clear browser caches
     if ('caches' in window) {
       caches.keys().then((cacheNames) => {
         cacheNames.forEach((cacheName) => {
@@ -44,7 +47,45 @@ const Explore: React.FC = () => {
         });
       });
     }
-    fetchIdeas();
+    
+    // Clear localStorage
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('idea') || key.includes('score') || key.includes('supabase'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    } catch (e) {
+      console.warn('Could not clear localStorage:', e);
+    }
+    
+    // Clear sessionStorage
+    try {
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Could not clear sessionStorage:', e);
+    }
+  };
+
+  const handleForceRefresh = () => {
+    console.log('🔄 Force refreshing ideas with complete cache clear...');
+    clearAllCaches();
+    
+    // Force a hard refresh of the component state
+    setTimeout(() => {
+      fetchIdeas();
+    }, 100);
+  };
+
+  const handleNuclearRefresh = () => {
+    console.log('💥 Nuclear refresh - clearing everything...');
+    clearAllCaches();
+    
+    // Reload the entire page as last resort
+    window.location.reload();
   };
 
   const text = {
@@ -53,14 +94,16 @@ const Explore: React.FC = () => {
       loading: '아이디어를 불러오는 중...',
       noIdeas: '아직 아이디어가 없습니다.',
       refresh: '새로고침',
-      forceRefresh: '강제 새로고침'
+      forceRefresh: '강제 새로고침',
+      nuclearRefresh: '완전 새로고침'
     },
     en: {
       title: 'Explore Ideas',
       loading: 'Loading ideas...',
       noIdeas: 'No ideas yet.',
       refresh: 'Refresh',
-      forceRefresh: 'Force Refresh'
+      forceRefresh: 'Force Refresh',
+      nuclearRefresh: 'Nuclear Refresh'
     }
   };
 
@@ -95,10 +138,20 @@ const Explore: React.FC = () => {
                 variant="outline"
                 size="sm"
                 disabled={loading}
-                className="border-red-200 text-red-600 hover:bg-red-50"
+                className="border-orange-200 text-orange-600 hover:bg-orange-50"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 {text[currentLanguage].forceRefresh}
+              </Button>
+              <Button
+                onClick={handleNuclearRefresh}
+                variant="outline"
+                size="sm"
+                disabled={loading}
+                className="border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className={`h-4 w-4 mr-2`} />
+                {text[currentLanguage].nuclearRefresh}
               </Button>
             </div>
           </div>
@@ -125,7 +178,7 @@ const Explore: React.FC = () => {
           <div className="space-y-6">
             {ideas.map((idea) => (
               <IdeaCard
-                key={`${idea.id}-${idea.score}`}
+                key={`idea-card-${idea.id}-${idea.score}-${idea.text?.length || 0}-${Date.now()}`}
                 idea={idea}
                 currentLanguage={currentLanguage}
                 currentUserId={user?.id}
