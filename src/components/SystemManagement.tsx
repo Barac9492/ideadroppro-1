@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Zap } from 'lucide-react';
+import { Settings, Zap, AlertCircle, CheckCircle, BarChart3 } from 'lucide-react';
 import BulkAnalysisButton from './BulkAnalysisButton';
 import { useIdeas } from '@/hooks/useIdeas';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SystemManagementProps {
   currentLanguage: 'ko' | 'en';
@@ -11,21 +12,84 @@ interface SystemManagementProps {
 
 const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) => {
   const { fetchIdeas } = useIdeas(currentLanguage);
+  const [systemStats, setSystemStats] = useState({
+    totalIdeas: 0,
+    zeroScoreIdeas: 0,
+    analyzedIdeas: 0,
+    loading: true
+  });
 
   const text = {
     ko: {
       title: '시스템 관리',
       description: '시스템 전반의 관리 도구와 분석 기능을 제공합니다.',
       analysisTools: '분석 도구',
-      analysisDescription: '아이디어 분석 및 점수 관리 도구'
+      analysisDescription: '아이디어 분석 및 점수 관리 도구',
+      systemStatus: '시스템 상태',
+      totalIdeas: '전체 아이디어',
+      zeroScoreIdeas: '0점 아이디어',
+      analyzedIdeas: '분석 완료',
+      systemHealthy: '시스템 정상',
+      systemNeedsAttention: '관리 필요',
+      refreshStats: '통계 새로고침'
     },
     en: {
       title: 'System Management',
       description: 'Provides system-wide management tools and analysis features.',
       analysisTools: 'Analysis Tools',
-      analysisDescription: 'Idea analysis and score management tools'
+      analysisDescription: 'Idea analysis and score management tools',
+      systemStatus: 'System Status',
+      totalIdeas: 'Total Ideas',
+      zeroScoreIdeas: '0-Score Ideas',
+      analyzedIdeas: 'Analyzed Ideas',
+      systemHealthy: 'System Healthy',
+      systemNeedsAttention: 'Needs Attention',
+      refreshStats: 'Refresh Stats'
     }
   };
+
+  const fetchSystemStats = async () => {
+    try {
+      setSystemStats(prev => ({ ...prev, loading: true }));
+      
+      // Get total ideas count
+      const { count: totalIdeas } = await supabase
+        .from('ideas')
+        .select('*', { count: 'exact', head: true })
+        .eq('seed', false);
+
+      // Get zero score ideas count
+      const { count: zeroScoreIdeas } = await supabase
+        .from('ideas')
+        .select('*', { count: 'exact', head: true })
+        .or('score.eq.0,score.is.null')
+        .eq('seed', false);
+
+      // Get analyzed ideas count
+      const { count: analyzedIdeas } = await supabase
+        .from('ideas')
+        .select('*', { count: 'exact', head: true })
+        .gt('score', 0)
+        .not('ai_analysis', 'is', null)
+        .eq('seed', false);
+
+      setSystemStats({
+        totalIdeas: totalIdeas || 0,
+        zeroScoreIdeas: zeroScoreIdeas || 0,
+        analyzedIdeas: analyzedIdeas || 0,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error fetching system stats:', error);
+      setSystemStats(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  useEffect(() => {
+    fetchSystemStats();
+  }, []);
+
+  const isSystemHealthy = systemStats.zeroScoreIdeas === 0;
 
   return (
     <div className="space-y-6">
@@ -41,6 +105,85 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
             {text[currentLanguage].description}
           </p>
 
+          {/* System Status Dashboard */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5" />
+              <span>{text[currentLanguage].systemStatus}</span>
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="bg-blue-100 p-2 rounded-full">
+                      <BarChart3 className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">{text[currentLanguage].totalIdeas}</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {systemStats.loading ? '...' : systemStats.totalIdeas}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className={`${systemStats.zeroScoreIdeas > 0 ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className={`p-2 rounded-full ${systemStats.zeroScoreIdeas > 0 ? 'bg-orange-100' : 'bg-green-100'}`}>
+                      <AlertCircle className={`h-4 w-4 ${systemStats.zeroScoreIdeas > 0 ? 'text-orange-600' : 'text-green-600'}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">{text[currentLanguage].zeroScoreIdeas}</p>
+                      <p className={`text-2xl font-bold ${systemStats.zeroScoreIdeas > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                        {systemStats.loading ? '...' : systemStats.zeroScoreIdeas}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="bg-green-100 p-2 rounded-full">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">{text[currentLanguage].analyzedIdeas}</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {systemStats.loading ? '...' : systemStats.analyzedIdeas}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="flex items-center space-x-2 mb-4">
+              {isSystemHealthy ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-green-600 font-semibold">{text[currentLanguage].systemHealthy}</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-5 w-5 text-orange-600" />
+                  <span className="text-orange-600 font-semibold">{text[currentLanguage].systemNeedsAttention}</span>
+                </>
+              )}
+              <button
+                onClick={fetchSystemStats}
+                className="ml-auto px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                {text[currentLanguage].refreshStats}
+              </button>
+            </div>
+          </div>
+
+          {/* Analysis Tools */}
           <div className="space-y-4">
             <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
               <CardHeader>
@@ -55,7 +198,10 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
                 </p>
                 <BulkAnalysisButton 
                   currentLanguage={currentLanguage}
-                  fetchIdeas={fetchIdeas}
+                  fetchIdeas={() => {
+                    fetchIdeas();
+                    fetchSystemStats(); // Refresh stats after analysis
+                  }}
                 />
               </CardContent>
             </Card>
