@@ -6,6 +6,7 @@ import HeroSection from '@/components/HeroSection';
 import DailyXPDashboard from '@/components/DailyXPDashboard';
 import LiveMissionTracker from '@/components/LiveMissionTracker';
 import RecentIdeasPreview from '@/components/RecentIdeasPreview';
+import BulkAnalysisButton from '@/components/BulkAnalysisButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
