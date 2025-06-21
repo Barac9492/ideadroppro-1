@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,10 +5,11 @@ import Header from '@/components/Header';
 import InfluenceScoreDisplay from '@/components/InfluenceScoreDisplay';
 import InvitationManager from '@/components/InvitationManager';
 import TopInfluencersBoard from '@/components/TopInfluencersBoard';
+import YearlyAchievements from '@/components/YearlyAchievements';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Users, Zap, Gift } from 'lucide-react';
+import { TrendingUp, Users, Zap, Gift, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -62,11 +62,15 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">개요</TabsTrigger>
             <TabsTrigger value="invitations">초대 관리</TabsTrigger>
             <TabsTrigger value="rankings">순위</TabsTrigger>
             <TabsTrigger value="history">활동 기록</TabsTrigger>
+            <TabsTrigger value="achievements">
+              <Calendar className="w-4 h-4 mr-1" />
+              연간 성과
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -160,6 +164,10 @@ const Dashboard = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="achievements">
+            <YearlyAchievements currentLanguage={currentLanguage} />
           </TabsContent>
         </Tabs>
       </div>

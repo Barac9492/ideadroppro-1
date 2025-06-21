@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Globe, LogOut, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import InfluenceScoreDisplay from './InfluenceScoreDisplay';
+import LiveMissionTracker from './LiveMissionTracker';
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
@@ -72,6 +72,13 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
             </Badge>
           </div>
 
+          {/* Center - Live Mission Tracker for authenticated users */}
+          {user && (
+            <div className="hidden md:block flex-1 max-w-md mx-8">
+              <LiveMissionTracker currentLanguage={currentLanguage} />
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex items-center space-x-4">
             {/* Language Toggle */}
@@ -123,6 +130,13 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
             )}
           </div>
         </div>
+
+        {/* Mobile Mission Tracker */}
+        {user && (
+          <div className="md:hidden mt-3">
+            <LiveMissionTracker currentLanguage={currentLanguage} />
+          </div>
+        )}
       </div>
     </header>
   );
