@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface IdeaData {
   id: string;
-  content: string;
+  text: string;
   user_id: string;
   likes_count: number;
   created_at: string;
@@ -23,12 +23,18 @@ export const useRealIdeaData = () => {
     try {
       const { data, error } = await supabase
         .from('ideas')
-        .select('id, content, user_id, likes_count, created_at, has_analysis')
+        .select('id, text, user_id, likes_count, created_at, ai_analysis')
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
-      setRealIdeas(data || []);
+      
+      const ideasWithAnalysis = (data || []).map(idea => ({
+        ...idea,
+        has_analysis: !!idea.ai_analysis
+      }));
+      
+      setRealIdeas(ideasWithAnalysis);
     } catch (error) {
       console.error('Error fetching real ideas:', error);
     } finally {

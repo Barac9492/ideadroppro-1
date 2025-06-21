@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Shield, Eye, MessageCircle, Briefcase, CheckCircle, Users } from 'lucide-react';
+import { VC_PROFILES, getVCByIndex } from '@/utils/vcConfig';
 
 interface VCVerificationSectionProps {
   currentLanguage: 'ko' | 'en';
@@ -41,42 +42,50 @@ const VCVerificationSection: React.FC<VCVerificationSectionProps> = ({ currentLa
   const vcProfiles = [
     {
       name: '김OO 파트너',
-      company: 'Green Ventures',
-      avatar: 'K',
-      focusArea: 'ESG, CleanTech',
+      company: currentLanguage === 'ko' ? VC_PROFILES[0].name : VC_PROFILES[0].nameEn,
+      avatar: getVCByIndex(0).avatar,
+      focusArea: currentLanguage === 'ko' ? 
+        VC_PROFILES[0].specialties.slice(0, 2).join(', ') : 
+        VC_PROFILES[0].specialtiesEn.slice(0, 2).join(', '),
       ideasReviewed: 47,
       connectionsToday: 3,
-      interests: ['친환경', '순환경제', 'ESG'],
+      interests: currentLanguage === 'ko' ? VC_PROFILES[0].specialties : VC_PROFILES[0].specialtiesEn,
       isActive: true
     },
     {
       name: '이OO 대표',
-      company: 'Tech Capital',
-      avatar: 'L',
-      focusArea: 'AI, Healthcare',
+      company: currentLanguage === 'ko' ? VC_PROFILES[1].name : VC_PROFILES[1].nameEn,
+      avatar: getVCByIndex(1).avatar,
+      focusArea: currentLanguage === 'ko' ? 
+        VC_PROFILES[1].specialties.slice(0, 2).join(', ') : 
+        VC_PROFILES[1].specialtiesEn.slice(0, 2).join(', '),
       ideasReviewed: 62,
       connectionsToday: 5,
-      interests: ['AI', '헬스케어', 'B2B'],
+      interests: currentLanguage === 'ko' ? VC_PROFILES[1].specialties : VC_PROFILES[1].specialtiesEn,
       isActive: true
     },
     {
       name: '박OO 심사역',
-      company: 'Startup Alliance',
-      avatar: 'P',
-      focusArea: 'Consumer, Pet-tech',
+      company: currentLanguage === 'ko' ? VC_PROFILES[2].name : VC_PROFILES[2].nameEn,
+      avatar: getVCByIndex(2).avatar,
+      focusArea: currentLanguage === 'ko' ? 
+        VC_PROFILES[2].specialties.slice(0, 2).join(', ') : 
+        VC_PROFILES[2].specialtiesEn.slice(0, 2).join(', '),
       ideasReviewed: 34,
       connectionsToday: 2,
-      interests: ['펫테크', 'B2C', '소비재'],
+      interests: currentLanguage === 'ko' ? VC_PROFILES[2].specialties : VC_PROFILES[2].specialtiesEn,
       isActive: false
     },
     {
       name: '정OO 파트너',
-      company: 'Innovation Fund',
-      avatar: 'J',
-      focusArea: 'Fintech, Blockchain',
+      company: currentLanguage === 'ko' ? VC_PROFILES[3].name : VC_PROFILES[3].nameEn,
+      avatar: getVCByIndex(3).avatar,
+      focusArea: currentLanguage === 'ko' ? 
+        VC_PROFILES[3].specialties.slice(0, 2).join(', ') : 
+        VC_PROFILES[3].specialtiesEn.slice(0, 2).join(', '),
       ideasReviewed: 51,
       connectionsToday: 4,
-      interests: ['핀테크', '블록체인', 'Web3'],
+      interests: currentLanguage === 'ko' ? VC_PROFILES[3].specialties : VC_PROFILES[3].specialtiesEn,
       isActive: true
     }
   ];
@@ -121,8 +130,8 @@ const VCVerificationSection: React.FC<VCVerificationSectionProps> = ({ currentLa
 
               {/* VC Avatar & Basic Info */}
               <div className="text-center mb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-white text-xl font-bold">{vc.avatar}</span>
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                  {vc.avatar}
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">{vc.name}</h3>
                 <div className="flex items-center justify-center space-x-2 mb-2">

@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Crown, MessageCircle, Users, TrendingUp, Zap } from 'lucide-react';
+import { VC_PROFILES, getVCByIndex } from '@/utils/vcConfig';
 
 interface VCActivitySectionProps {
   currentLanguage: 'ko' | 'en';
@@ -40,31 +41,34 @@ const VCActivitySection: React.FC<VCActivitySectionProps> = ({ currentLanguage }
 
   const vcData = [
     {
-      name: 'GreenTech Ventures',
-      avatar: '🌱',
+      vc: getVCByIndex(0),
       remixes: 23,
       comments: 45,
       dmRequests: 12,
-      badge: 'Top Remixer',
-      picks: ['AI 농업 자동화', '탄소 중립 블록체인', '스마트 에너지 관리']
+      badge: currentLanguage === 'ko' ? 'Top 리믹서' : 'Top Remixer',
+      picks: currentLanguage === 'ko' ? 
+        ['AI 농업 자동화', '탄소 중립 블록체인', '스마트 에너지 관리'] :
+        ['AI Agriculture Automation', 'Carbon Neutral Blockchain', 'Smart Energy Management']
     },
     {
-      name: 'Innovation Capital',
-      avatar: '⚡',
+      vc: getVCByIndex(1),
       remixes: 18,
       comments: 38,
       dmRequests: 15,
-      badge: 'Active Curator',
-      picks: ['B2B SaaS 확장', '모바일 헬쓰케어', '에듀테크 플랫폼']
+      badge: currentLanguage === 'ko' ? '액티브 큐레이터' : 'Active Curator',
+      picks: currentLanguage === 'ko' ?
+        ['B2B SaaS 확장', '모바일 헬쓰케어', '에듀테크 플랫폼'] :
+        ['B2B SaaS Expansion', 'Mobile Healthcare', 'EdTech Platform']
     },
     {
-      name: 'Future Fund',
-      avatar: '🚀',
+      vc: getVCByIndex(2),
       remixes: 15,
       comments: 29,
       dmRequests: 8,
-      badge: 'Early Adopter',
-      picks: ['메타버스 커머스', '로봇 자동화', 'AI 콘텐츠 생성']
+      badge: currentLanguage === 'ko' ? '얼리 어답터' : 'Early Adopter',
+      picks: currentLanguage === 'ko' ?
+        ['메타버스 커머스', '로봇 자동화', 'AI 콘텐츠 생성'] :
+        ['Metaverse Commerce', 'Robot Automation', 'AI Content Generation']
     }
   ];
 
@@ -89,7 +93,7 @@ const VCActivitySection: React.FC<VCActivitySectionProps> = ({ currentLanguage }
 
           {/* VC Activity Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {vcData.map((vc, index) => (
+            {vcData.map((data, index) => (
               <div 
                 key={index}
                 className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-indigo-100"
@@ -97,14 +101,14 @@ const VCActivitySection: React.FC<VCActivitySectionProps> = ({ currentLanguage }
                 {/* VC Header */}
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-2xl">
-                    {vc.avatar}
+                    {data.vc.avatar}
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-lg">
-                      {vc.name}
+                      {currentLanguage === 'ko' ? data.vc.name : data.vc.nameEn}
                     </h3>
                     <Badge className="bg-green-100 text-green-700">
-                      {vc.badge}
+                      {data.badge}
                     </Badge>
                   </div>
                 </div>
@@ -113,7 +117,7 @@ const VCActivitySection: React.FC<VCActivitySectionProps> = ({ currentLanguage }
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">
-                      {vc.remixes}
+                      {data.remixes}
                     </div>
                     <div className="text-sm text-gray-600">
                       {text[currentLanguage].remixes}
@@ -122,7 +126,7 @@ const VCActivitySection: React.FC<VCActivitySectionProps> = ({ currentLanguage }
                   
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">
-                      {vc.comments}
+                      {data.comments}
                     </div>
                     <div className="text-sm text-gray-600">
                       {text[currentLanguage].comments}
@@ -131,7 +135,7 @@ const VCActivitySection: React.FC<VCActivitySectionProps> = ({ currentLanguage }
                   
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {vc.dmRequests}
+                      {data.dmRequests}
                     </div>
                     <div className="text-sm text-gray-600">
                       {text[currentLanguage].dmRequests}
@@ -146,7 +150,7 @@ const VCActivitySection: React.FC<VCActivitySectionProps> = ({ currentLanguage }
                     {text[currentLanguage].curation}
                   </h4>
                   <div className="space-y-2">
-                    {vc.picks.slice(0, 2).map((pick, pickIndex) => (
+                    {data.picks.slice(0, 2).map((pick, pickIndex) => (
                       <div key={pickIndex} className="text-sm text-gray-700">
                         • {pick}
                       </div>

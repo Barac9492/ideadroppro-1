@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import {
   getCurrentKSTTime 
 } from '@/utils/vcBehaviorUtils';
 import { useRealIdeaData } from '@/hooks/useRealIdeaData';
+import { VC_PROFILES, getRandomVC, getVCByIndex } from '@/utils/vcConfig';
 
 interface VCEvent {
   id: string;
@@ -51,7 +51,9 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
       minutesAgo: '분 전',
       vcOnline: '명의 VC 온라인',
       realIdea: '실제 아이디어',
-      officeHours: '업무시간 외'
+      officeHours: '업무시간 외',
+      weeklyPicks: '이번 주 VC 추천 아이디어',
+      viewAll: '전체 보기'
     },
     en: {
       vcReading: 'is reading',
@@ -64,20 +66,11 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
       minutesAgo: 'min ago',
       vcOnline: 'VCs online',
       realIdea: 'real idea',
-      officeHours: 'outside office hours'
+      officeHours: 'outside office hours',
+      weeklyPicks: 'Weekly VC Picks',
+      viewAll: 'View All'
     }
   };
-
-  const mockVCs = [
-    { name: 'GreenTech Ventures', avatar: '🌱' },
-    { name: 'Innovation Capital', avatar: '⚡' },
-    { name: 'Future Fund', avatar: '🚀' },
-    { name: 'TechStars Korea', avatar: '⭐' },
-    { name: 'Kakao Ventures', avatar: '💬' },
-    { name: 'Naver D2SF', avatar: '🔍' },
-    { name: 'Samsung Ventures', avatar: '📱' },
-    { name: 'LG Technology Ventures', avatar: '🔬' }
-  ];
 
   const generateRealisticEvent = (): VCEvent | null => {
     const activityLevel = getVCActivityLevel();
@@ -87,7 +80,7 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
       return null;
     }
 
-    const vc = mockVCs[Math.floor(Math.random() * mockVCs.length)];
+    const vc = getRandomVC();
     const timeBasedTypes = getTimeBasedEventTypes();
     const type = timeBasedTypes[Math.floor(Math.random() * timeBasedTypes.length)];
     
@@ -123,11 +116,11 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
     return {
       id: Date.now().toString() + Math.random(),
       type,
-      vcName: vc.name,
+      vcName: currentLanguage === 'ko' ? vc.name : vc.nameEn,
       vcAvatar: vc.avatar,
       timestamp: new Date(),
       ideaId: selectedIdea?.id || 'idea-' + Math.floor(Math.random() * 100),
-      ideaContent: selectedIdea?.content,
+      ideaContent: selectedIdea?.text,
       message,
       isReal: !!selectedIdea
     };
@@ -333,24 +326,27 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
         <CardContent className="p-4">
           <h3 className="font-semibold text-purple-800 mb-3 flex items-center">
             <Crown className="w-4 h-4 mr-2" />
-            이번 주 VC 추천 아이디어
+            {text[currentLanguage].weeklyPicks}
           </h3>
           <div className="space-y-2">
-            {popularIdeas.slice(0, 3).map((idea, index) => (
-              <div key={idea.id} className="text-sm text-purple-700">
-                {mockVCs[index]?.avatar} {mockVCs[index]?.name}: "{idea.content.substring(0, 30)}..."
-              </div>
-            ))}
+            {popularIdeas.slice(0, 3).map((idea, index) => {
+              const vc = getVCByIndex(index);
+              return (
+                <div key={idea.id} className="text-sm text-purple-700">
+                  {vc.avatar} {currentLanguage === 'ko' ? vc.name : vc.nameEn}: "{idea.text.substring(0, 30)}..."
+                </div>
+              );
+            })}
             {popularIdeas.length === 0 && (
               <>
                 <div className="text-sm text-purple-700">
-                  🌱 GreenTech: "AI 농업 자동화 플랫폼"
+                  💼 대형 VC: "AI 농업 자동화 플랫폼"
                 </div>
                 <div className="text-sm text-purple-700">
-                  ⚡ Innovation Capital: "탄소 중립 블록체인"
+                  📊 초기 전문 VC: "탄소 중립 블록체인"
                 </div>
                 <div className="text-sm text-purple-700">
-                  🚀 Future Fund: "스마트 에너지 관리"
+                  📈 성장 단계 VC: "스마트 에너지 관리"
                 </div>
               </>
             )}
@@ -359,7 +355,7 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
             size="sm" 
             className="mt-3 bg-purple-600 hover:bg-purple-700 text-white"
           >
-            전체 보기
+            {text[currentLanguage].viewAll}
           </Button>
         </CardContent>
       </Card>

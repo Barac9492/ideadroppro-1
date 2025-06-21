@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building2, Eye, MessageSquare, Heart, TrendingUp, Clock, Zap } from 'lucide-react';
 import VCPrivacyIndicator from './VCPrivacyIndicator';
 import VCStatsDisplay from './VCStatsDisplay';
+import { VC_PROFILES, getVCByIndex } from '@/utils/vcConfig';
 
 interface VCProfile {
   id: string;
@@ -42,11 +43,11 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
     {
       id: 'vc-1',
       name: '김상현',
-      company: 'GreenTech Ventures',
-      companyType: '대형 VC',
-      fundSize: '시리즈 A-B 전문',
+      company: currentLanguage === 'ko' ? VC_PROFILES[0].name : VC_PROFILES[0].nameEn,
+      companyType: currentLanguage === 'ko' ? VC_PROFILES[0].type : VC_PROFILES[0].typeEn,
+      fundSize: currentLanguage === 'ko' ? VC_PROFILES[0].fundSize : VC_PROFILES[0].fundSizeEn,
       position: '심사역',
-      specialties: ['펫테크', 'ESG', '헬스케어'],
+      specialties: currentLanguage === 'ko' ? VC_PROFILES[0].specialties : VC_PROFILES[0].specialtiesEn,
       avatar: '/api/placeholder/60/60',
       privacyLevel: 'partial',
       stats: {
@@ -75,11 +76,11 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
     {
       id: 'vc-2',
       name: 'Anonymous VC',
-      company: 'Innovation Capital',
-      companyType: '성장단계 펀드',
-      fundSize: '시드-시리즈 A 리더',
+      company: currentLanguage === 'ko' ? VC_PROFILES[1].name : VC_PROFILES[1].nameEn,
+      companyType: currentLanguage === 'ko' ? VC_PROFILES[1].type : VC_PROFILES[1].typeEn,
+      fundSize: currentLanguage === 'ko' ? VC_PROFILES[1].fundSize : VC_PROFILES[1].fundSizeEn,
       position: '파트너',
-      specialties: ['핀테크', 'AI/ML', '블록체인'],
+      specialties: currentLanguage === 'ko' ? VC_PROFILES[1].specialties : VC_PROFILES[1].specialtiesEn,
       avatar: '/api/placeholder/60/60',
       privacyLevel: 'anonymous',
       stats: {
@@ -102,11 +103,11 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
     {
       id: 'vc-3',
       name: '박지현',
-      company: 'Future Vision Partners',
-      companyType: '스타트업 전문',
-      fundSize: '프리시드-시드 집중',
+      company: currentLanguage === 'ko' ? VC_PROFILES[2].name : VC_PROFILES[2].nameEn,
+      companyType: currentLanguage === 'ko' ? VC_PROFILES[2].type : VC_PROFILES[2].typeEn,
+      fundSize: currentLanguage === 'ko' ? VC_PROFILES[2].fundSize : VC_PROFILES[2].fundSizeEn,
       position: '대표',
-      specialties: ['딥테크', '로보틱스', 'IoT'],
+      specialties: currentLanguage === 'ko' ? VC_PROFILES[2].specialties : VC_PROFILES[2].specialtiesEn,
       avatar: '/api/placeholder/60/60',
       privacyLevel: 'verified',
       stats: {
