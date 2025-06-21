@@ -1,68 +1,112 @@
 
-import React, { useState } from 'react';
-import Header from '@/components/Header';
-import LiveFeedSection from '@/components/LiveFeedSection';
-import { useAuth } from '@/contexts/AuthContext';
+import React from 'react';
 import { useIdeas } from '@/hooks/useIdeas';
-import { useStreaks } from '@/hooks/useStreaks';
-import { useInfluenceScore } from '@/hooks/useInfluenceScore';
-import { useDailyXP } from '@/hooks/useDailyXP';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
+import IdeaCard from '@/components/IdeaCard';
+import Header from '@/components/Header';
+import EmergencyZeroScoreFixer from '@/components/EmergencyZeroScoreFixer';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
-const Explore = () => {
-  const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
+const Explore: React.FC = () => {
+  const [currentLanguage, setCurrentLanguage] = React.useState<'ko' | 'en'>('ko');
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { ideas, loading, toggleLike } = useIdeas(currentLanguage);
-  const { updateStreak } = useStreaks(currentLanguage);
-  const { scoreActions } = useInfluenceScore();
-  const { updateMissionProgress, awardXP } = useDailyXP();
+  const { isAdmin } = useUserRole();
+  const {
+    ideas,
+    loading,
+    fetchIdeas,
+    handleLike,
+    handleGenerateAnalysis,
+    handleGenerateGlobalAnalysis,
+    handleSaveFinalVerdict,
+    handleDelete
+  } = useIdeas(currentLanguage);
 
-  const handleLanguageToggle = () => {
+  const toggleLanguage = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  const handleLike = async (ideaId: string) => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    
-    try {
-      await toggleLike(ideaId);
-      await scoreActions.ideaLike();
-      updateMissionProgress('like_ideas');
-      await awardXP(10, '아이디어 좋아요');
-    } catch (error) {
-      console.error('Error liking idea:', error);
+  const handleEmergencyFixComplete = () => {
+    console.log('🔄 Emergency fix completed, refreshing ideas...');
+    fetchIdeas();
+  };
+
+  const text = {
+    ko: {
+      title: '아이디어 탐색',
+      loading: '아이디어를 불러오는 중...',
+      noIdeas: '아직 아이디어가 없습니다.',
+      refresh: '새로고침'
+    },
+    en: {
+      title: 'Explore Ideas',
+      loading: 'Loading ideas...',
+      noIdeas: 'No ideas yet.',
+      refresh: 'Refresh'
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 md:h-32 md:w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-slate-600">아이디어를 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      <Header 
-        currentLanguage={currentLanguage}
-        onLanguageToggle={handleLanguageToggle}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+      <Header currentLanguage={currentLanguage} onLanguageToggle={toggleLanguage} />
       
-      {/* Main Ideas Feed */}
-      <LiveFeedSection 
-        ideas={ideas}
-        currentLanguage={currentLanguage}
-        onLike={handleLike}
-        isAuthenticated={!!user}
-      />
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              {text[currentLanguage].title}
+            </h1>
+            <Button
+              onClick={fetchIdeas}
+              variant="outline"
+              size="sm"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {text[currentLanguage].refresh}
+            </Button>
+          </div>
+
+          {/* Emergency Zero Score Fixer - Only show for admins */}
+          {isAdmin && (
+            <EmergencyZeroScoreFixer 
+              currentLanguage={currentLanguage}
+              onComplete={handleEmergencyFixComplete}
+            />
+          )}
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">{text[currentLanguage].loading}</p>
+          </div>
+        ) : ideas.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">{text[currentLanguage].noIdeas}</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {ideas.map((idea) => (
+              <IdeaCard
+                key={idea.id}
+                idea={idea}
+                currentLanguage={currentLanguage}
+                currentUserId={user?.id}
+                onLike={handleLike}
+                onGenerateAnalysis={handleGenerateAnalysis}
+                onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
+                onSaveFinalVerdict={handleSaveFinalVerdict}
+                onDelete={handleDelete}
+                isAdmin={isAdmin}
+                isAuthenticated={!!user}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
