@@ -58,34 +58,64 @@ const ImprovedIdeaAnalysis: React.FC<ImprovedIdeaAnalysisProps> = ({
     setExpandedSections(newExpanded);
   };
 
-  // Improved key insights extraction - removes formatting and gets meaningful content
-  const getKeyInsights = (analysis: string) => {
-    if (!analysis || typeof analysis !== 'string') return '';
-    
-    // Remove markdown formatting, asterisks, colons, and numbers at the start
-    const cleanText = analysis
-      .replace(/\*\*/g, '') // Remove bold formatting
-      .replace(/^\d+\.\s*/gm, '') // Remove numbered lists
-      .replace(/^[\-\*]\s*/gm, '') // Remove bullet points
-      .replace(/^#+\s*/gm, '') // Remove headers
-      .replace(/:\s*$/gm, '') // Remove trailing colons
-      .trim();
-    
-    // Split into sentences and filter out empty ones
-    const sentences = cleanText
-      .split(/[.!?]+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 10 && !s.match(/^[\d\s\-\*:#]+$/)); // Filter meaningful sentences
-    
-    // Get first 2 meaningful sentences
-    const meaningfulSentences = sentences.slice(0, 2);
-    
-    if (meaningfulSentences.length === 0) {
-      // Fallback: get first 150 characters
-      return cleanText.substring(0, 150) + (cleanText.length > 150 ? '...' : '');
+  // 완전히 개선된 핵심 인사이트 추출 함수
+  const getKeyInsights = (analysis: string): string => {
+    if (!analysis || typeof analysis !== 'string') {
+      return '';
     }
     
-    return meaningfulSentences.join('. ') + (meaningfulSentences.length > 0 ? '.' : '');
+    console.log('🔍 Original AI Analysis:', analysis.substring(0, 200));
+    
+    // 1단계: 모든 마크다운 형식 제거
+    let cleanText = analysis
+      .replace(/\*\*/g, '') // 볼드 제거
+      .replace(/\*/g, '') // 이탤릭 제거
+      .replace(/#{1,6}\s*/g, '') // 헤더 제거
+      .replace(/^\d+\.\s*/gm, '') // 번호 목록 제거
+      .replace(/^[\-\*\+]\s*/gm, '') // 불렛 포인트 제거
+      .replace(/:\s*$/gm, '') // 끝의 콜론 제거
+      .replace(/\[.*?\]\(.*?\)/g, '') // 링크 제거
+      .replace(/`{1,3}.*?`{1,3}/gs, '') // 코드 블록 제거
+      .trim();
+    
+    // 2단계: 의미없는 패턴 제거
+    cleanText = cleanText
+      .replace(/^(개선\s*사항|특징|장점|단점|분석|요약|결론).*?:/gm, '') // 제목 패턴 제거
+      .replace(/^\([^)]*\)\s*/gm, '') // 괄호 안 숫자/텍스트 제거
+      .replace(/^[\d\s\-\*:#\(\)]+$/gm, '') // 형식 문자만 있는 줄 제거
+      .replace(/\n{3,}/g, '\n\n') // 과도한 줄바꿈 정리
+      .trim();
+    
+    // 3단계: 의미있는 문장 추출
+    const sentences = cleanText
+      .split(/[.!?]\s+/)
+      .map(sentence => sentence.trim())
+      .filter(sentence => {
+        // 최소 15자 이상, 실질적 내용이 있는 문장만
+        return sentence.length >= 15 && 
+               !sentence.match(/^[\d\s\-\*:#\(\)]+$/) && // 형식 문자만 있는 것 제외
+               !sentence.match(/^(개선|특징|장점|단점|분석|요약|결론)/i) && // 제목성 문장 제외
+               sentence.includes(' '); // 단어가 여러 개 있는 문장만
+      });
+    
+    console.log('🔍 Extracted sentences:', sentences);
+    
+    // 4단계: 최고 품질 문장 선별 (첫 2개)
+    const bestSentences = sentences.slice(0, 2);
+    
+    if (bestSentences.length === 0) {
+      // 대안: 원본에서 가장 긴 연속 텍스트 블록 찾기
+      const blocks = cleanText.split('\n').filter(block => block.trim().length > 20);
+      const longestBlock = blocks.reduce((prev, current) => 
+        current.length > prev.length ? current : prev, '');
+      
+      return longestBlock.substring(0, 120) + (longestBlock.length > 120 ? '...' : '');
+    }
+    
+    const result = bestSentences.join('. ') + '.';
+    console.log('🔍 Final key insights:', result);
+    
+    return result;
   };
 
   const analysisItems = [
@@ -132,15 +162,18 @@ const ImprovedIdeaAnalysis: React.FC<ImprovedIdeaAnalysisProps> = ({
   }
 
   // Debug logging for AI analysis
-  console.log('🔍 AI Analysis data:', {
-    aiAnalysis: aiAnalysis?.substring(0, 100),
-    keyInsights: getKeyInsights(aiAnalysis || '')?.substring(0, 100)
+  const keyInsights = aiAnalysis ? getKeyInsights(aiAnalysis) : '';
+  console.log('🔍 AI Analysis processing:', {
+    hasAnalysis: !!aiAnalysis,
+    analysisLength: aiAnalysis?.length,
+    keyInsightsLength: keyInsights.length,
+    keyInsightsPreview: keyInsights.substring(0, 50)
   });
 
   return (
     <div className="space-y-3">
-      {/* AI Key Insights Summary - Improved extraction */}
-      {aiAnalysis && (
+      {/* AI Key Insights Summary - 완전히 개선된 추출 */}
+      {aiAnalysis && keyInsights && (
         <div className={`rounded-lg p-4 border-2 ${
           isSeed 
             ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200'
@@ -154,10 +187,10 @@ const ImprovedIdeaAnalysis: React.FC<ImprovedIdeaAnalysisProps> = ({
           </div>
           
           <div className="text-sm text-gray-700 leading-relaxed">
-            {expandedSections.has('aiAnalysis') ? aiAnalysis : getKeyInsights(aiAnalysis)}
+            {expandedSections.has('aiAnalysis') ? aiAnalysis : keyInsights}
           </div>
           
-          {aiAnalysis.length > 150 && (
+          {aiAnalysis.length > keyInsights.length && (
             <Button
               variant="ghost"
               size="sm"

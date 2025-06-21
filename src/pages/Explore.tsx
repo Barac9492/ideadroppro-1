@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import EmergencyZeroScoreFixer from '@/components/EmergencyZeroScoreFixer';
 import ScoreRefreshHandler from '@/components/ScoreRefreshHandler';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Trash2 } from 'lucide-react';
+import { RefreshCw, Trash2, Zap } from 'lucide-react';
 
 const Explore: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = React.useState<'ko' | 'en'>('ko');
@@ -32,60 +32,111 @@ const Explore: React.FC = () => {
   const handleEmergencyFixComplete = () => {
     console.log('🔄 Emergency fix completed, refreshing ideas...');
     // Clear all caches before fetching
-    clearAllCaches();
+    performComprehensiveCacheClear();
     fetchIdeas();
   };
 
-  const clearAllCaches = () => {
-    console.log('🧹 Comprehensive cache clearing...');
+  // 강화된 캐시 무효화 시스템
+  const performComprehensiveCacheClear = () => {
+    console.log('🧹 Performing comprehensive cache clearing...');
     
-    // Clear browser caches
+    // 1. Service Worker 캐시 완전 삭제
     if ('caches' in window) {
-      caches.keys().then((cacheNames) => {
-        cacheNames.forEach((cacheName) => {
-          caches.delete(cacheName);
+      caches.keys().then(async (cacheNames) => {
+        const deletePromises = cacheNames.map(cacheName => {
+          console.log('🗑️ Deleting cache:', cacheName);
+          return caches.delete(cacheName);
         });
-      });
+        await Promise.all(deletePromises);
+        console.log('✅ All service worker caches cleared');
+      }).catch(e => console.warn('Could not clear service worker caches:', e));
     }
     
-    // Clear localStorage
+    // 2. localStorage 완전 정리
     try {
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && (key.includes('idea') || key.includes('score') || key.includes('supabase'))) {
+        if (key && (
+          key.includes('idea') || 
+          key.includes('score') || 
+          key.includes('supabase') ||
+          key.includes('analysis') ||
+          key.includes('cache')
+        )) {
           keysToRemove.push(key);
         }
       }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log('🗑️ Removed localStorage key:', key);
+      });
+      console.log(`✅ Cleared ${keysToRemove.length} localStorage entries`);
     } catch (e) {
       console.warn('Could not clear localStorage:', e);
     }
     
-    // Clear sessionStorage
+    // 3. sessionStorage 완전 정리
     try {
+      const sessionKeys = Object.keys(sessionStorage);
       sessionStorage.clear();
+      console.log(`✅ Cleared ${sessionKeys.length} sessionStorage entries`);
     } catch (e) {
       console.warn('Could not clear sessionStorage:', e);
+    }
+    
+    // 4. IndexedDB 정리 (가능한 경우)
+    if ('indexedDB' in window) {
+      try {
+        // 일반적인 캐시 DB들 정리
+        const dbNamesToClear = ['keyval-store', 'supabase-cache', 'app-cache'];
+        dbNamesToClear.forEach(dbName => {
+          const deleteReq = indexedDB.deleteDatabase(dbName);
+          deleteReq.onsuccess = () => console.log(`✅ Cleared IndexedDB: ${dbName}`);
+          deleteReq.onerror = () => console.warn(`Could not clear IndexedDB: ${dbName}`);
+        });
+      } catch (e) {
+        console.warn('Could not clear IndexedDB:', e);
+      }
+    }
+    
+    // 5. Memory 정리
+    if (typeof window.gc === 'function') {
+      window.gc();
+      console.log('✅ Manual garbage collection triggered');
     }
   };
 
   const handleForceRefresh = () => {
-    console.log('🔄 Force refreshing ideas with complete cache clear...');
-    clearAllCaches();
+    console.log('🔄 Force refreshing with comprehensive cache clear...');
+    performComprehensiveCacheClear();
     
-    // Force a hard refresh of the component state
+    // React 상태 강제 리셋
     setTimeout(() => {
+      console.log('🔄 Fetching fresh data...');
       fetchIdeas();
-    }, 100);
+    }, 200);
   };
 
   const handleNuclearRefresh = () => {
-    console.log('💥 Nuclear refresh - clearing everything...');
-    clearAllCaches();
+    console.log('💥 Nuclear refresh - clearing everything and reloading...');
+    performComprehensiveCacheClear();
     
-    // Reload the entire page as last resort
-    window.location.reload();
+    // 전체 페이지 리로드
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
+  // UI 렌더링 강제 업데이트
+  const handleInstantRefresh = () => {
+    console.log('⚡ Instant UI refresh...');
+    
+    // 강제 리렌더링을 위한 상태 변경
+    const timestamp = Date.now();
+    window.dispatchEvent(new CustomEvent('force-refresh', { detail: timestamp }));
+    
+    fetchIdeas();
   };
 
   const text = {
@@ -95,7 +146,8 @@ const Explore: React.FC = () => {
       noIdeas: '아직 아이디어가 없습니다.',
       refresh: '새로고침',
       forceRefresh: '강제 새로고침',
-      nuclearRefresh: '완전 새로고침'
+      nuclearRefresh: '완전 새로고침',
+      instantRefresh: '즉시 새로고침'
     },
     en: {
       title: 'Explore Ideas',
@@ -103,7 +155,8 @@ const Explore: React.FC = () => {
       noIdeas: 'No ideas yet.',
       refresh: 'Refresh',
       forceRefresh: 'Force Refresh',
-      nuclearRefresh: 'Nuclear Refresh'
+      nuclearRefresh: 'Nuclear Refresh',
+      instantRefresh: 'Instant Refresh'
     }
   };
 
@@ -132,6 +185,16 @@ const Explore: React.FC = () => {
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 {text[currentLanguage].refresh}
+              </Button>
+              <Button
+                onClick={handleInstantRefresh}
+                variant="outline"
+                size="sm"
+                disabled={loading}
+                className="border-green-200 text-green-600 hover:bg-green-50"
+              >
+                <Zap className={`h-4 w-4 mr-2`} />
+                {text[currentLanguage].instantRefresh}
               </Button>
               <Button
                 onClick={handleForceRefresh}
@@ -178,7 +241,7 @@ const Explore: React.FC = () => {
           <div className="space-y-6">
             {ideas.map((idea) => (
               <IdeaCard
-                key={`idea-card-${idea.id}-${idea.score}-${idea.text?.length || 0}-${Date.now()}`}
+                key={`ideacard-${idea.id}-${idea.timestamp.getTime()}-${Date.now()}`}
                 idea={idea}
                 currentLanguage={currentLanguage}
                 currentUserId={user?.id}

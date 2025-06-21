@@ -68,10 +68,46 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     fetchIdeas: async () => {} // This will be handled by parent component
   });
 
+  // 완전히 안전한 텍스트 처리 - "0" 접두사 문제 근본 해결
+  const getSafeIdeaText = (text: string | null | undefined): string => {
+    if (!text) {
+      console.warn('❌ Empty or null idea text detected:', text);
+      return '아이디어 내용을 불러올 수 없습니다.';
+    }
+    
+    // 문자열로 확실히 변환
+    const stringText = String(text).trim();
+    
+    // 빈 문자열 체크
+    if (!stringText) {
+      console.warn('❌ Empty string after conversion:', stringText);
+      return '아이디어 내용을 불러올 수 없습니다.';
+    }
+    
+    // 숫자로만 시작하는 경우 제거 (예: "0", "123 ")
+    const cleanedText = stringText.replace(/^\d+\s*/, '');
+    
+    // 정리 후에도 내용이 있는지 확인
+    const finalText = cleanedText.trim() || stringText;
+    
+    console.log('🔍 Text processing:', {
+      original: text,
+      stringConverted: stringText,
+      afterNumberRemoval: cleanedText,
+      final: finalText
+    });
+    
+    return finalText;
+  };
+
+  // 안전한 텍스트 추출
+  const safeIdeaText = getSafeIdeaText(idea.text);
+
   // Debug logging to catch any issues
   console.log('🔍 IdeaCard rendering:', {
     id: idea.id,
-    text: idea.text,
+    originalText: idea.text,
+    processedText: safeIdeaText,
     score: idea.score,
     textType: typeof idea.text,
     textLength: idea.text?.length
@@ -128,12 +164,6 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     }
   };
 
-  // Ensure we have clean text without any prefixes
-  const cleanIdeaText = String(idea.text || '').trim();
-  
-  // Remove any leading "0" or numbers that might have been accidentally prepended
-  const sanitizedText = cleanIdeaText.replace(/^[0-9]+\s*/, '');
-  
   const showGenerateButton = (!idea.improvements || !idea.marketPotential);
   const isOwner = currentUserId === idea.user_id;
   const showGlobalButton = !idea.globalAnalysis && !!(idea.improvements && idea.marketPotential) && isOwner;
@@ -145,7 +175,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
       isMobile ? 'p-4' : 'p-6'
     } mb-4 md:mb-6 border border-slate-200 ${
       idea.seed ? 'border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50' : ''
-    }`} key={`idea-${idea.id}-${idea.score}-${Date.now()}`}>
+    }`} key={`ideacard-${idea.id}-${idea.timestamp.getTime()}`}>
       <IdeaCardHeader 
         score={idea.score}
         timestamp={idea.timestamp}
@@ -169,18 +199,18 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         </div>
       )}
 
-      {/* Idea Text - Fixed to prevent "0" prefix issue */}
+      {/* Idea Text - 완전히 안전한 렌더링 */}
       <div className={`text-slate-800 leading-relaxed mb-4 ${
         isMobile ? 'text-base' : 'text-lg'
       }`}>
-        {sanitizedText || '아이디어 내용을 불러올 수 없습니다.'}
+        {safeIdeaText}
       </div>
 
       {/* Tags */}
       <div className={`flex flex-wrap gap-2 mb-4 ${isMobile ? 'gap-1' : 'gap-2'}`}>
         {idea.tags?.map((tag, index) => (
           <span
-            key={`tag-${index}-${tag}`}
+            key={`tag-${idea.id}-${index}-${tag}`}
             className={`px-3 py-1 rounded-full font-medium ${
               isMobile ? 'text-xs' : 'text-sm'
             } ${
@@ -242,7 +272,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         showRemixButton={showRemixButton}
         remixCount={idea.remix_count}
         chainDepth={idea.remix_chain_depth}
-        originalText={sanitizedText}
+        originalText={safeIdeaText}
         originalScore={idea.score}
         onLike={handleLikeClick}
         onGenerateAnalysis={handleGenerateAnalysis}
