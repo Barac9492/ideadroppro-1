@@ -2,11 +2,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useRemixOperations } from '@/hooks/useRemixOperations';
 import IdeaCardHeader from './IdeaCardHeader';
 import IdeaAnalysisSection from './IdeaAnalysisSection';
 import GlobalAnalysisSection from './GlobalAnalysisSection';
+import VCAnalysisSection from './VCAnalysisSection';
 import IdeaCardActions from './IdeaCardActions';
 import IdeaFinalVerdict from './IdeaFinalVerdict';
+import { Badge } from '@/components/ui/badge';
 
 interface Idea {
   id: string;
@@ -23,8 +26,12 @@ interface Idea {
   pitchPoints?: string[];
   finalVerdict?: string;
   globalAnalysis?: any;
+  vcAnalysis?: any;
   seed?: boolean;
   user_id: string;
+  remix_parent_id?: string;
+  remix_count?: number;
+  remix_chain_depth?: number;
 }
 
 interface IdeaCardProps {
@@ -35,6 +42,7 @@ interface IdeaCardProps {
   onGenerateAnalysis: (ideaId: string) => Promise<void>;
   onGenerateGlobalAnalysis?: (ideaId: string) => Promise<void>;
   onSaveFinalVerdict?: (ideaId: string, verdict: string) => void;
+  onDelete?: (ideaId: string) => void;
   isAdmin?: boolean;
   isAuthenticated: boolean;
 }
@@ -47,6 +55,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   onGenerateAnalysis,
   onGenerateGlobalAnalysis,
   onSaveFinalVerdict,
+  onDelete,
   isAdmin = false,
   isAuthenticated
 }) => {
@@ -54,6 +63,10 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
   const [isGeneratingGlobal, setIsGeneratingGlobal] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { createRemix, isRemixing } = useRemixOperations({ 
+    currentLanguage, 
+    fetchIdeas: async () => {} // This will be handled by parent component
+  });
 
   const handleGenerateAnalysis = async () => {
     if (!isAuthenticated) {
@@ -96,9 +109,21 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     onLike(idea.id);
   };
 
+  const handleRemix = async (remixText: string) => {
+    await createRemix(idea.id, remixText, idea.score);
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(idea.id);
+    }
+  };
+
   const showGenerateButton = (!idea.improvements || !idea.marketPotential);
   const isOwner = currentUserId === idea.user_id;
   const showGlobalButton = !idea.globalAnalysis && !!(idea.improvements && idea.marketPotential) && isOwner;
+  const showDeleteButton = isOwner;
+  const showRemixButton = !isOwner && isAuthenticated;
 
   return (
     <div className={`bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.01] ${
@@ -112,6 +137,22 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         isSeed={idea.seed}
         currentLanguage={currentLanguage}
       />
+
+      {/* Remix Chain Info */}
+      {(idea.remix_parent_id || idea.remix_count) && (
+        <div className="mb-4 flex items-center space-x-2">
+          {idea.remix_parent_id && (
+            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+              리믹스 {idea.remix_chain_depth && `(${idea.remix_chain_depth}단계)`}
+            </Badge>
+          )}
+          {idea.remix_count && idea.remix_count > 0 && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {idea.remix_count}개 리믹스
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Idea Text */}
       <p className={`text-slate-800 leading-relaxed mb-4 ${
@@ -148,6 +189,14 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         currentLanguage={currentLanguage}
       />
 
+      {/* VC Analysis Section */}
+      {idea.vcAnalysis && (
+        <VCAnalysisSection
+          analysis={idea.vcAnalysis}
+          currentLanguage={currentLanguage}
+        />
+      )}
+
       {/* Global Analysis Section */}
       {idea.globalAnalysis && (
         <GlobalAnalysisSection
@@ -173,9 +222,18 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         isGeneratingGlobal={isGeneratingGlobal}
         showGenerateButton={showGenerateButton}
         showGlobalButton={showGlobalButton}
+        showDeleteButton={showDeleteButton}
+        showRemixButton={showRemixButton}
+        remixCount={idea.remix_count}
+        chainDepth={idea.remix_chain_depth}
+        originalText={idea.text}
+        originalScore={idea.score}
         onLike={handleLikeClick}
         onGenerateAnalysis={handleGenerateAnalysis}
         onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
+        onDelete={handleDelete}
+        onRemix={handleRemix}
+        isRemixing={isRemixing}
         currentLanguage={currentLanguage}
       />
     </div>

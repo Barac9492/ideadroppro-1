@@ -1,199 +1,11 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface IdeaAnalysisRequest {
-  ideaText: string;
-  language: 'ko' | 'en';
-  userId?: string;
-}
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-);
-
-// Server-side text quality validation
-const validateTextQuality = (text: string, language: 'ko' | 'en'): { isValid: boolean; reason?: string } => {
-  const trimmedText = text.trim();
-  
-  // Check minimum length
-  if (trimmedText.length < 10) {
-    return {
-      isValid: false,
-      reason: language === 'ko' ? 
-        '아이디어는 최소 10자 이상 작성해주세요.' : 
-        'Please write at least 10 characters for your idea.'
-    };
-  }
-
-  // Korean patterns
-  if (language === 'ko') {
-    // Check for only consonants/vowels
-    if (/^[ㄱ-ㅎㅏ-ㅣ\s]{3,}$/.test(trimmedText)) {
-      return { isValid: false, reason: '의미 있는 한글 단어를 사용해주세요.' };
-    }
-    
-    // Check for keyboard patterns
-    if (/[ㅁㄴㅇㄹ]{3,}|[ㅂㅈㄷㄱ]{3,}|[ㅛㅕㅑㅐ]{3,}/.test(trimmedText)) {
-      return { isValid: false, reason: '키보드 연타가 아닌 의미 있는 내용을 작성해주세요.' };
-    }
-  }
-
-  // English patterns
-  if (language === 'en') {
-    // Check for keyboard rows
-    if (/[qwertyuiop]{4,}|[asdfghjkl]{4,}|[zxcvbnm]{4,}/i.test(trimmedText)) {
-      return { isValid: false, reason: 'Please write meaningful content instead of keyboard patterns.' };
-    }
-  }
-
-  // Check for same character repetition
-  if (/(.)\1{3,}/.test(trimmedText)) {
-    return { 
-      isValid: false, 
-      reason: language === 'ko' ? 
-        '같은 문자 반복이 아닌 구체적인 아이디어를 작성해주세요.' : 
-        'Please write specific ideas instead of repeating characters.'
-    };
-  }
-
-  // Check for meaningful words
-  const words = trimmedText.split(/\s+/).filter(word => word.length > 1);
-  if (words.length < (language === 'ko' ? 2 : 3)) {
-    return {
-      isValid: false,
-      reason: language === 'ko' ? 
-        '더 구체적이고 상세한 아이디어를 작성해주세요.' : 
-        'Please write a more detailed and specific idea.'
-    };
-  }
-
-  return { isValid: true };
-};
-
-// Enhanced AI analysis
-async function analyzeIdeaWithAI(ideaText: string, language: 'ko' | 'en') {
-  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!geminiApiKey) {
-    throw new Error('GEMINI_API_KEY not configured');
-  }
-
-  const prompt = language === 'ko' 
-    ? `당신은 경험이 풍부한 벤처캐피털리스트입니다. 다음 아이디어를 매우 엄격하게 평가해주세요.
-
-평가 기준 (각 항목당 0-2점, 총 10점 만점):
-1. 문제 정의의 명확성과 시급성
-2. 해결책의 혁신성과 실현가능성
-3. 시장 규모와 성장 잠재력
-4. 경쟁 우위와 차별화 요소
-5. 수익 모델의 구체성과 지속가능성
-
-8.5점 이상은 극히 예외적인 경우에만 부여하세요. 대부분의 아이디어는 5-7점 범위에 있어야 합니다.
-
-아이디어: "${ideaText}"
-
-다음 JSON 형식으로 응답해주세요:
-{
-  "score": [1-10 점수],
-  "analysis": "상세한 분석 (300자 이상)",
-  "improvements": ["개선점1", "개선점2", "개선점3"],
-  "marketPotential": ["시장 잠재력 분석 포인트1", "시장 잠재력 분석 포인트2"],
-  "tags": ["태그1", "태그2", "태그3"],
-  "pitchPoints": ["핵심 피칭 포인트1", "핵심 피칭 포인트2"],
-  "similarIdeas": ["유사 아이디어/서비스1", "유사 아이디어/서비스2"]
-}`
-    : `You are an experienced venture capitalist. Please evaluate the following idea very strictly.
-
-Evaluation criteria (0-2 points each, total 10 points):
-1. Clarity and urgency of problem definition
-2. Innovation and feasibility of solution
-3. Market size and growth potential
-4. Competitive advantage and differentiation
-5. Specificity and sustainability of revenue model
-
-Only award 8.5+ points in truly exceptional cases. Most ideas should fall in the 5-7 point range.
-
-Idea: "${ideaText}"
-
-Please respond in the following JSON format:
-{
-  "score": [1-10 score],
-  "analysis": "Detailed analysis (300+ characters)",
-  "improvements": ["Improvement1", "Improvement2", "Improvement3"],
-  "marketPotential": ["Market potential analysis point1", "Market potential analysis point2"],
-  "tags": ["Tag1", "Tag2", "Tag3"],
-  "pitchPoints": ["Key pitch point1", "Key pitch point2"],
-  "similarIdeas": ["Similar idea/service1", "Similar idea/service2"]
-}`;
-
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.3,
-          topK: 20,
-          topP: 0.8,
-          maxOutputTokens: 2048,
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!generatedText) {
-      throw new Error('No content generated from Gemini API');
-    }
-
-    const cleanedText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
-    const parsedResult = JSON.parse(cleanedText);
-    
-    // Ensure all array fields are actually arrays
-    const ensureArray = (value: any): string[] => {
-      if (Array.isArray(value)) {
-        return value.map(item => String(item));
-      }
-      if (typeof value === 'string') {
-        return [value];
-      }
-      return [];
-    };
-
-    return {
-      score: Number(parsedResult.score) || 5.0,
-      analysis: parsedResult.analysis || '',
-      tags: ensureArray(parsedResult.tags),
-      improvements: ensureArray(parsedResult.improvements),
-      marketPotential: ensureArray(parsedResult.marketPotential),
-      similarIdeas: ensureArray(parsedResult.similarIdeas),
-      pitchPoints: ensureArray(parsedResult.pitchPoints)
-    };
-    
-  } catch (error) {
-    console.error('AI Analysis failed:', error);
-    throw error;
-  }
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -201,103 +13,181 @@ serve(async (req) => {
   }
 
   try {
-    // Get authorization header
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      console.error('No authorization header provided');
+    const { ideaText, language = 'ko' } = await req.json();
+
+    if (!ideaText) {
       return new Response(
-        JSON.stringify({ 
-          error: 'Authentication required',
-          message: 'Please sign in to submit ideas'
-        }),
-        {
-          status: 401,
+        JSON.stringify({ error: 'Idea text is required' }),
+        { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
         }
       );
     }
 
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not found');
+    }
+
+    const prompt = language === 'ko' 
+      ? `당신은 경험이 풍부한 벤처 캐피털리스트입니다. 다음 비즈니스 아이디어를 VC 관점에서 분석해주세요:
+
+"${ideaText}"
+
+다음 형식으로 구체적이고 실용적인 분석을 제공해주세요:
+
+**개선 사항 (3-5개):**
+- 구체적이고 실행 가능한 개선 방안
+- 기술적/비즈니스적 관점에서의 제안
+
+**시장 잠재력 (3-4개):**
+- 타겟 시장 규모와 성장성
+- 수익화 가능성과 확장성
+- 경쟁사 대비 차별화 포인트
+
+**유사 아이디어/경쟁사 (2-3개):**
+- 기존 시장의 유사 서비스나 제품
+- 차별화 전략 필요성
+
+**투자 피치 포인트 (3-4개):**
+- 투자자에게 어필할 수 있는 핵심 강점
+- 시장 기회와 성장 잠재력
+- 팀의 실행 역량과 비전
+
+각 항목은 구체적이고 실행 가능한 내용으로 작성하되, VC가 실제로 검토할 때 고려하는 요소들을 포함해주세요.`
+      : `You are an experienced venture capitalist. Please analyze the following business idea from a VC perspective:
+
+"${ideaText}"
+
+Provide a specific and practical analysis in the following format:
+
+**Improvements (3-5 items):**
+- Specific and actionable improvement suggestions
+- Technical/business perspective recommendations
+
+**Market Potential (3-4 items):**
+- Target market size and growth potential
+- Monetization possibilities and scalability
+- Differentiation points vs competitors
+
+**Similar Ideas/Competitors (2-3 items):**
+- Existing similar services or products in the market
+- Need for differentiation strategy
+
+**Investment Pitch Points (3-4 items):**
+- Key strengths that would appeal to investors
+- Market opportunities and growth potential
+- Team execution capability and vision
+
+Each item should be specific and actionable, including factors that VCs actually consider during their review process.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 2048,
+          }
+        }),
+      }
     );
 
-    if (authError || !user) {
-      console.error('Authentication failed:', authError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Authentication failed',
-          message: 'Please sign in to submit ideas'
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Gemini API error:', errorData);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
-    const { ideaText, language }: IdeaAnalysisRequest = await req.json();
+    const data = await response.json();
     
-    console.log('Analysis request:', { 
-      ideaLength: ideaText?.length, 
-      language, 
-      userId: user.id
-    });
-
-    if (!ideaText || !language) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error('Invalid response from Gemini API');
     }
 
-    // Server-side text quality validation
-    const qualityCheck = validateTextQuality(ideaText, language);
-    if (!qualityCheck.isValid) {
-      console.log('Server-side quality check failed:', qualityCheck.reason);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Text quality validation failed',
-          reason: qualityCheck.reason 
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Perform AI Analysis
-    const analysisResult = await analyzeIdeaWithAI(ideaText, language);
+    const analysisText = data.candidates[0].content.parts[0].text;
     
-    console.log('Analysis completed successfully:', { 
-      score: analysisResult.score,
-      hasAnalysis: !!analysisResult.analysis,
-      tagsCount: analysisResult.tags?.length || 0,
-      userId: user.id
-    });
+    // Parse the analysis into structured format
+    const parseSection = (text: string, sectionName: string): string[] => {
+      const regex = new RegExp(`\\*\\*${sectionName}[^:]*:(.*?)(?=\\*\\*|$)`, 'is');
+      const match = text.match(regex);
+      if (!match) return [];
+      
+      return match[1]
+        .split(/[-•]\s+/)
+        .filter(item => item.trim().length > 0)
+        .map(item => item.trim().replace(/\n\s*/g, ' '))
+        .slice(0, 5); // Limit to 5 items max
+    };
+
+    const improvements = parseSection(analysisText, language === 'ko' ? '개선 사항' : 'Improvements');
+    const marketPotential = parseSection(analysisText, language === 'ko' ? '시장 잠재력' : 'Market Potential');
+    const similarIdeas = parseSection(analysisText, language === 'ko' ? '유사 아이디어' : 'Similar Ideas');
+    const pitchPoints = parseSection(analysisText, language === 'ko' ? '투자 피치 포인트' : 'Investment Pitch Points');
+
+    // Calculate a more sophisticated score based on various factors
+    const calculateScore = () => {
+      let score = 5; // Base score
+      
+      // Market potential factor
+      if (marketPotential.length >= 3) score += 1;
+      if (marketPotential.some(p => p.toLowerCase().includes(language === 'ko' ? '확장' : 'scalab'))) score += 0.5;
+      
+      // Innovation factor
+      if (improvements.length >= 4) score += 1;
+      if (analysisText.toLowerCase().includes(language === 'ko' ? '혁신' : 'innovat')) score += 0.5;
+      
+      // Competition factor
+      if (similarIdeas.length <= 2) score += 0.5; // Less competition is better
+      
+      // Pitch strength factor
+      if (pitchPoints.length >= 3) score += 1;
+      
+      // Cap at 10
+      return Math.min(score, 10);
+    };
+
+    const score = calculateScore();
+
+    console.log('Analysis completed successfully');
 
     return new Response(
-      JSON.stringify(analysisResult),
-      {
-        status: 200,
+      JSON.stringify({
+        score: parseFloat(score.toFixed(1)),
+        analysis: analysisText,
+        improvements,
+        marketPotential,
+        similarIdeas,
+        pitchPoints
+      }),
+      { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
       }
     );
 
   } catch (error) {
-    console.error('Error in analyze-idea function:', error);
+    console.error('Analysis error:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Analysis failed',
         details: error.message 
       }),
-      {
-        status: 500,
+      { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
       }
     );
   }

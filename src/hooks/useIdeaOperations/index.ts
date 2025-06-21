@@ -5,6 +5,7 @@ import { useVerdictManagement } from './useVerdictManagement';
 import { useGlobalAnalysis } from './useGlobalAnalysis';
 import { useRemixLeverage } from '../useRemixLeverage';
 import { useInfluenceIntegration } from './useInfluenceIntegration';
+import { useIdeaDeletion } from './useIdeaDeletion';
 
 interface IdeaOperationsProps {
   currentLanguage: 'ko' | 'en';
@@ -18,6 +19,7 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
   const { saveFinalVerdict } = useVerdictManagement({ currentLanguage, user, fetchIdeas });
   const { generateGlobalAnalysis } = useGlobalAnalysis({ currentLanguage, user, fetchIdeas });
   const { processRemixLeverage } = useRemixLeverage({ currentLanguage });
+  const { deleteIdea } = useIdeaDeletion({ currentLanguage, user, fetchIdeas });
   const influenceIntegration = useInfluenceIntegration({ currentLanguage, user });
 
   const submitIdeaWithNetworkEffects = async (ideaText: string) => {
@@ -52,6 +54,7 @@ export const useIdeaOperations = ({ currentLanguage, user, fetchIdeas }: IdeaOpe
     saveFinalVerdict,
     generateGlobalAnalysis,
     createRemix,
-    processRemixLeverage
+    processRemixLeverage,
+    deleteIdea
   };
 };

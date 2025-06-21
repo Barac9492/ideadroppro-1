@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Heart, LogIn, Globe } from 'lucide-react';
+import { Heart, LogIn, Globe, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import RemixButton from './RemixButton';
 
 interface IdeaCardActionsProps {
   likes: number;
@@ -12,9 +13,18 @@ interface IdeaCardActionsProps {
   isGeneratingGlobal?: boolean;
   showGenerateButton: boolean;
   showGlobalButton?: boolean;
+  showDeleteButton?: boolean;
+  showRemixButton?: boolean;
+  remixCount?: number;
+  chainDepth?: number;
+  originalText?: string;
+  originalScore?: number;
   onLike: () => void;
   onGenerateAnalysis: () => void;
   onGenerateGlobalAnalysis?: () => void;
+  onDelete?: () => void;
+  onRemix?: (remixText: string) => void;
+  isRemixing?: boolean;
   currentLanguage: 'ko' | 'en';
 }
 
@@ -27,9 +37,18 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
   isGeneratingGlobal = false,
   showGenerateButton,
   showGlobalButton = false,
+  showDeleteButton = false,
+  showRemixButton = false,
+  remixCount = 0,
+  chainDepth = 0,
+  originalText = '',
+  originalScore = 0,
   onLike,
   onGenerateAnalysis,
   onGenerateGlobalAnalysis,
+  onDelete,
+  onRemix,
+  isRemixing = false,
   currentLanguage
 }) => {
   const text = {
@@ -40,7 +59,9 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
       goGlobal: '🌍 Go Global',
       generatingGlobal: '글로벌 분석 중...',
       loginToInteract: '로그인 후 이용 가능',
-      loginRequired: '로그인이 필요합니다'
+      loginRequired: '로그인이 필요합니다',
+      delete: '삭제',
+      confirmDelete: '정말로 삭제하시겠습니까?'
     },
     en: {
       likes: 'Likes',
@@ -49,7 +70,9 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
       goGlobal: '🌍 Go Global',
       generatingGlobal: 'Analyzing Global Market...',
       loginToInteract: 'Login to interact',
-      loginRequired: 'Login required'
+      loginRequired: 'Login required',
+      delete: 'Delete',
+      confirmDelete: 'Are you sure you want to delete?'
     }
   };
 
@@ -83,6 +106,22 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
         </div>
       )}
 
+      {/* Remix Button - Prominent placement */}
+      {showRemixButton && !isSeed && (
+        <div className="flex justify-center">
+          <RemixButton
+            originalText={originalText}
+            originalScore={originalScore}
+            remixCount={remixCount}
+            chainDepth={chainDepth}
+            onRemix={onRemix || (() => {})}
+            isRemixing={isRemixing}
+            currentLanguage={currentLanguage}
+            isAuthenticated={isAuthenticated}
+          />
+        </div>
+      )}
+
       {/* Regular actions row */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <button
@@ -106,29 +145,43 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
           )}
         </button>
 
-        {showGenerateButton && !isSeed && (
-          <Button
-            onClick={onGenerateAnalysis}
-            disabled={isGenerating}
-            className={`${
-              !isAuthenticated 
-                ? 'bg-gray-400 hover:bg-gray-500' 
-                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
-            }`}
-            title={!isAuthenticated ? text[currentLanguage].loginRequired : ''}
-          >
-            {!isAuthenticated ? (
-              <>
-                <LogIn className="h-4 w-4 mr-2" />
-                {text[currentLanguage].loginToInteract}
-              </>
-            ) : (
-              <>
-                {isGenerating ? text[currentLanguage].generating : text[currentLanguage].generateAnalysis}
-              </>
-            )}
-          </Button>
-        )}
+        <div className="flex items-center space-x-2">
+          {showGenerateButton && !isSeed && (
+            <Button
+              onClick={onGenerateAnalysis}
+              disabled={isGenerating}
+              className={`${
+                !isAuthenticated 
+                  ? 'bg-gray-400 hover:bg-gray-500' 
+                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+              }`}
+              title={!isAuthenticated ? text[currentLanguage].loginRequired : ''}
+            >
+              {!isAuthenticated ? (
+                <>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  {text[currentLanguage].loginToInteract}
+                </>
+              ) : (
+                <>
+                  {isGenerating ? text[currentLanguage].generating : text[currentLanguage].generateAnalysis}
+                </>
+              )}
+            </Button>
+          )}
+
+          {showDeleteButton && !isSeed && (
+            <Button
+              onClick={onDelete}
+              variant="destructive"
+              size="sm"
+              className="bg-red-500 hover:bg-red-600"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              {text[currentLanguage].delete}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

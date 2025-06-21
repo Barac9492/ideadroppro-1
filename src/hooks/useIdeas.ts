@@ -24,6 +24,9 @@ interface Idea {
   globalAnalysis?: any;
   user_id: string;
   seed?: boolean;
+  remix_parent_id?: string;
+  remix_count?: number;
+  remix_chain_depth?: number;
 }
 
 export const useIdeas = (currentLanguage: 'ko' | 'en') => {
@@ -74,7 +77,10 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           finalVerdict: idea.final_verdict,
           globalAnalysis: idea.global_analysis,
           user_id: idea.user_id,
-          seed: idea.seed || false
+          seed: idea.seed || false,
+          remix_parent_id: idea.remix_parent_id,
+          remix_count: idea.remix_count || 0,
+          remix_chain_depth: idea.remix_chain_depth || 0
         };
       }));
 
@@ -167,6 +173,10 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     return ideaOperations.saveFinalVerdict(ideaId, verdict);
   };
 
+  const deleteIdea = async (ideaId: string) => {
+    return ideaOperations.deleteIdea(ideaId);
+  };
+
   return {
     ideas,
     loading,
@@ -175,6 +185,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     generateAnalysis,
     generateGlobalAnalysis,
     saveFinalVerdict,
+    deleteIdea,
     generateSeedIdeas: seedIdeas.generateSeedIdeas
   };
 };

@@ -74,6 +74,9 @@ export type Database = {
           likes_count: number | null
           market_potential: string[] | null
           pitch_points: string[] | null
+          remix_chain_depth: number | null
+          remix_count: number | null
+          remix_parent_id: string | null
           score: number | null
           seed: boolean | null
           similar_ideas: string[] | null
@@ -93,6 +96,9 @@ export type Database = {
           likes_count?: number | null
           market_potential?: string[] | null
           pitch_points?: string[] | null
+          remix_chain_depth?: number | null
+          remix_count?: number | null
+          remix_parent_id?: string | null
           score?: number | null
           seed?: boolean | null
           similar_ideas?: string[] | null
@@ -112,6 +118,9 @@ export type Database = {
           likes_count?: number | null
           market_potential?: string[] | null
           pitch_points?: string[] | null
+          remix_chain_depth?: number | null
+          remix_count?: number | null
+          remix_parent_id?: string | null
           score?: number | null
           seed?: boolean | null
           similar_ideas?: string[] | null
@@ -126,6 +135,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ideas_remix_parent_id_fkey"
+            columns: ["remix_parent_id"]
+            isOneToOne: false
+            referencedRelation: "ideas"
             referencedColumns: ["id"]
           },
         ]
@@ -383,6 +399,10 @@ export type Database = {
       check_and_award_streak_badge: {
         Args: { p_user_id: string; p_streak: number }
         Returns: undefined
+      }
+      delete_idea_cascade: {
+        Args: { idea_id: string; user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
