@@ -18,7 +18,7 @@ const Submit = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { ideas, submitIdea, toggleLike } = useIdeas(currentLanguage);
+  const { ideas, submitIdea, toggleLike, fetchIdeas } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
@@ -101,7 +101,7 @@ const Submit = () => {
           <div className="max-w-2xl mx-auto">
             <BulkAnalysisButton 
               currentLanguage={currentLanguage}
-              fetchIdeas={() => {}} // Will be handled by global state
+              fetchIdeas={fetchIdeas}
             />
           </div>
         </div>
