@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building2, Eye, MessageSquare, Heart, TrendingUp, Clock } from 'lucide-react';
+import { Building2, Eye, MessageSquare, Heart, TrendingUp, Clock, Zap } from 'lucide-react';
 import VCPrivacyIndicator from './VCPrivacyIndicator';
 import VCStatsDisplay from './VCStatsDisplay';
 
@@ -144,7 +143,8 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
       sendDM: 'DM 보내기',
       viewProfile: '프로필 보기',
       fundType: '펀드 유형',
-      anonymousName: '익명 투자자'
+      anonymousName: '익명 투자자',
+      liveActivity: '실시간 활동'
     },
     en: {
       title: '💼 Active VC Profiles',
@@ -158,7 +158,8 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
       sendDM: 'Send DM',
       viewProfile: 'View Profile',
       fundType: 'Fund Type',
-      anonymousName: 'Anonymous Investor'
+      anonymousName: 'Anonymous Investor',
+      liveActivity: 'Live Activity'
     }
   };
 
@@ -216,44 +217,51 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+    <div className="space-y-8">
+      <div className="text-center mb-10">
+        <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
           {text[currentLanguage].title}
         </h2>
-        <p className="text-gray-600">{text[currentLanguage].subtitle}</p>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">{text[currentLanguage].subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {vcProfiles.map(vc => (
-          <Card key={vc.id} className="border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between">
+          <Card key={vc.id} className="group relative overflow-hidden bg-white border-2 border-purple-100 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-purple-200">
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            
+            <CardHeader className="relative z-10 pb-4">
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <Avatar className="w-16 h-16">
+                    <Avatar className="w-16 h-16 ring-2 ring-purple-100 group-hover:ring-purple-200 transition-all">
                       <AvatarImage src={vc.avatar} alt={getDisplayName(vc)} />
-                      <AvatarFallback>{getDisplayName(vc).charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold text-lg">
+                        {getDisplayName(vc).charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     {vc.isOnline && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-3 border-white rounded-full animate-pulse shadow-lg">
+                        <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-75" />
+                      </div>
                     )}
                   </div>
                   <div className="flex-1">
-                    <CardTitle className="text-lg font-bold text-gray-900 mb-1">
+                    <CardTitle className="text-lg font-bold text-gray-900 mb-2">
                       {getDisplayName(vc)}
                     </CardTitle>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                      <Building2 className="w-4 h-4" />
-                      <span>{getDisplayCompany(vc)}</span>
-                      <Badge variant="outline" className="text-xs">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
+                      <Building2 className="w-4 h-4 text-purple-500" />
+                      <span className="font-medium">{getDisplayCompany(vc)}</span>
+                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
                         {vc.position}
                       </Badge>
                     </div>
                   </div>
                 </div>
                 
-                <Badge className={vc.isOnline ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                <Badge className={`${vc.isOnline ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-700 border-gray-200"} font-medium`}>
                   {vc.isOnline ? text[currentLanguage].online : text[currentLanguage].offline}
                 </Badge>
               </div>
@@ -264,25 +272,26 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
               />
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="relative z-10 space-y-5">
               {/* Fund Type Information */}
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg p-3 border border-slate-200">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                  <Zap className="w-4 h-4 mr-2 text-purple-500" />
                   {text[currentLanguage].fundType}
                 </h4>
-                <Badge variant="secondary" className="text-xs mb-2 bg-blue-50 text-blue-700">
+                <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 font-medium">
                   {vc.fundSize}
                 </Badge>
               </div>
 
               {/* Specialties */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">
                   {text[currentLanguage].specialty}
                 </h4>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-2">
                   {vc.specialties.map(specialty => (
-                    <Badge key={specialty} variant="secondary" className="text-xs bg-purple-50 text-purple-700">
+                    <Badge key={specialty} variant="secondary" className="text-xs bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 border-purple-200 hover:from-purple-100 hover:to-indigo-100 transition-colors">
                       {specialty}
                     </Badge>
                   ))}
@@ -290,18 +299,21 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
               </div>
 
               {/* Current Activity */}
-              <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Eye className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-blue-800">
+              <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl border border-blue-200 shadow-sm">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Eye className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-800">
                     {text[currentLanguage].currentActivity}
                   </span>
                 </div>
-                <p className="text-sm text-blue-700">{vc.currentActivity}</p>
+                <p className="text-sm text-blue-700 leading-relaxed">{vc.currentActivity}</p>
                 
                 {liveViewers[vc.id] && (
-                  <div className="mt-2 text-xs text-blue-600">
-                    💡 {liveViewers[vc.id]}개 아이디어 동시 검토 중
+                  <div className="mt-3 flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-blue-600 font-medium">
+                      {text[currentLanguage].liveActivity}: {liveViewers[vc.id]}개 아이디어 검토 중
+                    </span>
                   </div>
                 )}
               </div>
@@ -311,15 +323,17 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
 
               {/* Recent Actions */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">
                   {text[currentLanguage].recentActions}
                 </h4>
                 <div className="space-y-2">
                   {vc.recentActions.slice(0, 2).map((action, index) => (
-                    <div key={index} className="flex items-center space-x-2 text-sm p-2 bg-gray-50 rounded">
-                      {getActivityIcon(action.type)}
-                      <span className="text-gray-700 flex-1 truncate">{action.description}</span>
-                      <span className="text-gray-500 text-xs">
+                    <div key={index} className="flex items-center space-x-3 text-sm p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
+                      <div className="p-1 rounded-full bg-white shadow-sm">
+                        {getActivityIcon(action.type)}
+                      </div>
+                      <span className="text-gray-700 flex-1 truncate font-medium">{action.description}</span>
+                      <span className="text-gray-500 text-xs bg-white px-2 py-1 rounded-full">
                         {getTimeAgo(action.timestamp)}
                       </span>
                     </div>
@@ -328,11 +342,13 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-2 pt-2">
-                <Button size="sm" className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+              <div className="flex space-x-3 pt-4 border-t border-gray-100">
+                <Button size="sm" className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
+                  <MessageSquare className="w-4 h-4 mr-2" />
                   {text[currentLanguage].sendDM}
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1 border-purple-200 text-purple-700 hover:bg-purple-50">
+                <Button size="sm" variant="outline" className="flex-1 border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200">
+                  <Eye className="w-4 h-4 mr-2" />
                   {text[currentLanguage].viewProfile}
                 </Button>
               </div>

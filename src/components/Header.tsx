@@ -3,12 +3,13 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, LogOut, Share2, Bell } from 'lucide-react';
+import { Globe, LogOut, Share2, Bell, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import InfluenceScoreDisplay from './InfluenceScoreDisplay';
 import { useNavigate } from 'react-router-dom';
 import { useDailyChallenge } from '@/hooks/useDailyChallenge';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface HeaderProps {
   currentLanguage: 'ko' | 'en';
@@ -19,6 +20,7 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
   const { user } = useAuth();
   const navigate = useNavigate();
   const { hasParticipated } = useDailyChallenge(currentLanguage);
+  const { isAdmin, loading: roleLoading } = useUserRole();
 
   const text = {
     ko: {
@@ -26,14 +28,16 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
       login: '로그인',
       logout: '로그아웃',
       invite: '친구 초대',
-      mission: '오늘 미션'
+      mission: '오늘 미션',
+      admin: '관리자'
     },
     en: {
       title: 'IdeaDrop Pro',
       login: 'Login',
       logout: 'Logout',
       invite: 'Invite Friends',
-      mission: 'Daily Mission'
+      mission: 'Daily Mission',
+      admin: 'Admin'
     }
   };
 
@@ -60,6 +64,10 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
 
   const handleInvite = () => {
     navigate('/dashboard');
+  };
+
+  const handleAdminClick = () => {
+    navigate('/admin');
   };
 
   return (
@@ -109,6 +117,19 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
               <>
                 {/* Influence Score Display */}
                 <InfluenceScoreDisplay variant="compact" />
+                
+                {/* Admin Button - only show for admins */}
+                {!roleLoading && isAdmin && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAdminClick}
+                    className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 text-orange-700 hover:from-orange-100 hover:to-red-100"
+                  >
+                    <Settings className="w-4 h-4 mr-1" />
+                    {text[currentLanguage].admin}
+                  </Button>
+                )}
                 
                 {/* Invite Button */}
                 <Button
