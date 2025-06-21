@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import BetaAnnouncementBanner from '@/components/BetaAnnouncementBanner';
 import LandingHero from '@/components/LandingHero';
@@ -11,29 +11,16 @@ import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useDailyXP } from '@/hooks/useDailyXP';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { submitIdea } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
-
-  // Handle auth state from login redirect
-  useEffect(() => {
-    const state = location.state as { ideaText?: string } | null;
-    if (state?.ideaText && user) {
-      handleIdeaDrop(state.ideaText);
-      navigate('/', { replace: true, state: null });
-    }
-  }, [user, location.state]);
-
-  const handleLanguageToggle = () => {
-    setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
-  };
 
   const handleIdeaDrop = async (ideaText: string) => {
     if (!user) {
@@ -54,6 +41,13 @@ const Index = () => {
     } catch (error) {
       console.error('Error submitting idea:', error);
     }
+  };
+
+  // Handle auth redirect with the custom hook
+  useAuthRedirect({ onIdeaDrop: handleIdeaDrop });
+
+  const handleLanguageToggle = () => {
+    setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
   const scrollToHero = () => {
