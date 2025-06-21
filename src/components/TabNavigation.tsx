@@ -3,8 +3,9 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, PlusCircle, Shuffle, Trophy, Building2, User } from 'lucide-react';
+import { Home, PlusCircle, Search, Shuffle, Trophy, Building2, User } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDailyChallenge';
+import { useIdeas } from '@/hooks/useIdeas';
 
 interface TabNavigationProps {
   currentLanguage: 'ko' | 'en';
@@ -14,11 +15,13 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { hasParticipated } = useDailyChallenge(currentLanguage);
+  const { ideas } = useIdeas(currentLanguage);
 
   const text = {
     ko: {
       home: '홈',
       submit: '제출',
+      explore: '탐색',
       remix: '리믹스',
       ranking: '랭킹',
       vcs: 'VC',
@@ -28,6 +31,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
     en: {
       home: 'Home',
       submit: 'Submit',
+      explore: 'Explore',
       remix: 'Remix',
       ranking: 'Ranking',
       vcs: 'VCs',
@@ -52,6 +56,14 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
       path: '/submit',
       badge: !hasParticipated ? text[currentLanguage].new : null,
       description: 'Daily Challenges'
+    },
+    {
+      id: 'explore',
+      label: text[currentLanguage].explore,
+      icon: Search,
+      path: '/explore',
+      badge: ideas.length > 0 ? ideas.length.toString() : null,
+      description: 'Browse All Ideas'
     },
     {
       id: 'remix',
@@ -116,7 +128,11 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
                 <span className="text-xs md:text-sm font-medium">{tab.label}</span>
                 
                 {tab.badge && (
-                  <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 animate-bounce">
+                  <Badge className={`absolute -top-1 -right-1 text-white text-xs px-1.5 py-0.5 ${
+                    tab.id === 'submit' 
+                      ? 'bg-red-500 animate-bounce' 
+                      : 'bg-purple-500 animate-pulse'
+                  }`}>
                     {tab.badge}
                   </Badge>
                 )}

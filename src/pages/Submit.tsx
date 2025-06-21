@@ -5,6 +5,7 @@ import DailyChallengeSection from '@/components/DailyChallengeSection';
 import HeroSection from '@/components/HeroSection';
 import DailyXPDashboard from '@/components/DailyXPDashboard';
 import LiveMissionTracker from '@/components/LiveMissionTracker';
+import RecentIdeasPreview from '@/components/RecentIdeasPreview';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -16,7 +17,7 @@ const Submit = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { submitIdea } = useIdeas(currentLanguage);
+  const { ideas, submitIdea, toggleLike } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
@@ -40,6 +41,22 @@ const Submit = () => {
       await awardXP(50, '아이디어 제출');
     } catch (error) {
       console.error('Error submitting idea:', error);
+    }
+  };
+
+  const handleLike = async (ideaId: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
+    try {
+      await toggleLike(ideaId);
+      await scoreActions.ideaLike();
+      updateMissionProgress('like_ideas');
+      await awardXP(10, '아이디어 좋아요');
+    } catch (error) {
+      console.error('Error liking idea:', error);
     }
   };
 
@@ -75,6 +92,14 @@ const Submit = () => {
       <HeroSection 
         currentLanguage={currentLanguage}
         onIdeaDrop={handleIdeaDrop}
+      />
+      
+      {/* Recent Ideas Preview */}
+      <RecentIdeasPreview 
+        ideas={ideas}
+        currentLanguage={currentLanguage}
+        onLike={handleLike}
+        isAuthenticated={!!user}
       />
       
       {/* Progress Dashboard for authenticated users */}
