@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -180,6 +179,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   return {
     ideas,
     loading,
+    fetchIdeas,
     submitIdea: ideaOperations.submitIdea,
     toggleLike: ideaLikes.toggleLike,
     generateAnalysis,
