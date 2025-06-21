@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Sparkles, Rocket, Lightbulb, Code, Flame, ArrowRight } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Sparkles, Rocket, Lightbulb, Code, Flame, ArrowRight, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import EnhancedIdeaModal from './EnhancedIdeaModal';
 
 interface LandingHeroProps {
   currentLanguage: 'ko' | 'en';
@@ -12,14 +12,17 @@ interface LandingHeroProps {
 
 const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }) => {
   const [ideaText, setIdeaText] = useState('');
+  const [showEnhancedModal, setShowEnhancedModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const text = {
     ko: {
       title: '아이디어를 던지세요, 기회를 잡으세요',
       subtitle: '단 몇 초 만에 아이디어를 던지고 AI 피드백을 받으세요. VC의 관심을 끌고, 영향력을 높이며, 리믹스를 통해 협업하세요.',
-      placeholder: '당신의 아이디어를 적어보세요...',
-      submit: '아이디어 던지기',
+      placeholder: '당신의 아이디어를 적어보세요...\n\nShift+Enter로 줄바꿈, Enter로 빠른 제출',
+      quickSubmit: '빠른 제출',
+      enhancedSubmit: '상세 작성',
       explore: '둘러보기',
       trustIndicators: '이미 수천 개의 아이디어가 검증되었습니다',
       howItWorks: '어떻게 작동하나요?',
@@ -27,12 +30,14 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
       step2: '2. AI 분석 & 점수',
       step3: '3. Remix & 협업',
       step4: '4. VC 연결',
+      keyboardHint: 'Shift+Enter: 줄바꿈 | Enter: 빠른 제출 | Ctrl+Enter: 상세 작성'
     },
     en: {
       title: 'Drop Your Idea, Catch Opportunity',
       subtitle: 'Submit your idea in seconds and get AI feedback. Attract VCs, boost influence, and collaborate through remixes.',
-      placeholder: 'Write your idea here...',
-      submit: 'Drop Idea',
+      placeholder: 'Write your idea here...\n\nShift+Enter for new line, Enter for quick submit',
+      quickSubmit: 'Quick Submit',
+      enhancedSubmit: 'Detailed Writing',
       explore: 'Explore',
       trustIndicators: 'Thousands of ideas already validated',
       howItWorks: 'How it works?',
@@ -40,14 +45,54 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
       step2: '2. AI analysis & score',
       step3: '3. Remix & collaborate',
       step4: '4. Connect with VCs',
+      keyboardHint: 'Shift+Enter: New line | Enter: Quick submit | Ctrl+Enter: Detailed writing'
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') {
+      if (e.ctrlKey || e.metaKey) {
+        // Ctrl+Enter: Open enhanced modal
+        e.preventDefault();
+        if (ideaText.trim()) {
+          setShowEnhancedModal(true);
+        }
+      } else if (!e.shiftKey) {
+        // Enter (without Shift): Quick submit
+        e.preventDefault();
+        if (ideaText.trim()) {
+          handleQuickSubmit();
+        }
+      }
+      // Shift+Enter: Default behavior (new line)
+    }
+  };
+
+  const handleQuickSubmit = async () => {
     if (ideaText.trim()) {
-      onIdeaDrop(ideaText.trim());
+      setIsSubmitting(true);
+      try {
+        await onIdeaDrop(ideaText.trim());
+        setIdeaText('');
+      } catch (error) {
+        console.error('Quick submit error:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const handleEnhancedSubmit = async (title: string, fullIdea: string) => {
+    setShowEnhancedModal(false);
+    setIsSubmitting(true);
+    
+    try {
+      await onIdeaDrop(fullIdea);
       setIdeaText('');
+    } catch (error) {
+      console.error('Enhanced submit error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,24 +114,49 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
             {text[currentLanguage].subtitle}
           </p>
 
-          {/* Quick Submit Form */}
-          <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto mb-8">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder={text[currentLanguage].placeholder}
+          {/* Enhanced Input Form */}
+          <div className="w-full max-w-2xl mx-auto mb-8">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-purple-100">
+              <Textarea
                 value={ideaText}
                 onChange={(e) => setIdeaText(e.target.value)}
-                className="w-full rounded-full py-6 px-6 text-lg shadow-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-32"
+                onKeyDown={handleKeyDown}
+                placeholder={text[currentLanguage].placeholder}
+                className="w-full min-h-[100px] border-0 focus:ring-0 text-lg resize-none"
+                maxLength={500}
               />
-              <Button
-                type="submit"
-                className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 py-3 text-lg font-semibold shadow-md"
-              >
-                {text[currentLanguage].submit}
-              </Button>
+              
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                <div className="text-xs text-gray-500">
+                  {text[currentLanguage].keyboardHint}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {ideaText.length}/500
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-4">
+                <Button
+                  onClick={handleQuickSubmit}
+                  disabled={!ideaText.trim() || isSubmitting}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  <Rocket className="w-4 h-4 mr-2" />
+                  {text[currentLanguage].quickSubmit}
+                </Button>
+                
+                <Button
+                  onClick={() => setShowEnhancedModal(true)}
+                  disabled={!ideaText.trim()}
+                  variant="outline"
+                  className="flex-1 border-purple-200 text-purple-700 hover:bg-purple-50"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {text[currentLanguage].enhancedSubmit}
+                </Button>
+              </div>
             </div>
-          </form>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -149,6 +219,16 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
           </div>
         </div>
       </div>
+
+      {/* Enhanced Idea Modal */}
+      <EnhancedIdeaModal
+        isOpen={showEnhancedModal}
+        onClose={() => setShowEnhancedModal(false)}
+        onSubmit={handleEnhancedSubmit}
+        initialTitle={ideaText.trim()}
+        currentLanguage={currentLanguage}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 };
