@@ -3,12 +3,15 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, Users, MessageCircle, Crown, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SocialProofSectionProps {
   currentLanguage: 'ko' | 'en';
 }
 
 const SocialProofSection: React.FC<SocialProofSectionProps> = ({ currentLanguage }) => {
+  const navigate = useNavigate();
+
   const text = {
     ko: {
       title: '실제 투자자들이 주목하는 아이디어들',
@@ -127,7 +130,11 @@ const SocialProofSection: React.FC<SocialProofSectionProps> = ({ currentLanguage
                 <Crown className="w-6 h-6 text-yellow-500 mr-2" />
                 {text[currentLanguage].topIdeas}
               </h3>
-              <Button variant="outline" className="text-purple-600 border-purple-200">
+              <Button 
+                variant="outline" 
+                className="text-purple-600 border-purple-200"
+                onClick={() => navigate('/ranking')}
+              >
                 {text[currentLanguage].viewAll}
               </Button>
             </div>

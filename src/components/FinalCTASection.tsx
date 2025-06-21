@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Zap, TrendingUp, Users, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface FinalCTASectionProps {
   currentLanguage: 'ko' | 'en';
@@ -10,6 +11,8 @@ interface FinalCTASectionProps {
 }
 
 const FinalCTASection: React.FC<FinalCTASectionProps> = ({ currentLanguage, onDropIdea }) => {
+  const navigate = useNavigate();
+
   const text = {
     ko: {
       question: '당신의 아이디어는\n세상에 드러날 준비가 되었나요?',
@@ -67,6 +70,14 @@ const FinalCTASection: React.FC<FinalCTASectionProps> = ({ currentLanguage, onDr
     }
   };
 
+  const handleMainCTA = () => {
+    navigate('/submit');
+  };
+
+  const handleSecondaryClick = () => {
+    navigate('/explore');
+  };
+
   return (
     <div className="bg-gray-900 text-white py-20">
       <div className="container mx-auto px-4">
@@ -105,7 +116,7 @@ const FinalCTASection: React.FC<FinalCTASectionProps> = ({ currentLanguage, onDr
           {/* Main CTA */}
           <div className="mb-12">
             <Button
-              onClick={onDropIdea}
+              onClick={handleMainCTA}
               size="lg"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-16 py-6 text-2xl rounded-2xl shadow-2xl mb-4"
             >
@@ -137,6 +148,7 @@ const FinalCTASection: React.FC<FinalCTASectionProps> = ({ currentLanguage, onDr
 
           {/* Secondary CTA */}
           <Button
+            onClick={handleSecondaryClick}
             variant="outline"
             size="lg"
             className="border-white/30 text-white hover:bg-white/10 px-8 py-3 text-lg rounded-xl bg-transparent"
