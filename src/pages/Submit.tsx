@@ -94,6 +94,18 @@ const Submit = () => {
         onIdeaDrop={handleIdeaDrop}
       />
       
+      {/* Admin Tools for bulk analysis */}
+      {user && (
+        <div className="container mx-auto px-4 pb-4">
+          <div className="max-w-2xl mx-auto">
+            <BulkAnalysisButton 
+              currentLanguage={currentLanguage}
+              fetchIdeas={() => {}} // Will be handled by global state
+            />
+          </div>
+        </div>
+      )}
+      
       {/* Recent Ideas Preview */}
       <RecentIdeasPreview 
         ideas={ideas}

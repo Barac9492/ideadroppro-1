@@ -129,7 +129,7 @@ Each item should be specific and actionable, including factors that VCs actually
         .split(/[-•]\s+/)
         .filter(item => item.trim().length > 0)
         .map(item => item.trim().replace(/\n\s*/g, ' '))
-        .slice(0, 5); // Limit to 5 items max
+        .slice(0, 5);
     };
 
     const improvements = parseSection(analysisText, language === 'ko' ? '개선 사항' : 'Improvements');
@@ -137,35 +137,65 @@ Each item should be specific and actionable, including factors that VCs actually
     const similarIdeas = parseSection(analysisText, language === 'ko' ? '유사 아이디어' : 'Similar Ideas');
     const pitchPoints = parseSection(analysisText, language === 'ko' ? '투자 피치 포인트' : 'Investment Pitch Points');
 
-    // Calculate a more sophisticated score based on various factors
+    // Enhanced scoring algorithm with broader range
     const calculateScore = () => {
-      let score = 5; // Base score
+      let score = 3.0; // Lower base score
       
-      // Market potential factor
-      if (marketPotential.length >= 3) score += 1;
-      if (marketPotential.some(p => p.toLowerCase().includes(language === 'ko' ? '확장' : 'scalab'))) score += 0.5;
+      // Text quality assessment
+      const ideaLength = ideaText.trim().length;
+      if (ideaLength > 100) score += 1.0;
+      if (ideaLength > 200) score += 0.5;
       
-      // Innovation factor
-      if (improvements.length >= 4) score += 1;
-      if (analysisText.toLowerCase().includes(language === 'ko' ? '혁신' : 'innovat')) score += 0.5;
+      // Innovation indicators
+      const innovationKeywords = language === 'ko' 
+        ? ['AI', '블록체인', '머신러닝', '자동화', '혁신', 'IoT', '빅데이터', 'VR', 'AR']
+        : ['AI', 'blockchain', 'machine learning', 'automation', 'innovation', 'IoT', 'big data', 'VR', 'AR'];
       
-      // Competition factor
-      if (similarIdeas.length <= 2) score += 0.5; // Less competition is better
+      const hasInnovation = innovationKeywords.some(keyword => 
+        ideaText.toLowerCase().includes(keyword.toLowerCase())
+      );
+      if (hasInnovation) score += 1.0;
       
-      // Pitch strength factor
-      if (pitchPoints.length >= 3) score += 1;
+      // Market potential based on analysis quality
+      if (marketPotential.length >= 3) score += 1.0;
+      if (marketPotential.some(p => 
+        p.toLowerCase().includes(language === 'ko' ? '확장' : 'scalab') ||
+        p.toLowerCase().includes(language === 'ko' ? '시장' : 'market')
+      )) score += 0.5;
       
-      // Cap at 10
-      return Math.min(score, 10);
+      // Competition analysis
+      if (similarIdeas.length <= 2) score += 0.5; // Less competition
+      if (similarIdeas.length >= 3) score -= 0.5; // More competition
+      
+      // Implementation feasibility
+      if (improvements.length >= 4) score += 0.5;
+      if (improvements.some(imp => 
+        imp.toLowerCase().includes(language === 'ko' ? '단순' : 'simple') ||
+        imp.toLowerCase().includes(language === 'ko' ? '쉬운' : 'easy')
+      )) score += 0.5;
+      
+      // Pitch strength
+      if (pitchPoints.length >= 3) score += 1.0;
+      
+      // Analysis depth bonus
+      const totalAnalysisItems = improvements.length + marketPotential.length + similarIdeas.length + pitchPoints.length;
+      if (totalAnalysisItems >= 12) score += 0.5;
+      
+      // Random variation for realism (±0.3)
+      const randomVariation = (Math.random() - 0.5) * 0.6;
+      score += randomVariation;
+      
+      // Ensure score is within valid range
+      return Math.max(1.0, Math.min(10.0, parseFloat(score.toFixed(1))));
     };
 
     const score = calculateScore();
 
-    console.log('Analysis completed successfully');
+    console.log('Analysis completed successfully with score:', score);
 
     return new Response(
       JSON.stringify({
-        score: parseFloat(score.toFixed(1)),
+        score,
         analysis: analysisText,
         improvements,
         marketPotential,
