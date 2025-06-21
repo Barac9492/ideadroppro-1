@@ -85,6 +85,11 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
     }
   };
 
+  const handlePostAnalysisRefresh = async () => {
+    await fetchIdeas();
+    await fetchSystemStats();
+  };
+
   useEffect(() => {
     fetchSystemStats();
   }, []);
@@ -198,10 +203,7 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
                 </p>
                 <BulkAnalysisButton 
                   currentLanguage={currentLanguage}
-                  fetchIdeas={() => {
-                    fetchIdeas();
-                    fetchSystemStats(); // Refresh stats after analysis
-                  }}
+                  fetchIdeas={handlePostAnalysisRefresh}
                 />
               </CardContent>
             </Card>
