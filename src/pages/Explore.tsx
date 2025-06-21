@@ -17,11 +17,11 @@ const Explore: React.FC = () => {
     ideas,
     loading,
     fetchIdeas,
-    handleLike,
-    handleGenerateAnalysis,
-    handleGenerateGlobalAnalysis,
-    handleSaveFinalVerdict,
-    handleDelete
+    toggleLike,
+    generateAnalysis,
+    generateGlobalAnalysis,
+    saveFinalVerdict,
+    deleteIdea
   } = useIdeas(currentLanguage);
 
   const toggleLanguage = () => {
@@ -95,11 +95,11 @@ const Explore: React.FC = () => {
                 idea={idea}
                 currentLanguage={currentLanguage}
                 currentUserId={user?.id}
-                onLike={handleLike}
-                onGenerateAnalysis={handleGenerateAnalysis}
-                onGenerateGlobalAnalysis={handleGenerateGlobalAnalysis}
-                onSaveFinalVerdict={handleSaveFinalVerdict}
-                onDelete={handleDelete}
+                onLike={toggleLike}
+                onGenerateAnalysis={generateAnalysis}
+                onGenerateGlobalAnalysis={generateGlobalAnalysis}
+                onSaveFinalVerdict={saveFinalVerdict}
+                onDelete={deleteIdea}
                 isAdmin={isAdmin}
                 isAuthenticated={!!user}
               />
