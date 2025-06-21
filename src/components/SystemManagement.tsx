@@ -1,9 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Zap, AlertCircle, CheckCircle, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Settings, Zap, AlertCircle, CheckCircle, BarChart3, Shield, Eye, EyeOff } from 'lucide-react';
 import BulkAnalysisButton from './BulkAnalysisButton';
+import AdminForceUpdatePanel from './AdminForceUpdatePanel';
 import { useIdeas } from '@/hooks/useIdeas';
+import { useZeroScoreMonitoring } from '@/hooks/useZeroScoreMonitoring';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SystemManagementProps {
@@ -12,6 +15,15 @@ interface SystemManagementProps {
 
 const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) => {
   const { fetchIdeas } = useIdeas(currentLanguage);
+  const { 
+    stats, 
+    monitoring, 
+    startMonitoring, 
+    stopMonitoring, 
+    checkZeroScoreStats,
+    attemptAutoFix 
+  } = useZeroScoreMonitoring(currentLanguage);
+  
   const [systemStats, setSystemStats] = useState({
     totalIdeas: 0,
     zeroScoreIdeas: 0,
@@ -31,7 +43,18 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
       analyzedIdeas: '분석 완료',
       systemHealthy: '시스템 정상',
       systemNeedsAttention: '관리 필요',
-      refreshStats: '통계 새로고침'
+      refreshStats: '통계 새로고침',
+      adminTools: '관리자 도구',
+      adminDescription: '강력한 관리자 전용 수정 도구',
+      monitoring: '자동 모니터링',
+      monitoringDescription: '0점 아이디어 실시간 감지 및 자동 수정',
+      startMonitoring: '모니터링 시작',
+      stopMonitoring: '모니터링 중단',
+      monitoringActive: '모니터링 활성화됨',
+      monitoringInactive: '모니터링 비활성화됨',
+      autoFix: '자동 수정 실행',
+      lastCheck: '마지막 확인',
+      recentZeros: '최근 0점'
     },
     en: {
       title: 'System Management',
@@ -44,7 +67,18 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
       analyzedIdeas: 'Analyzed Ideas',
       systemHealthy: 'System Healthy',
       systemNeedsAttention: 'Needs Attention',
-      refreshStats: 'Refresh Stats'
+      refreshStats: 'Refresh Stats',
+      adminTools: 'Admin Tools',
+      adminDescription: 'Powerful administrator-only fix tools',
+      monitoring: 'Auto Monitoring',
+      monitoringDescription: 'Real-time 0-score detection and auto-fix',
+      startMonitoring: 'Start Monitoring',
+      stopMonitoring: 'Stop Monitoring',
+      monitoringActive: 'Monitoring Active',
+      monitoringInactive: 'Monitoring Inactive',
+      autoFix: 'Run Auto Fix',
+      lastCheck: 'Last Check',
+      recentZeros: 'Recent Zeros'
     }
   };
 
@@ -52,20 +86,17 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
     try {
       setSystemStats(prev => ({ ...prev, loading: true }));
       
-      // Get total ideas count
       const { count: totalIdeas } = await supabase
         .from('ideas')
         .select('*', { count: 'exact', head: true })
         .eq('seed', false);
 
-      // Get zero score ideas count
       const { count: zeroScoreIdeas } = await supabase
         .from('ideas')
         .select('*', { count: 'exact', head: true })
         .or('score.eq.0,score.is.null')
         .eq('seed', false);
 
-      // Get analyzed ideas count
       const { count: analyzedIdeas } = await supabase
         .from('ideas')
         .select('*', { count: 'exact', head: true })
@@ -88,6 +119,7 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
   const handlePostAnalysisRefresh = async () => {
     await fetchIdeas();
     await fetchSystemStats();
+    await checkZeroScoreStats();
   };
 
   useEffect(() => {
@@ -117,7 +149,7 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
               <span>{text[currentLanguage].systemStatus}</span>
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-2">
@@ -134,15 +166,15 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
                 </CardContent>
               </Card>
 
-              <Card className={`${systemStats.zeroScoreIdeas > 0 ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
+              <Card className={`${systemStats.zeroScoreIdeas > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-2">
-                    <div className={`p-2 rounded-full ${systemStats.zeroScoreIdeas > 0 ? 'bg-orange-100' : 'bg-green-100'}`}>
-                      <AlertCircle className={`h-4 w-4 ${systemStats.zeroScoreIdeas > 0 ? 'text-orange-600' : 'text-green-600'}`} />
+                    <div className={`p-2 rounded-full ${systemStats.zeroScoreIdeas > 0 ? 'bg-red-100' : 'bg-green-100'}`}>
+                      <AlertCircle className={`h-4 w-4 ${systemStats.zeroScoreIdeas > 0 ? 'text-red-600' : 'text-green-600'}`} />
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">{text[currentLanguage].zeroScoreIdeas}</p>
-                      <p className={`text-2xl font-bold ${systemStats.zeroScoreIdeas > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      <p className={`text-2xl font-bold ${systemStats.zeroScoreIdeas > 0 ? 'text-re-600' : 'text-green-600'}`}>
                         {systemStats.loading ? '...' : systemStats.zeroScoreIdeas}
                       </p>
                     </div>
@@ -165,30 +197,121 @@ const SystemManagement: React.FC<SystemManagementProps> = ({ currentLanguage }) 
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className={`${monitoring ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200'}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className={`p-2 rounded-full ${monitoring ? 'bg-purple-100' : 'bg-gray-100'}`}>
+                      {monitoring ? (
+                        <Eye className="h-4 w-4 text-purple-600" />
+                      ) : (
+                        <EyeOff className="h-4 w-4 text-gray-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">{text[currentLanguage].recentZeros}</p>
+                      <p className={`text-2xl font-bold ${monitoring ? 'text-purple-600' : 'text-gray-600'}`}>
+                        {stats.recentZeroScores}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="flex items-center space-x-2 mb-4">
-              {isSystemHealthy ? (
-                <>
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-green-600 font-semibold">{text[currentLanguage].systemHealthy}</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-5 w-5 text-orange-600" />
-                  <span className="text-orange-600 font-semibold">{text[currentLanguage].systemNeedsAttention}</span>
-                </>
-              )}
-              <button
-                onClick={fetchSystemStats}
-                className="ml-auto px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-              >
-                {text[currentLanguage].refreshStats}
-              </button>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                {isSystemHealthy ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="text-green-600 font-semibold">{text[currentLanguage].systemHealthy}</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <span className="text-red-600 font-semibold">{text[currentLanguage].systemNeedsAttention}</span>
+                  </>
+                )}
+                <span className="text-sm text-gray-500">
+                  ({text[currentLanguage].lastCheck}: {stats.lastCheck.toLocaleTimeString()})
+                </span>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={checkZeroScoreStats}
+                  size="sm"
+                  variant="outline"
+                >
+                  {text[currentLanguage].refreshStats}
+                </Button>
+                <Button
+                  onClick={attemptAutoFix}
+                  size="sm"
+                  variant="outline"
+                  className="text-blue-600"
+                >
+                  {text[currentLanguage].autoFix}
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* Analysis Tools */}
+          {/* Auto Monitoring System */}
+          <div className="mb-6">
+            <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-lg">
+                  <Eye className="h-5 w-5 text-purple-600" />
+                  <span>{text[currentLanguage].monitoring}</span>
+                  <span className={`text-sm px-2 py-1 rounded-full ${
+                    monitoring 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {monitoring 
+                      ? text[currentLanguage].monitoringActive 
+                      : text[currentLanguage].monitoringInactive
+                    }
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  {text[currentLanguage].monitoringDescription}
+                </p>
+                <Button
+                  onClick={monitoring ? stopMonitoring : startMonitoring}
+                  className={`${
+                    monitoring 
+                      ? 'bg-red-600 hover:bg-red-700' 
+                      : 'bg-purple-600 hover:bg-purple-700'
+                  } text-white`}
+                >
+                  {monitoring ? (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-2" />
+                      {text[currentLanguage].stopMonitoring}
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-2" />
+                      {text[currentLanguage].startMonitoring}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Admin Force Update Panel */}
+          <div className="mb-6">
+            <AdminForceUpdatePanel 
+              currentLanguage={currentLanguage}
+              onUpdateComplete={handlePostAnalysisRefresh}
+            />
+          </div>
+
+          {/* Original Analysis Tools */}
           <div className="space-y-4">
             <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
               <CardHeader>
