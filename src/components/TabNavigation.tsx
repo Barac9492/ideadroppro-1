@@ -23,7 +23,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
       ranking: '랭킹',
       vcs: 'VC',
       profile: '프로필',
-      urgent: '긴급!'
+      new: 'NEW!'
     },
     en: {
       home: 'Home',
@@ -32,7 +32,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
       ranking: 'Ranking',
       vcs: 'VCs',
       profile: 'Profile',
-      urgent: 'Urgent!'
+      new: 'NEW!'
     }
   };
 
@@ -42,42 +42,48 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
       label: text[currentLanguage].home,
       icon: Home,
       path: '/',
-      badge: null
+      badge: null,
+      description: 'Landing & Overview'
     },
     {
       id: 'submit',
       label: text[currentLanguage].submit,
       icon: PlusCircle,
       path: '/submit',
-      badge: !hasParticipated ? text[currentLanguage].urgent : null
+      badge: !hasParticipated ? text[currentLanguage].new : null,
+      description: 'Daily Challenges'
     },
     {
       id: 'remix',
       label: text[currentLanguage].remix,
       icon: Shuffle,
       path: '/remix',
-      badge: null
+      badge: null,
+      description: 'Collaborate & Evolve'
     },
     {
       id: 'ranking',
       label: text[currentLanguage].ranking,
       icon: Trophy,
       path: '/ranking',
-      badge: null
+      badge: null,
+      description: 'Leaderboards'
     },
     {
       id: 'vcs',
       label: text[currentLanguage].vcs,
       icon: Building2,
       path: '/vcs',
-      badge: null
+      badge: null,
+      description: 'Investor Network'
     },
     {
       id: 'profile',
       label: text[currentLanguage].profile,
       icon: User,
       path: '/dashboard',
-      badge: null
+      badge: null,
+      description: 'Your Stats'
     }
   ];
 
@@ -87,9 +93,9 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
   };
 
   return (
-    <nav className="bg-white border-t border-gray-200 sticky bottom-0 md:static md:border-t-0 md:border-b md:bg-gradient-to-r md:from-purple-50 md:to-blue-50 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-around md:justify-center md:space-x-8 py-2 md:py-4">
+    <nav className="bg-white border-t border-gray-200 sticky bottom-0 md:static md:border-t-0 md:border-b md:bg-gradient-to-r md:from-purple-50 md:to-blue-50 z-50 shadow-lg md:shadow-sm">
+      <div className="container mx-auto px-2 md:px-4">
+        <div className="flex items-center justify-around md:justify-center md:space-x-4 py-2 md:py-3">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab.path);
@@ -100,19 +106,23 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ currentLanguage }) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate(tab.path)}
-                className={`flex flex-col md:flex-row items-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-4 py-2 relative ${
+                className={`flex flex-col md:flex-row items-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-4 py-2 md:py-3 relative rounded-lg transition-all ${
                   active 
-                    ? 'text-purple-600 bg-purple-100 md:bg-purple-100' 
+                    ? 'text-purple-600 bg-purple-100 shadow-sm scale-105' 
                     : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={`w-5 h-5 ${active ? 'animate-pulse' : ''}`} />
                 <span className="text-xs md:text-sm font-medium">{tab.label}</span>
                 
                 {tab.badge && (
-                  <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 animate-pulse">
+                  <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 animate-bounce">
                     {tab.badge}
                   </Badge>
+                )}
+                
+                {active && (
+                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-600 rounded-full md:hidden"></div>
                 )}
               </Button>
             );

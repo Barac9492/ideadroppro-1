@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, LogOut, Share2 } from 'lucide-react';
+import { Globe, LogOut, Share2, Bell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import InfluenceScoreDisplay from './InfluenceScoreDisplay';
-import LiveMissionTracker from './LiveMissionTracker';
 import { useNavigate } from 'react-router-dom';
+import { useDailyChallenge } from '@/hooks/useDailyChallenge';
 
 interface HeaderProps {
   currentLanguage: 'ko' | 'en';
@@ -17,19 +18,22 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { hasParticipated } = useDailyChallenge(currentLanguage);
 
   const text = {
     ko: {
       title: 'IdeaDrop Pro',
       login: '로그인',
       logout: '로그아웃',
-      invite: '친구 초대'
+      invite: '친구 초대',
+      mission: '오늘 미션'
     },
     en: {
       title: 'IdeaDrop Pro',
       login: 'Login',
       logout: 'Logout',
-      invite: 'Invite Friends'
+      invite: 'Invite Friends',
+      mission: 'Daily Mission'
     }
   };
 
@@ -63,7 +67,10 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <div 
+            className="flex items-center space-x-2 cursor-pointer"
+            onClick={() => navigate('/')}
+          >
             <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               💡 {text[currentLanguage].title}
             </h1>
@@ -72,15 +79,21 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
             </Badge>
           </div>
 
-          {/* Center - Live Mission Tracker for authenticated users */}
-          {user && (
-            <div className="hidden md:block flex-1 max-w-md mx-8">
-              <LiveMissionTracker currentLanguage={currentLanguage} />
-            </div>
-          )}
-
           {/* Navigation */}
           <div className="flex items-center space-x-4">
+            {/* Mission Alert for authenticated users */}
+            {user && !hasParticipated && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/submit')}
+                className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 animate-pulse"
+              >
+                <Bell className="w-4 h-4 mr-1" />
+                {text[currentLanguage].mission}
+              </Button>
+            )}
+
             {/* Language Toggle */}
             <Button
               variant="ghost"
@@ -130,13 +143,6 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
             )}
           </div>
         </div>
-
-        {/* Mobile Mission Tracker */}
-        {user && (
-          <div className="md:hidden mt-3">
-            <LiveMissionTracker currentLanguage={currentLanguage} />
-          </div>
-        )}
       </div>
     </header>
   );

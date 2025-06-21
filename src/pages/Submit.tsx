@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import DailyChallengeSection from '@/components/DailyChallengeSection';
 import HeroSection from '@/components/HeroSection';
 import DailyXPDashboard from '@/components/DailyXPDashboard';
+import LiveMissionTracker from '@/components/LiveMissionTracker';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -53,16 +54,30 @@ const Submit = () => {
         onLanguageToggle={handleLanguageToggle}
       />
       
+      {/* Mission Status - prominently displayed */}
+      {user && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 py-4">
+          <div className="container mx-auto px-4">
+            <div className="max-w-2xl mx-auto">
+              <LiveMissionTracker currentLanguage={currentLanguage} />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Daily Challenge - Main focus */}
       <DailyChallengeSection 
         currentLanguage={currentLanguage}
         onJoinChallenge={handleJoinChallenge}
       />
       
+      {/* Idea Submission Interface */}
       <HeroSection 
         currentLanguage={currentLanguage}
         onIdeaDrop={handleIdeaDrop}
       />
       
+      {/* Progress Dashboard for authenticated users */}
       {user && (
         <div className="bg-gray-50 py-8">
           <div className="container mx-auto px-4">
