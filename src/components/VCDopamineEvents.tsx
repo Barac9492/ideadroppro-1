@@ -5,6 +5,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, MessageSquare, Heart, Crown, Zap, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { 
+  getVCActivityLevel, 
+  getRealisticVCCount, 
+  getEventFrequencyMs, 
+  getTimeBasedEventTypes,
+  getCurrentKSTTime 
+} from '@/utils/vcBehaviorUtils';
+import { useRealIdeaData } from '@/hooks/useRealIdeaData';
 
 interface VCEvent {
   id: string;
@@ -13,7 +21,9 @@ interface VCEvent {
   vcAvatar: string;
   timestamp: Date;
   ideaId?: string;
+  ideaContent?: string;
   message?: string;
+  isReal: boolean;
 }
 
 interface VCDopamineEventsProps {
@@ -27,6 +37,7 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
 }) => {
   const [liveEvents, setLiveEvents] = useState<VCEvent[]>([]);
   const [vcOnlineCount, setVCOnlineCount] = useState(8);
+  const { popularIdeas, recentIdeas, loading } = useRealIdeaData();
 
   const text = {
     ko: {
@@ -38,7 +49,9 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
       liveVC: '실시간 VC',
       justNow: '방금',
       minutesAgo: '분 전',
-      vcOnline: '명의 VC 온라인'
+      vcOnline: '명의 VC 온라인',
+      realIdea: '실제 아이디어',
+      officeHours: '업무시간 외'
     },
     en: {
       vcReading: 'is reading',
@@ -49,7 +62,9 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
       liveVC: 'Live VC',
       justNow: 'just now',
       minutesAgo: 'min ago',
-      vcOnline: 'VCs online'
+      vcOnline: 'VCs online',
+      realIdea: 'real idea',
+      officeHours: 'outside office hours'
     }
   };
 
@@ -58,13 +73,52 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
     { name: 'Innovation Capital', avatar: '⚡' },
     { name: 'Future Fund', avatar: '🚀' },
     { name: 'TechStars Korea', avatar: '⭐' },
-    { name: 'Kakao Ventures', avatar: '💬' }
+    { name: 'Kakao Ventures', avatar: '💬' },
+    { name: 'Naver D2SF', avatar: '🔍' },
+    { name: 'Samsung Ventures', avatar: '📱' },
+    { name: 'LG Technology Ventures', avatar: '🔬' }
   ];
 
-  const generateVCEvent = (): VCEvent => {
+  const generateRealisticEvent = (): VCEvent | null => {
+    const activityLevel = getVCActivityLevel();
+    
+    // Very low chance of events during low activity periods
+    if (activityLevel === 'low' && Math.random() < 0.7) {
+      return null;
+    }
+
     const vc = mockVCs[Math.floor(Math.random() * mockVCs.length)];
-    const types: VCEvent['type'][] = ['reading', 'interested', 'remixed', 'dm_request', 'featured'];
-    const type = types[Math.floor(Math.random() * types.length)];
+    const timeBasedTypes = getTimeBasedEventTypes();
+    const type = timeBasedTypes[Math.floor(Math.random() * timeBasedTypes.length)];
+    
+    // Decide if this should be a real idea event (70% if we have real ideas)
+    const useRealIdea = !loading && (popularIdeas.length > 0 || recentIdeas.length > 0) && Math.random() < 0.7;
+    
+    let selectedIdea = null;
+    if (useRealIdea) {
+      // Prefer popular ideas for high-value events
+      if ((type === 'featured' || type === 'dm_request') && popularIdeas.length > 0) {
+        selectedIdea = popularIdeas[Math.floor(Math.random() * popularIdeas.length)];
+      } else if (recentIdeas.length > 0) {
+        selectedIdea = recentIdeas[Math.floor(Math.random() * recentIdeas.length)];
+      }
+    }
+    
+    const realisticMessages = {
+      ko: {
+        remixed: ['혁신적인 접근입니다!', '흥미로운 아이디어네요', '시장성이 보입니다', '실현 가능성이 높아요'],
+        interested: ['더 자세한 내용이 궁금합니다', '투자 검토해보겠습니다', '미팅 제안드립니다'],
+        featured: ['이번 주 추천 아이디어', '파트너사에 소개하겠습니다', 'VC 네트워크에 공유']
+      },
+      en: {
+        remixed: ['Innovative approach!', 'Interesting concept', 'Great market potential', 'Highly feasible'],
+        interested: ['Would like to know more', 'Considering investment', 'Meeting proposal'],
+        featured: ['This week\'s featured idea', 'Introducing to partners', 'Sharing with VC network']
+      }
+    };
+    
+    const messages = realisticMessages[currentLanguage][type as keyof typeof realisticMessages['ko']] || [];
+    const message = messages.length > 0 ? messages[Math.floor(Math.random() * messages.length)] : undefined;
     
     return {
       id: Date.now().toString() + Math.random(),
@@ -72,8 +126,10 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
       vcName: vc.name,
       vcAvatar: vc.avatar,
       timestamp: new Date(),
-      ideaId: 'idea-' + Math.floor(Math.random() * 100),
-      message: type === 'remixed' ? '혁신적인 접근입니다!' : undefined
+      ideaId: selectedIdea?.id || 'idea-' + Math.floor(Math.random() * 100),
+      ideaContent: selectedIdea?.content,
+      message,
+      isReal: !!selectedIdea
     };
   };
 
@@ -89,14 +145,18 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
   };
 
   const getEventText = (event: VCEvent) => {
-    switch (event.type) {
-      case 'reading': return `${event.vcName} ${text[currentLanguage].vcReading}`;
-      case 'interested': return `${event.vcName} ${text[currentLanguage].vcInterested}`;
-      case 'remixed': return `${event.vcName} ${text[currentLanguage].vcRemixed}`;
-      case 'dm_request': return `${event.vcName} ${text[currentLanguage].vcDmRequest}`;
-      case 'featured': return `${event.vcName} ${text[currentLanguage].vcFeatured}`;
-      default: return event.vcName;
-    }
+    const baseText = (() => {
+      switch (event.type) {
+        case 'reading': return `${event.vcName} ${text[currentLanguage].vcReading}`;
+        case 'interested': return `${event.vcName} ${text[currentLanguage].vcInterested}`;
+        case 'remixed': return `${event.vcName} ${text[currentLanguage].vcRemixed}`;
+        case 'dm_request': return `${event.vcName} ${text[currentLanguage].vcDmRequest}`;
+        case 'featured': return `${event.vcName} ${text[currentLanguage].vcFeatured}`;
+        default: return event.vcName;
+      }
+    })();
+
+    return event.isReal ? `${baseText} (${text[currentLanguage].realIdea})` : baseText;
   };
 
   const getTimeAgo = (timestamp: Date) => {
@@ -115,38 +175,84 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
     }
   };
 
+  const isOfficeHours = () => {
+    return getVCActivityLevel() !== 'low';
+  };
+
   useEffect(() => {
-    // Generate initial events
-    const initialEvents = Array.from({ length: 3 }, () => generateVCEvent());
-    setLiveEvents(initialEvents);
+    // Set initial realistic VC count
+    setVCOnlineCount(getRealisticVCCount());
 
-    // Simulate live VC activity
-    const eventInterval = setInterval(() => {
-      if (Math.random() < 0.3) { // 30% chance every 5 seconds
-        const newEvent = generateVCEvent();
-        setLiveEvents(prev => [newEvent, ...prev.slice(0, 4)]); // Keep only 5 recent events
-        
-        // Show toast for high-value events
-        if (newEvent.type === 'dm_request' || newEvent.type === 'featured') {
-          toast({
-            title: `🔥 ${newEvent.vcAvatar} ${newEvent.vcName}`,
-            description: getEventText(newEvent),
-            duration: 4000,
-          });
-        }
+    // Generate initial events only during active hours
+    if (isOfficeHours()) {
+      const initialEvents: VCEvent[] = [];
+      for (let i = 0; i < 2; i++) {
+        const event = generateRealisticEvent();
+        if (event) initialEvents.push(event);
       }
-    }, 5000);
+      setLiveEvents(initialEvents);
+    }
 
-    // Update VC online count
+    // Set up realistic event generation
+    const scheduleNextEvent = () => {
+      const frequency = getEventFrequencyMs();
+      
+      setTimeout(() => {
+        const newEvent = generateRealisticEvent();
+        if (newEvent) {
+          setLiveEvents(prev => [newEvent, ...prev.slice(0, 4)]);
+          
+          // Show toast for high-value events
+          if (newEvent.type === 'dm_request' || newEvent.type === 'featured') {
+            toast({
+              title: `🔥 ${newEvent.vcAvatar} ${newEvent.vcName}`,
+              description: getEventText(newEvent),
+              duration: 4000,
+            });
+          }
+        }
+        
+        scheduleNextEvent(); // Schedule next event
+      }, frequency);
+    };
+
+    scheduleNextEvent();
+
+    // Update VC count realistically
     const countInterval = setInterval(() => {
-      setVCOnlineCount(prev => Math.max(5, prev + Math.floor(Math.random() * 3) - 1));
-    }, 15000);
+      setVCOnlineCount(getRealisticVCCount());
+    }, 5 * 60 * 1000); // Every 5 minutes
 
     return () => {
-      clearInterval(eventInterval);
       clearInterval(countInterval);
     };
-  }, []);
+  }, [loading]);
+
+  // Don't show events during very low activity periods
+  if (!isOfficeHours() && liveEvents.length === 0) {
+    return (
+      <div className="space-y-4">
+        <Card className="border-gray-300 bg-gradient-to-r from-gray-50 to-slate-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                  <Badge className="bg-gray-100 text-gray-600">
+                    {text[currentLanguage].officeHours}
+                  </Badge>
+                </div>
+                <span className="text-sm text-gray-600">
+                  {vcOnlineCount} {text[currentLanguage].vcOnline}
+                </span>
+              </div>
+              <Users className="w-5 h-5 text-gray-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -165,7 +271,12 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
                 {vcOnlineCount} {text[currentLanguage].vcOnline}
               </span>
             </div>
-            <Users className="w-5 h-5 text-green-600" />
+            <div className="flex items-center space-x-2">
+              <Users className="w-5 h-5 text-green-600" />
+              <Badge className="bg-blue-100 text-blue-700 text-xs">
+                {getVCActivityLevel().toUpperCase()}
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -175,7 +286,9 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
         {liveEvents.map((event) => (
           <Card 
             key={event.id}
-            className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+            className={`border-gray-200 hover:shadow-md transition-shadow cursor-pointer ${
+              event.isReal ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200' : ''
+            }`}
             onClick={() => handleEventClick(event)}
           >
             <CardContent className="p-3">
@@ -183,11 +296,21 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
                 <div className="flex items-center space-x-3">
                   <div className="text-lg">{event.vcAvatar}</div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900 flex items-center">
                       {getEventText(event)}
+                      {event.isReal && (
+                        <Badge className="ml-2 bg-blue-100 text-blue-700 text-xs">
+                          실제
+                        </Badge>
+                      )}
                     </div>
+                    {event.ideaContent && (
+                      <div className="text-xs text-gray-600 truncate max-w-xs mt-1">
+                        "{event.ideaContent.substring(0, 50)}..."
+                      </div>
+                    )}
                     {event.message && (
-                      <div className="text-xs text-gray-600 italic">
+                      <div className="text-xs text-gray-600 italic mt-1">
                         "{event.message}"
                       </div>
                     )}
@@ -213,15 +336,24 @@ const VCDopamineEvents: React.FC<VCDopamineEventsProps> = ({
             이번 주 VC 추천 아이디어
           </h3>
           <div className="space-y-2">
-            <div className="text-sm text-purple-700">
-              🌱 GreenTech: "AI 농업 자동화 플랫폼"
-            </div>
-            <div className="text-sm text-purple-700">
-              ⚡ Innovation Capital: "탄소 중립 블록체인"
-            </div>
-            <div className="text-sm text-purple-700">
-              🚀 Future Fund: "스마트 에너지 관리"
-            </div>
+            {popularIdeas.slice(0, 3).map((idea, index) => (
+              <div key={idea.id} className="text-sm text-purple-700">
+                {mockVCs[index]?.avatar} {mockVCs[index]?.name}: "{idea.content.substring(0, 30)}..."
+              </div>
+            ))}
+            {popularIdeas.length === 0 && (
+              <>
+                <div className="text-sm text-purple-700">
+                  🌱 GreenTech: "AI 농업 자동화 플랫폼"
+                </div>
+                <div className="text-sm text-purple-700">
+                  ⚡ Innovation Capital: "탄소 중립 블록체인"
+                </div>
+                <div className="text-sm text-purple-700">
+                  🚀 Future Fund: "스마트 에너지 관리"
+                </div>
+              </>
+            )}
           </div>
           <Button 
             size="sm" 
