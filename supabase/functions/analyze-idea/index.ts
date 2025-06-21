@@ -112,8 +112,9 @@ Provide a specific and practical analysis in the following format:
 
 Each item should be specific and actionable, including factors that VCs actually consider during their review process.`;
 
+    // Use the updated Gemini model
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -244,11 +245,20 @@ Each item should be specific and actionable, including factors that VCs actually
   } catch (error) {
     console.error('Analysis error:', error);
     
+    // Extract language from the request if possible
+    let fallbackLanguage = 'ko';
+    try {
+      const body = await req.json();
+      fallbackLanguage = body.language || 'ko';
+    } catch {
+      // Use default language if parsing fails
+    }
+    
     // Return a fallback response with a reasonable score instead of failing completely
     return new Response(
       JSON.stringify({ 
         score: 5.0, // Fallback score
-        analysis: language === 'ko' 
+        analysis: fallbackLanguage === 'ko' 
           ? '분석 중 오류가 발생했지만 기본 점수를 제공합니다.'
           : 'Analysis failed but providing default score.',
         improvements: [],

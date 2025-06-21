@@ -6,7 +6,6 @@ import HeroSection from '@/components/HeroSection';
 import DailyXPDashboard from '@/components/DailyXPDashboard';
 import LiveMissionTracker from '@/components/LiveMissionTracker';
 import RecentIdeasPreview from '@/components/RecentIdeasPreview';
-import BulkAnalysisButton from '@/components/BulkAnalysisButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -94,18 +93,6 @@ const Submit = () => {
         currentLanguage={currentLanguage}
         onIdeaDrop={handleIdeaDrop}
       />
-      
-      {/* Admin Tools for bulk analysis */}
-      {user && (
-        <div className="container mx-auto px-4 pb-4">
-          <div className="max-w-2xl mx-auto">
-            <BulkAnalysisButton 
-              currentLanguage={currentLanguage}
-              fetchIdeas={fetchIdeas}
-            />
-          </div>
-        </div>
-      )}
       
       {/* Recent Ideas Preview */}
       <RecentIdeasPreview 

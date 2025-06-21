@@ -9,6 +9,7 @@ import IdeaManagement from './IdeaManagement';
 import SeedDataManagement from './SeedDataManagement';
 import DailyPromptManagement from './DailyPromptManagement';
 import UserRoleManager from './UserRoleManager';
+import SystemManagement from './SystemManagement';
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       ideaManagement: '아이디어 관리',
       seedDataManagement: '시드 데이터 관리',
       dailyPromptManagement: '오늘의 주제 관리',
+      systemManagement: '시스템 관리',
       loadingUsers: '사용자 정보를 불러오는 중...',
       fetchError: '사용자 정보를 가져오는데 실패했습니다'
     },
@@ -38,6 +40,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       ideaManagement: 'Idea Management',
       seedDataManagement: 'Seed Data Management',
       dailyPromptManagement: 'Daily Prompt Management',
+      systemManagement: 'System Management',
       loadingUsers: 'Loading users...',
       fetchError: 'Failed to fetch users'
     }
@@ -89,11 +92,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="users">{text[currentLanguage].userManagement}</TabsTrigger>
         <TabsTrigger value="ideas">{text[currentLanguage].ideaManagement}</TabsTrigger>
         <TabsTrigger value="seeds">{text[currentLanguage].seedDataManagement}</TabsTrigger>
         <TabsTrigger value="prompts">{text[currentLanguage].dailyPromptManagement}</TabsTrigger>
+        <TabsTrigger value="system">{text[currentLanguage].systemManagement}</TabsTrigger>
       </TabsList>
       
       <TabsContent value="users">
@@ -124,6 +128,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
 
       <TabsContent value="prompts">
         <DailyPromptManagement currentLanguage={currentLanguage} />
+      </TabsContent>
+
+      <TabsContent value="system">
+        <SystemManagement currentLanguage={currentLanguage} />
       </TabsContent>
     </Tabs>
   );
