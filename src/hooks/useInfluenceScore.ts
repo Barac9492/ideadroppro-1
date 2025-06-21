@@ -121,7 +121,8 @@ export const useInfluenceScore = () => {
     ideaRemixed: (count = 1) => updateScore('아이디어 리믹스됨', 5 * count, `내 아이디어가 ${count}번 리믹스되었습니다`),
     vcInterest: (count = 1) => updateScore('VC 관심 표시', 20 * count, `내 아이디어에 ${count}명의 VC가 관심을 표시했습니다`),
     dailyStreak: () => updateScore('3일 연속 제출', 15, '3일 연속 아이디어를 제출했습니다'),
-    keywordParticipation: () => updateScore('오늘의 키워드 참여', 10, '오늘의 키워드에 참여했습니다')
+    keywordParticipation: () => updateScore('오늘의 키워드 참여', 10, '오늘의 키워드에 참여했습니다'),
+    ideaLike: () => updateScore('아이디어 좋아요', 3, '아이디어에 좋아요를 눌렀습니다')
   };
 
   useEffect(() => {

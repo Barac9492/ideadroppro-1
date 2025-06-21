@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +17,7 @@ interface UserXP {
 
 interface DailyMission {
   id: string;
-  type: 'idea_submit' | 'remix_create' | 'vote_participate' | 'vc_interact';
+  type: 'idea_submit' | 'remix_create' | 'vote_participate' | 'vc_interact' | 'like_ideas';
   title: string;
   description: string;
   xp_reward: number;
@@ -56,7 +55,7 @@ export const useDailyXP = () => {
     },
     {
       id: '3',
-      type: 'vote_participate', 
+      type: 'like_ideas', 
       title: '🗳️ 평가 참여',
       description: '아이디어에 좋아요를 눌러주세요',
       xp_reward: 20,
