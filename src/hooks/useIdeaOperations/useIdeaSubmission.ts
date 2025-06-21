@@ -65,7 +65,8 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
     
     // 창의성 추정 (특수문자, 이모지, 독특한 표현)
     if (/[!@#$%^&*()_+={}\[\]:";'<>?,.\/]/.test(ideaText)) score += 0.2;
-    if (/[😀-🙏]/.test(ideaText)) score += 0.3;
+    // Fix: Use Unicode property escapes for emoji detection instead of character range
+    if (/\p{Emoji}/u.test(ideaText)) score += 0.3;
     
     // 상세도 평가 (구체적인 숫자나 명사 등장)
     const numbers = ideaText.match(/\d+/g);
