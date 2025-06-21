@@ -1,15 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Crown, User, Shield } from 'lucide-react';
+import { Crown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import IdeaManagement from './IdeaManagement';
 import SeedDataManagement from './SeedDataManagement';
 import DailyPromptManagement from './DailyPromptManagement';
+import UserRoleManager from './UserRoleManager';
 
 interface User {
   id: string;
@@ -31,14 +30,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       ideaManagement: '아이디어 관리',
       seedDataManagement: '시드 데이터 관리',
       dailyPromptManagement: '오늘의 주제 관리',
-      email: '이메일',
-      role: '역할',
-      admin: '관리자',
-      moderator: '모더레이터',
-      user: '사용자',
-      updateRole: '역할 업데이트',
-      updated: '역할이 업데이트되었습니다',
-      error: '역할 업데이트 중 오류가 발생했습니다',
       loadingUsers: '사용자 정보를 불러오는 중...',
       fetchError: '사용자 정보를 가져오는데 실패했습니다'
     },
@@ -47,22 +38,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
       ideaManagement: 'Idea Management',
       seedDataManagement: 'Seed Data Management',
       dailyPromptManagement: 'Daily Prompt Management',
-      email: 'Email',
-      role: 'Role',
-      admin: 'Admin',
-      moderator: 'Moderator',
-      user: 'User',
-      updateRole: 'Update Role',
-      updated: 'Role updated successfully',
-      error: 'Error updating user role',
       loadingUsers: 'Loading users...',
       fetchError: 'Failed to fetch users'
     }
   };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -91,45 +70,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'moderator' | 'user') => {
-    try {
-      const { error } = await supabase
-        .from('user_roles')
-        .upsert({ 
-          user_id: userId, 
-          role: newRole 
-        }, { 
-          onConflict: 'user_id,role'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: text[currentLanguage].updated,
-        duration: 3000,
-      });
-
-      fetchUsers();
-    } catch (error) {
-      console.error('Error updating user role:', error);
-      toast({
-        title: text[currentLanguage].error,
-        variant: 'destructive',
-        duration: 3000,
-      });
-    }
-  };
-
-  const getRoleIcon = (role?: string) => {
-    switch (role) {
-      case 'admin':
-        return <Crown className="h-4 w-4 text-yellow-500" />;
-      case 'moderator':
-        return <Shield className="h-4 w-4 text-blue-500" />;
-      default:
-        return <User className="h-4 w-4 text-gray-500" />;
-    }
-  };
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   if (loading) {
     return (
@@ -162,44 +105,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentLanguage }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {users.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
-                  {text[currentLanguage].fetchError}
-                </p>
-              ) : (
-                users.map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      {getRoleIcon(user.role)}
-                      <div>
-                        <p className="font-medium">{user.email}</p>
-                        <p className="text-sm text-gray-500">
-                          {text[currentLanguage][user.role || 'user']}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Select
-                        value={user.role}
-                        onValueChange={(value: 'admin' | 'moderator' | 'user') => 
-                          updateUserRole(user.id, value)
-                        }
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">{text[currentLanguage].user}</SelectItem>
-                          <SelectItem value="moderator">{text[currentLanguage].moderator}</SelectItem>
-                          <SelectItem value="admin">{text[currentLanguage].admin}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <UserRoleManager 
+              users={users}
+              currentLanguage={currentLanguage}
+              onUsersUpdate={fetchUsers}
+            />
           </CardContent>
         </Card>
       </TabsContent>

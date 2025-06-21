@@ -4,14 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building2, Eye, MessageSquare, Heart, TrendingUp, Clock, Shield } from 'lucide-react';
+import { Building2, Eye, MessageSquare, Heart, TrendingUp, Clock } from 'lucide-react';
+import VCPrivacyIndicator from './VCPrivacyIndicator';
+import VCStatsDisplay from './VCStatsDisplay';
 
 interface VCProfile {
   id: string;
   name: string;
   company: string;
-  companyType: string; // Added for alternative identification
-  fundSize: string; // Added for fund classification
+  companyType: string;
+  fundSize: string;
   position: string;
   specialties: string[];
   avatar: string;
@@ -23,7 +25,7 @@ interface VCProfile {
   };
   currentActivity: string;
   isOnline: boolean;
-  privacyLevel: 'anonymous' | 'partial' | 'verified'; // Added privacy levels
+  privacyLevel: 'anonymous' | 'partial' | 'verified';
   recentActions: Array<{
     type: 'remix' | 'comment' | 'view' | 'dm';
     ideaId: string;
@@ -73,7 +75,7 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
     },
     {
       id: 'vc-2',
-      name: '이혜진',
+      name: 'Anonymous VC',
       company: 'Innovation Capital',
       companyType: '성장단계 펀드',
       fundSize: '시드-시리즈 A 리더',
@@ -97,6 +99,33 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
           description: 'DeFi 프로토콜 창업자에게 DM 요청'
         }
       ]
+    },
+    {
+      id: 'vc-3',
+      name: '박지현',
+      company: 'Future Vision Partners',
+      companyType: '스타트업 전문',
+      fundSize: '프리시드-시드 집중',
+      position: '대표',
+      specialties: ['딥테크', '로보틱스', 'IoT'],
+      avatar: '/api/placeholder/60/60',
+      privacyLevel: 'verified',
+      stats: {
+        remixCount: 15,
+        commentCount: 32,
+        dmRequests: 8,
+        successfulInvestments: 18
+      },
+      currentActivity: '로보틱스 솔루션 평가 중',
+      isOnline: false,
+      recentActions: [
+        {
+          type: 'view',
+          ideaId: 'idea-126',
+          timestamp: new Date(Date.now() - 45 * 60 * 1000),
+          description: '자율주행 배송 로봇 아이디어 검토'
+        }
+      ]
     }
   ]);
 
@@ -107,45 +136,39 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
       title: '💼 활성 VC 프로필',
       subtitle: '실시간으로 당신의 아이디어를 검토하는 투자자들',
       online: '온라인',
+      offline: '오프라인',
       specialty: '전문 분야',
       currentActivity: '현재 활동',
       recentActions: '최근 활동',
-      stats: '실적',
-      remixes: '리믹스',
-      comments: '코멘트',
-      investments: '투자',
-      dmRequests: 'DM 요청',
       minutesAgo: '분 전',
-      viewingYourIdea: '님이 당신의 아이디어를 보고 있습니다',
       sendDM: 'DM 보내기',
       viewProfile: '프로필 보기',
-      verified: '검증됨',
-      privacyProtected: '프라이버시 보호',
-      fundType: '펀드 유형'
+      fundType: '펀드 유형',
+      anonymousName: '익명 투자자'
     },
     en: {
       title: '💼 Active VC Profiles',
       subtitle: 'Investors reviewing your ideas in real-time',
       online: 'Online',
+      offline: 'Offline',
       specialty: 'Specialties',
       currentActivity: 'Current Activity',
       recentActions: 'Recent Actions',
-      stats: 'Stats',
-      remixes: 'Remixes',
-      comments: 'Comments', 
-      investments: 'Investments',
-      dmRequests: 'DM Requests',
       minutesAgo: 'min ago',
-      viewingYourIdea: 'is viewing your idea',
       sendDM: 'Send DM',
       viewProfile: 'View Profile',
-      verified: 'Verified',
-      privacyProtected: 'Privacy Protected',
-      fundType: 'Fund Type'
+      fundType: 'Fund Type',
+      anonymousName: 'Anonymous Investor'
     }
   };
 
-  // Function to mask company name based on privacy level
+  const getDisplayName = (vc: VCProfile) => {
+    if (vc.privacyLevel === 'anonymous') {
+      return text[currentLanguage].anonymousName;
+    }
+    return vc.name;
+  };
+
   const getDisplayCompany = (vc: VCProfile) => {
     switch (vc.privacyLevel) {
       case 'anonymous':
@@ -159,18 +182,6 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
         return vc.company;
       default:
         return vc.companyType;
-    }
-  };
-
-  // Get privacy indicator
-  const getPrivacyIndicator = (level: string) => {
-    switch (level) {
-      case 'verified':
-        return { icon: Shield, color: 'text-green-600', bg: 'bg-green-100' };
-      case 'partial':
-        return { icon: Shield, color: 'text-yellow-600', bg: 'bg-yellow-100' };
-      default:
-        return { icon: Shield, color: 'text-gray-600', bg: 'bg-gray-100' };
     }
   };
 
@@ -213,149 +224,121 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
         <p className="text-gray-600">{text[currentLanguage].subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {vcProfiles.map(vc => {
-          const privacyInfo = getPrivacyIndicator(vc.privacyLevel);
-          const PrivacyIcon = privacyInfo.icon;
-          
-          return (
-            <Card key={vc.id} className="border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <Avatar className="w-16 h-16">
-                        <AvatarImage src={vc.avatar} alt={vc.name} />
-                        <AvatarFallback>{vc.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      {vc.isOnline && (
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-bold text-gray-900 mb-1">
-                        {vc.name}
-                      </CardTitle>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                        <Building2 className="w-4 h-4" />
-                        <span>{getDisplayCompany(vc)}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {vc.position}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <PrivacyIcon className={`w-3 h-3 ${privacyInfo.color}`} />
-                        <span className="text-xs text-gray-500">
-                          {vc.privacyLevel === 'verified' 
-                            ? text[currentLanguage].verified 
-                            : text[currentLanguage].privacyProtected
-                          }
-                        </span>
-                      </div>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {vcProfiles.map(vc => (
+          <Card key={vc.id} className="border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+            <CardHeader className="pb-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={vc.avatar} alt={getDisplayName(vc)} />
+                      <AvatarFallback>{getDisplayName(vc).charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {vc.isOnline && (
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
+                    )}
                   </div>
-                  
-                  {vc.isOnline && (
-                    <Badge className="bg-green-100 text-green-700">
-                      {text[currentLanguage].online}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {/* Fund Type Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    {text[currentLanguage].fundType}
-                  </h4>
-                  <Badge variant="secondary" className="text-xs mb-2">
-                    {vc.fundSize}
-                  </Badge>
-                </div>
-
-                {/* Specialties */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    {text[currentLanguage].specialty}
-                  </h4>
-                  <div className="flex flex-wrap gap-1">
-                    {vc.specialties.map(specialty => (
-                      <Badge key={specialty} variant="secondary" className="text-xs">
-                        {specialty}
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-bold text-gray-900 mb-1">
+                      {getDisplayName(vc)}
+                    </CardTitle>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                      <Building2 className="w-4 h-4" />
+                      <span>{getDisplayCompany(vc)}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {vc.position}
                       </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Current Activity */}
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Eye className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-blue-800">
-                      {text[currentLanguage].currentActivity}
-                    </span>
-                  </div>
-                  <p className="text-sm text-blue-700">{vc.currentActivity}</p>
-                  
-                  {liveViewers[vc.id] && (
-                    <div className="mt-2 text-xs text-blue-600">
-                      💡 {liveViewers[vc.id]}개 아이디어 동시 검토 중
                     </div>
-                  )}
+                  </div>
                 </div>
+                
+                <Badge className={vc.isOnline ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                  {vc.isOnline ? text[currentLanguage].online : text[currentLanguage].offline}
+                </Badge>
+              </div>
+              
+              <VCPrivacyIndicator 
+                privacyLevel={vc.privacyLevel} 
+                currentLanguage={currentLanguage} 
+              />
+            </CardHeader>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-2 bg-gray-50 rounded">
-                    <div className="text-lg font-bold text-gray-900">{vc.stats.remixCount}</div>
-                    <div className="text-xs text-gray-600">{text[currentLanguage].remixes}</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded">
-                    <div className="text-lg font-bold text-gray-900">{vc.stats.commentCount}</div>
-                    <div className="text-xs text-gray-600">{text[currentLanguage].comments}</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded">
-                    <div className="text-lg font-bold text-gray-900">{vc.stats.dmRequests}</div>
-                    <div className="text-xs text-gray-600">{text[currentLanguage].dmRequests}</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded">
-                    <div className="text-lg font-bold text-gray-900">{vc.stats.successfulInvestments}</div>
-                    <div className="text-xs text-gray-600">{text[currentLanguage].investments}</div>
-                  </div>
-                </div>
+            <CardContent className="space-y-4">
+              {/* Fund Type Information */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  {text[currentLanguage].fundType}
+                </h4>
+                <Badge variant="secondary" className="text-xs mb-2 bg-blue-50 text-blue-700">
+                  {vc.fundSize}
+                </Badge>
+              </div>
 
-                {/* Recent Actions */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    {text[currentLanguage].recentActions}
-                  </h4>
-                  <div className="space-y-2">
-                    {vc.recentActions.slice(0, 2).map((action, index) => (
-                      <div key={index} className="flex items-center space-x-2 text-sm">
-                        {getActivityIcon(action.type)}
-                        <span className="text-gray-700 flex-1">{action.description}</span>
-                        <span className="text-gray-500 text-xs">
-                          {getTimeAgo(action.timestamp)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+              {/* Specialties */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  {text[currentLanguage].specialty}
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {vc.specialties.map(specialty => (
+                    <Badge key={specialty} variant="secondary" className="text-xs bg-purple-50 text-purple-700">
+                      {specialty}
+                    </Badge>
+                  ))}
                 </div>
+              </div>
 
-                {/* Action Buttons */}
-                <div className="flex space-x-2 pt-2">
-                  <Button size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700">
-                    {text[currentLanguage].sendDM}
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1">
-                    {text[currentLanguage].viewProfile}
-                  </Button>
+              {/* Current Activity */}
+              <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Eye className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm font-medium text-blue-800">
+                    {text[currentLanguage].currentActivity}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                <p className="text-sm text-blue-700">{vc.currentActivity}</p>
+                
+                {liveViewers[vc.id] && (
+                  <div className="mt-2 text-xs text-blue-600">
+                    💡 {liveViewers[vc.id]}개 아이디어 동시 검토 중
+                  </div>
+                )}
+              </div>
+
+              {/* Stats */}
+              <VCStatsDisplay stats={vc.stats} currentLanguage={currentLanguage} />
+
+              {/* Recent Actions */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  {text[currentLanguage].recentActions}
+                </h4>
+                <div className="space-y-2">
+                  {vc.recentActions.slice(0, 2).map((action, index) => (
+                    <div key={index} className="flex items-center space-x-2 text-sm p-2 bg-gray-50 rounded">
+                      {getActivityIcon(action.type)}
+                      <span className="text-gray-700 flex-1 truncate">{action.description}</span>
+                      <span className="text-gray-500 text-xs">
+                        {getTimeAgo(action.timestamp)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-2 pt-2">
+                <Button size="sm" className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                  {text[currentLanguage].sendDM}
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1 border-purple-200 text-purple-700 hover:bg-purple-50">
+                  {text[currentLanguage].viewProfile}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
