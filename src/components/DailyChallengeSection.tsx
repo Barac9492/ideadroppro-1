@@ -3,8 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Flame, Clock, Users, Zap, Target } from 'lucide-react';
-import {useDailyChallenge} from '@/hooks/useDailyChallenge';
+import { Flame, Clock, Users, Zap, Target, ArrowDown } from 'lucide-react';
+import { useDailyChallenge } from '@/hooks/useDailyChallenge';
 
 interface DailyChallengeSectionProps {
   currentLanguage: 'ko' | 'en';
@@ -20,11 +20,16 @@ const DailyChallengeSection: React.FC<DailyChallengeSectionProps> = ({
     liveParticipants, 
     timeRemaining, 
     hasParticipated, 
-    participateInChallenge,
+    scrollToIdeaForm,
     text 
   } = useDailyChallenge(currentLanguage);
 
   if (!todayChallenge) return null;
+
+  const handleJoinClick = () => {
+    scrollToIdeaForm();
+    onJoinChallenge(todayChallenge.keyword);
+  };
 
   return (
     <div className="bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 py-12">
@@ -90,6 +95,24 @@ const DailyChallengeSection: React.FC<DailyChallengeSectionProps> = ({
               </div>
             </div>
 
+            {/* Challenge Participation Instructions */}
+            {!hasParticipated && (
+              <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Target className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-blue-800">
+                    {currentLanguage === 'ko' ? '참여 방법' : 'How to Participate'}
+                  </h4>
+                </div>
+                <p className="text-blue-700 text-sm">
+                  {currentLanguage === 'ko' 
+                    ? '아래 아이디어 제출 폼에서 이 테마와 관련된 아이디어를 제출하세요!' 
+                    : 'Submit an idea related to this theme using the form below!'
+                  }
+                </p>
+              </div>
+            )}
+
             {/* Rewards */}
             <div className="bg-yellow-50 rounded-xl p-6 mb-6 border border-yellow-200">
               <h4 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center">
@@ -115,21 +138,35 @@ const DailyChallengeSection: React.FC<DailyChallengeSectionProps> = ({
             {/* Action Button */}
             <div className="text-center">
               {hasParticipated ? (
-                <Badge className="bg-green-100 text-green-700 px-6 py-3 text-lg">
-                  ✅ {text[currentLanguage].joined}
-                </Badge>
+                <div className="space-y-3">
+                  <Badge className="bg-green-100 text-green-700 px-6 py-3 text-lg">
+                    ✅ {text[currentLanguage].joined}
+                  </Badge>
+                  <p className="text-sm text-gray-600">
+                    {currentLanguage === 'ko' 
+                      ? '이미 오늘의 챌린지에 참여했습니다!' 
+                      : "You've already participated in today's challenge!"
+                    }
+                  </p>
+                </div>
               ) : (
-                <Button
-                  size="lg"
-                  onClick={() => {
-                    participateInChallenge();
-                    onJoinChallenge(todayChallenge.keyword);
-                  }}
-                  className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-4 text-lg font-bold shadow-lg transform hover:scale-105 transition-all"
-                >
-                  <Flame className="w-5 h-5 mr-2" />
-                  {text[currentLanguage].joinNow}
-                </Button>
+                <div className="space-y-4">
+                  <Button
+                    size="lg"
+                    onClick={handleJoinClick}
+                    className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-4 text-lg font-bold shadow-lg transform hover:scale-105 transition-all"
+                  >
+                    <Flame className="w-5 h-5 mr-2" />
+                    {text[currentLanguage].joinNow}
+                    <ArrowDown className="w-5 h-5 ml-2 animate-bounce" />
+                  </Button>
+                  <p className="text-sm text-gray-600">
+                    {currentLanguage === 'ko' 
+                      ? '버튼을 클릭하여 아이디어 제출 폼으로 이동하세요' 
+                      : 'Click to scroll to the idea submission form'
+                    }
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>

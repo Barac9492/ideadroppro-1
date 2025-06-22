@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DailyChallenge {
   id: string;
@@ -24,6 +25,7 @@ export const useDailyChallenge = (currentLanguage: 'ko' | 'en') => {
   const [liveParticipants, setLiveParticipants] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState('');
   const [hasParticipated, setHasParticipated] = useState(false);
+  const [challengeKeyword, setChallengeKeyword] = useState('');
   const { user } = useAuth();
 
   const text = {
@@ -32,14 +34,20 @@ export const useDailyChallenge = (currentLanguage: 'ko' | 'en') => {
       hoursLeft: '시간 남음',
       peopleWorking: '명이 동시에 작업 중',
       joined: '참여 완료!',
-      joinNow: '지금 참여하기'
+      joinNow: '아이디어 제출하기',
+      submitIdea: '이 테마로 아이디어 제출',
+      challengeCompleted: '🎯 챌린지 참여 완료!',
+      challengeReward: '챌린지 보상 획득'
     },
     en: {
       urgentChallenge: '🔥 Urgent Challenge',
       hoursLeft: 'hours left',
       peopleWorking: 'people working simultaneously',
-      joined: 'Joined!',
-      joinNow: 'Join Now'
+      joined: 'Completed!',
+      joinNow: 'Submit Idea',
+      submitIdea: 'Submit idea for this theme',
+      challengeCompleted: '🎯 Challenge Completed!',
+      challengeReward: 'Challenge reward earned'
     }
   };
 
@@ -89,7 +97,7 @@ export const useDailyChallenge = (currentLanguage: 'ko' | 'en') => {
       const deadline = new Date();
       deadline.setHours(23, 59, 59, 999);
 
-      setTodayChallenge({
+      const challengeData = {
         id: `daily-${new Date().toDateString()}`,
         date: new Date().toDateString(),
         keyword: challenge.keyword,
@@ -103,11 +111,48 @@ export const useDailyChallenge = (currentLanguage: 'ko' | 'en') => {
           badge: '🏆 Daily Pioneer',
           vcPriority: true
         }
-      });
+      };
+
+      setTodayChallenge(challengeData);
+      setChallengeKeyword(challenge.keyword);
     };
 
     generateTodayChallenge();
   }, [currentLanguage]);
+
+  // Check if user has participated in today's challenge
+  useEffect(() => {
+    const checkParticipation = async () => {
+      if (!user || !todayChallenge) return;
+
+      try {
+        const today = new Date().toDateString();
+        const { data: ideas } = await supabase
+          .from('ideas')
+          .select('id, created_at, text, tags')
+          .eq('user_id', user.id)
+          .gte('created_at', new Date(today).toISOString())
+          .lt('created_at', new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000).toISOString());
+
+        if (ideas && ideas.length > 0) {
+          // Check if any idea contains the challenge keyword or has challenge tag
+          const participatedIdea = ideas.find(idea => 
+            idea.text.toLowerCase().includes(challengeKeyword.toLowerCase()) ||
+            idea.tags?.includes('daily-challenge') ||
+            idea.tags?.includes(todayChallenge.theme)
+          );
+          
+          if (participatedIdea) {
+            setHasParticipated(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking challenge participation:', error);
+      }
+    };
+
+    checkParticipation();
+  }, [user, todayChallenge, challengeKeyword]);
 
   // Update live participants and countdown
   useEffect(() => {
@@ -131,15 +176,33 @@ export const useDailyChallenge = (currentLanguage: 'ko' | 'en') => {
     return () => clearInterval(interval);
   }, [todayChallenge, currentLanguage]);
 
-  const participateInChallenge = async () => {
+  const markChallengeCompleted = async (ideaId: string) => {
     if (!user || !todayChallenge) return;
 
-    setHasParticipated(true);
-    toast({
-      title: `🎯 ${todayChallenge.keyword} ${text[currentLanguage].joined}`,
-      description: `+${todayChallenge.reward.xp} XP + VC 우선 노출`,
-      duration: 4000,
-    });
+    try {
+      // Update the idea with challenge tags
+      await supabase
+        .from('ideas')
+        .update({ 
+          tags: ['daily-challenge', todayChallenge.theme, '챌린지참여']
+        })
+        .eq('id', ideaId);
+
+      setHasParticipated(true);
+      
+      toast({
+        title: text[currentLanguage].challengeCompleted,
+        description: `+${todayChallenge.reward.xp} XP + VC 우선 노출 + ${todayChallenge.reward.badge}`,
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error('Error marking challenge completed:', error);
+    }
+  };
+
+  const scrollToIdeaForm = () => {
+    // Smooth scroll to the idea submission form
+    window.scrollTo({ top: 400, behavior: 'smooth' });
   };
 
   return {
@@ -147,7 +210,9 @@ export const useDailyChallenge = (currentLanguage: 'ko' | 'en') => {
     liveParticipants,
     timeRemaining,
     hasParticipated,
-    participateInChallenge,
+    challengeKeyword,
+    markChallengeCompleted,
+    scrollToIdeaForm,
     text
   };
 };

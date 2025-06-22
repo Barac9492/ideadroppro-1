@@ -23,6 +23,7 @@ const Submit = () => {
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
+  const { markChallengeCompleted, challengeKeyword } = useDailyChallenge(currentLanguage);
   const isMobile = useIsMobile();
 
   const handleLanguageToggle = () => {
@@ -36,12 +37,18 @@ const Submit = () => {
     }
     
     try {
-      await submitIdea(ideaText);
+      const submittedIdea = await submitIdea(ideaText);
       await updateStreak();
       await scoreActions.keywordParticipation();
       
       updateMissionProgress('idea_submit');
       await awardXP(50, '아이디어 제출');
+
+      // Check if this idea is related to today's challenge
+      if (challengeKeyword && ideaText.toLowerCase().includes(challengeKeyword.toLowerCase())) {
+        await markChallengeCompleted(submittedIdea.id);
+        await awardXP(100, '일일 챌린지 참여');
+      }
     } catch (error) {
       console.error('Error submitting idea:', error);
     }

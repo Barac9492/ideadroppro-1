@@ -7,6 +7,7 @@ import TrustIndicators from './TrustIndicators';
 import ExampleIdeas from './ExampleIdeas';
 import IdeaReactionSystem from './IdeaReactionSystem';
 import EnhancedIdeaModal from './EnhancedIdeaModal';
+import ChallengeContextIndicator from './ChallengeContextIndicator';
 
 interface HeroSectionProps {
   currentLanguage: 'ko' | 'en';
@@ -67,6 +68,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
       <div className="relative z-10 w-full max-w-4xl mx-auto px-4 text-center">
         {/* Header Content */}
         <HeroText currentLanguage={currentLanguage} />
+
+        {/* Challenge Context Indicator */}
+        <div className="w-full max-w-3xl mx-auto mb-4">
+          <ChallengeContextIndicator currentLanguage={currentLanguage} />
+        </div>
 
         {/* Main Input Form */}
         {!showReactionSystem ? (
