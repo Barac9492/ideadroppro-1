@@ -42,9 +42,10 @@ const SimplifiedHeader: React.FC<SimplifiedHeaderProps> = ({
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="cursor-pointer" onClick={handleLogoClick}>
-            <HeaderLogo />
-          </div>
+          <HeaderLogo 
+            currentLanguage={currentLanguage}
+            onHomeClick={handleLogoClick}
+          />
           
           <div className="flex items-center space-x-3">
             {/* Challenge Button - Only on submit page */}
