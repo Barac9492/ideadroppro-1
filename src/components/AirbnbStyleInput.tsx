@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Search, Sparkles } from 'lucide-react';
 
 interface AirbnbStyleInputProps {
   currentLanguage: 'ko' | 'en';
@@ -18,12 +17,12 @@ const AirbnbStyleInput: React.FC<AirbnbStyleInputProps> = ({
 
   const text = {
     ko: {
-      placeholder: '어떤 아이디어든 환영합니다. 예: "AI로 반려동물 건강 체크", "중고차 실시간 경매"...',
-      submitButton: '아이디어 제출하기'
+      placeholder: '아이디어를 입력하세요',
+      submitButton: '시작하기'
     },
     en: {
-      placeholder: 'Any idea is welcome. e.g. "AI pet health checker", "Real-time used car auction"...',
-      submitButton: 'Submit Idea'
+      placeholder: 'Enter your idea',
+      submitButton: 'Get Started'
     }
   };
 
@@ -44,21 +43,20 @@ const AirbnbStyleInput: React.FC<AirbnbStyleInputProps> = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      {/* Airbnb-style search container */}
-      <div className="bg-white rounded-full shadow-lg border border-gray-200 p-2 hover:shadow-xl transition-shadow duration-300">
+    <div className="w-full max-w-5xl mx-auto mb-20">
+      {/* Large centered search container */}
+      <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-4 hover:shadow-3xl transition-all duration-300">
         <div className="flex items-center">
-          <div className="flex-1 flex items-center px-6 py-4">
-            <Search className="w-5 h-5 text-gray-400 mr-3" />
+          <div className="flex-1 flex items-center px-8 py-6">
             <textarea
               value={ideaText}
               onChange={(e) => setIdeaText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={text[currentLanguage].placeholder}
-              className="w-full resize-none border-none outline-none text-gray-900 placeholder-gray-500 text-base leading-relaxed"
-              rows={1}
+              className="w-full resize-none border-none outline-none text-gray-900 placeholder-gray-400 text-xl leading-relaxed font-medium"
+              rows={2}
               style={{ 
-                minHeight: '24px',
+                minHeight: '60px',
                 maxHeight: '120px',
                 overflow: 'hidden'
               }}
@@ -72,19 +70,27 @@ const AirbnbStyleInput: React.FC<AirbnbStyleInputProps> = ({
           <Button
             onClick={handleSubmit}
             disabled={!ideaText.trim() || isSubmitting}
-            className="bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-full font-semibold text-base shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-rose-500 hover:bg-rose-600 text-white px-10 py-6 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
             {text[currentLanguage].submitButton}
           </Button>
         </div>
       </div>
-      
-      {/* Character count */}
-      <div className="text-center mt-3">
-        <p className="text-sm text-gray-400">
-          {ideaText.length}/500
-        </p>
+
+      {/* Visual benefit indicators */}
+      <div className="flex justify-center items-center mt-8 space-x-8 text-gray-500">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-sm font-medium">30초 완료</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <span className="text-sm font-medium">즉시 피드백</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+          <span className="text-sm font-medium">무료 분석</span>
+        </div>
       </div>
     </div>
   );

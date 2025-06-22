@@ -42,13 +42,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero section with Airbnb-style clean layout */}
-      <div className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-6xl mx-auto">
-          {/* Hero text */}
+      {/* Hero section with ultra-clean layout */}
+      <div className="container mx-auto px-4 py-20 md:py-32">
+        <div className="max-w-7xl mx-auto">
+          {/* Ultra-simplified hero text */}
           <SimpleHeroText currentLanguage={currentLanguage} />
 
-          {/* Main input or reaction system */}
+          {/* Large centered search or reaction system */}
           {!showReactionSystem ? (
             <AirbnbStyleInput
               currentLanguage={currentLanguage}
@@ -56,10 +56,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
               isSubmitting={isSubmitting}
             />
           ) : (
-            <div className="w-full max-w-4xl mx-auto">
-              <Card className="shadow-lg border border-gray-200 rounded-2xl">
-                <CardContent className="p-8">
-                  <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+            <div className="w-full max-w-5xl mx-auto">
+              <Card className="shadow-2xl border-0 rounded-3xl">
+                <CardContent className="p-12">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
                     💫 "{submittedIdea.split('\n')[0]}" 분석 중...
                   </h3>
                   <IdeaReactionSystem
@@ -71,13 +71,27 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
               </Card>
             </div>
           )}
+
+          {/* Visual service explanation */}
+          <div className="mt-20 text-center">
+            <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-purple-50 to-blue-50 px-8 py-4 rounded-full">
+              <div className="flex space-x-2">
+                <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse delay-100"></div>
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse delay-200"></div>
+              </div>
+              <span className="text-lg font-semibold text-gray-700">
+                {currentLanguage === 'ko' ? 'AI가 실시간으로 분석합니다' : 'AI analyzes in real-time'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Success stories section */}
+      {/* Visual-first success stories */}
       <SuccessStoriesSection currentLanguage={currentLanguage} />
 
-      {/* Minimal trust section */}
+      {/* Minimal icon-only trust indicators */}
       <MinimalTrustSection currentLanguage={currentLanguage} />
 
       {/* Enhanced Idea Modal */}
