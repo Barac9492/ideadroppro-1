@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Lightbulb, Zap, Send, X, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EnhancedIdeaModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
   const [showTitleWarning, setShowTitleWarning] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const isMobile = useIsMobile();
 
   const text = {
     ko: {
@@ -43,7 +45,7 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
       submitting: 'AI가 분석 중...',
       titleRequired: '아이디어 제목을 입력해주세요',
       charCount: '글자',
-      keyboardShortcuts: 'Shift+Enter: 줄바꿈 | Ctrl+Enter: 제출',
+      keyboardShortcuts: isMobile ? '편리한 터치 입력' : 'Shift+Enter: 줄바꿈 | Ctrl+Enter: 제출',
       tip: '💡 팁: 구체적일수록 더 정확한 AI 분석을 받을 수 있습니다'
     },
     en: {
@@ -57,7 +59,7 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
       submitting: 'AI analyzing...',
       titleRequired: 'Please enter an idea title',
       charCount: 'characters',
-      keyboardShortcuts: 'Shift+Enter: New line | Ctrl+Enter: Submit',
+      keyboardShortcuts: isMobile ? 'Easy touch input' : 'Shift+Enter: New line | Ctrl+Enter: Submit',
       tip: '💡 Tip: More specific details lead to better AI analysis'
     }
   };
@@ -124,19 +126,27 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`${
+        isMobile 
+          ? 'max-w-[95vw] max-h-[90vh] m-2 p-4' 
+          : 'max-w-2xl max-h-[90vh]'
+      } overflow-y-auto`}>
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2 text-xl">
-            <Lightbulb className="w-6 h-6 text-purple-600" />
+          <DialogTitle className={`flex items-center space-x-2 ${
+            isMobile ? 'text-lg' : 'text-xl'
+          }`}>
+            <Lightbulb className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
             <span>{text[currentLanguage].modalTitle}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Title Input */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
+              <label className={`font-medium text-gray-700 ${
+                isMobile ? 'text-sm' : 'text-sm'
+              }`}>
                 {text[currentLanguage].titleLabel} <span className="text-red-500">*</span>
               </label>
               <span className="text-xs text-gray-500">
@@ -149,14 +159,17 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
               onChange={handleTitleChange}
               onKeyDown={(e) => handleKeyDown(e, 'title')}
               placeholder={text[currentLanguage].titlePlaceholder}
-              className={`${showTitleWarning ? 'border-red-500' : ''}`}
+              className={`${showTitleWarning ? 'border-red-500' : ''} ${
+                isMobile ? 'min-h-[48px] text-base' : ''
+              }`}
+              style={{ fontSize: isMobile ? '16px' : undefined }} // Prevent iOS zoom
               maxLength={100}
               disabled={isSubmitting}
             />
             {showTitleWarning && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
+                <AlertDescription className={isMobile ? 'text-sm' : ''}>
                   {text[currentLanguage].titleRequired}
                 </AlertDescription>
               </Alert>
@@ -166,7 +179,9 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
           {/* Description Textarea */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
+              <label className={`font-medium text-gray-700 ${
+                isMobile ? 'text-sm' : 'text-sm'
+              }`}>
                 {text[currentLanguage].descriptionLabel}
               </label>
               <span className="text-xs text-gray-500">
@@ -179,7 +194,12 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, 'description')}
               placeholder={text[currentLanguage].descriptionPlaceholder}
-              className="min-h-[200px] resize-none"
+              className={`resize-none ${
+                isMobile 
+                  ? 'min-h-[150px] text-base leading-relaxed' 
+                  : 'min-h-[200px]'
+              }`}
+              style={{ fontSize: isMobile ? '16px' : undefined }} // Prevent iOS zoom
               maxLength={900}
               disabled={isSubmitting}
             />
@@ -187,45 +207,52 @@ const EnhancedIdeaModal: React.FC<EnhancedIdeaModalProps> = ({
 
           {/* Keyboard Shortcuts Info */}
           <div className="bg-blue-50 p-3 rounded-lg">
-            <p className="text-xs text-blue-700 mb-1">
+            <p className={`text-blue-700 mb-1 ${isMobile ? 'text-xs' : 'text-xs'}`}>
               {text[currentLanguage].keyboardShortcuts}
             </p>
-            <p className="text-xs text-blue-600">
+            <p className={`text-blue-600 ${isMobile ? 'text-xs' : 'text-xs'}`}>
               {text[currentLanguage].tip}
             </p>
           </div>
 
           {/* Character Count & Actions */}
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className={`flex items-center justify-between pt-4 border-t ${
+            isMobile ? 'flex-col space-y-3' : ''
+          }`}>
             <div className="flex items-center space-x-2">
-              <Badge variant="outline">
+              <Badge variant="outline" className={isMobile ? 'text-xs' : ''}>
                 {totalChars}/{maxChars} {text[currentLanguage].charCount}
               </Badge>
             </div>
             
-            <div className="flex space-x-3">
+            <div className={`flex space-x-3 ${
+              isMobile ? 'w-full' : ''
+            }`}>
               <Button
                 variant="outline"
                 onClick={onClose}
                 disabled={isSubmitting}
+                className={isMobile ? 'flex-1 min-h-[48px]' : ''}
               >
                 {text[currentLanguage].cancelButton}
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={!title.trim() || totalChars > maxChars || isSubmitting}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                className={`bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 ${
+                  isMobile ? 'flex-1 min-h-[48px]' : ''
+                }`}
               >
                 {isSubmitting ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>{text[currentLanguage].submitting}</span>
+                    <span className={isMobile ? 'text-sm' : ''}>{text[currentLanguage].submitting}</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Zap className="w-4 h-4" />
                     <Send className="w-4 h-4" />
-                    <span>{text[currentLanguage].submitButton}</span>
+                    <span className={isMobile ? 'text-sm' : ''}>{text[currentLanguage].submitButton}</span>
                   </div>
                 )}
               </Button>
