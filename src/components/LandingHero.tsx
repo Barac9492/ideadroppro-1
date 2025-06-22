@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Rocket, Lightbulb, Sparkles, Code } from 'lucide-react';
+import { Lightbulb, Zap, BarChart3, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import EnhancedIdeaModal from './EnhancedIdeaModal';
@@ -21,18 +21,18 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
 
   const text = {
     ko: {
-      title: '아이디어 제출',
-      subtitle: '30초 만에 완료',
-      placeholder: '아이디어를 입력하세요',
-      startButton: '시작하기',
-      explore: '둘러보기'
+      title: 'AI 아이디어 분석기',
+      subtitle: '점수 + 피드백',
+      placeholder: '카페 배달 앱 아이디어를 입력해보세요',
+      submitButton: '분석하기',
+      resultPreview: '예시: 85점, 시장성 높음, 3가지 개선방안'
     },
     en: {
-      title: 'Submit Ideas',
-      subtitle: 'Complete in 30 seconds',
-      placeholder: 'Enter your idea',
-      startButton: 'Get Started',
-      explore: 'Explore'
+      title: 'AI Idea Analyzer',
+      subtitle: 'Score + Feedback',
+      placeholder: 'Enter your cafe delivery app idea',
+      submitButton: 'Analyze',
+      resultPreview: 'Example: 85pts, High market potential, 3 improvements'
     }
   };
 
@@ -82,7 +82,7 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
           </p>
 
           {/* Airbnb-Style Search Input */}
-          <div className={`w-full mx-auto mb-8 ${isMobile ? 'px-2' : 'max-w-2xl'}`}>
+          <div className={`w-full mx-auto mb-6 ${isMobile ? 'px-2' : 'max-w-2xl'}`}>
             <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-4 hover:shadow-3xl transition-all duration-300">
               <div className="flex items-center">
                 <div className="flex-1 flex items-center px-8 py-6">
@@ -110,83 +110,64 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
                   disabled={!ideaText.trim() || isSubmitting}
                   className="bg-rose-500 hover:bg-rose-600 text-white px-10 py-6 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
                 >
-                  {text[currentLanguage].startButton}
+                  {text[currentLanguage].submitButton}
                 </Button>
               </div>
             </div>
 
-            {/* Visual benefit indicators */}
-            <div className="flex justify-center items-center mt-6 space-x-8 text-gray-500">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium">30초 완료</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium">즉시 피드백</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-sm font-medium">무료 분석</span>
-              </div>
+            {/* Result Preview */}
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500 bg-gray-50 rounded-full px-4 py-2 inline-block">
+                {text[currentLanguage].resultPreview}
+              </p>
             </div>
-          </div>
-
-          {/* Simple Action Buttons */}
-          <div className={`flex gap-4 justify-center items-center mb-12 ${
-            isMobile ? 'flex-col px-4' : 'flex-row'
-          }`}>
-            <Button
-              onClick={() => navigate('/submit')}
-              size={isMobile ? "default" : "lg"}
-              className={`bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 ${
-                isMobile ? 'w-full min-h-[48px] text-base px-8 py-3' : 'px-8 py-4 text-lg'
-              }`}
-            >
-              <Rocket className="w-5 h-5 mr-2" />
-              {text[currentLanguage].startButton}
-            </Button>
-            <Button
-              onClick={() => navigate('/remix')}
-              variant="outline"
-              size={isMobile ? "default" : "lg"}
-              className={`border-2 ${
-                isMobile ? 'w-full min-h-[48px] text-base px-8 py-3' : 'px-8 py-4 text-lg'
-              }`}
-            >
-              {text[currentLanguage].explore}
-            </Button>
           </div>
         </div>
 
-        {/* Minimal Visual Process - Icons Only */}
+        {/* Visual Process Flow - Pure Icons with Emojis */}
         <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-lg">
-          <div className={`grid gap-8 ${
-            isMobile ? 'grid-cols-2' : 'grid-cols-4'
+          <div className={`flex items-center justify-center gap-4 ${
+            isMobile ? 'gap-2' : 'gap-8'
           }`}>
+            {/* Step 1: Idea Input */}
             <div className="text-center">
-              <div className="bg-gradient-to-r from-purple-500 to-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-gradient-to-r from-purple-500 to-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 relative">
                 <Lightbulb className="w-8 h-8 text-white" />
+                <div className="absolute -top-2 -right-2 text-2xl">💡</div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">1</div>
             </div>
+
+            {/* Arrow */}
+            <div className="text-2xl text-gray-400">→</div>
+
+            {/* Step 2: AI Analysis */}
             <div className="text-center">
-              <div className="bg-gradient-to-r from-blue-500 to-green-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-8 h-8 text-white" />
+              <div className="bg-gradient-to-r from-blue-500 to-green-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 relative">
+                <Zap className="w-8 h-8 text-white" />
+                <div className="absolute -top-2 -right-2 text-2xl">⚡</div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">2</div>
             </div>
+
+            {/* Arrow */}
+            <div className="text-2xl text-gray-400">→</div>
+
+            {/* Step 3: Score & Analysis */}
             <div className="text-center">
-              <div className="bg-gradient-to-r from-green-500 to-yellow-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Code className="w-8 h-8 text-white" />
+              <div className="bg-gradient-to-r from-green-500 to-yellow-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 relative">
+                <BarChart3 className="w-8 h-8 text-white" />
+                <div className="absolute -top-2 -right-2 text-2xl">📊</div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">3</div>
             </div>
+
+            {/* Arrow */}
+            <div className="text-2xl text-gray-400">→</div>
+
+            {/* Step 4: Launch Ready */}
             <div className="text-center">
-              <div className="bg-gradient-to-r from-yellow-500 to-red-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-gradient-to-r from-yellow-500 to-red-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 relative">
                 <Rocket className="w-8 h-8 text-white" />
+                <div className="absolute -top-2 -right-2 text-2xl">🚀</div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">4</div>
             </div>
           </div>
         </div>
