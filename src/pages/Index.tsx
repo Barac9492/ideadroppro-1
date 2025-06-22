@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
+import SimplifiedHeader from '@/components/SimplifiedHeader';
+import AdaptiveNavigation from '@/components/AdaptiveNavigation';
 import BetaAnnouncementBanner from '@/components/BetaAnnouncementBanner';
 import LandingHero from '@/components/LandingHero';
 import SocialProofSection from '@/components/SocialProofSection';
@@ -12,6 +13,7 @@ import { useStreaks } from '@/hooks/useStreaks';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useDailyXP } from '@/hooks/useDailyXP';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -21,6 +23,7 @@ const Index = () => {
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
+  const isMobile = useIsMobile();
 
   const handleIdeaDrop = async (ideaText: string) => {
     if (!user) {
@@ -68,10 +71,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header 
+      <SimplifiedHeader 
         currentLanguage={currentLanguage}
         onLanguageToggle={handleLanguageToggle}
       />
+      
+      {/* Desktop navigation at top */}
+      {!isMobile && (
+        <AdaptiveNavigation 
+          currentLanguage={currentLanguage}
+          position="top"
+        />
+      )}
       
       {/* Beta Announcement Banner */}
       <BetaAnnouncementBanner currentLanguage={currentLanguage} />
@@ -92,6 +103,14 @@ const Index = () => {
         currentLanguage={currentLanguage}
         onDropIdea={scrollToHero}
       />
+
+      {/* Mobile navigation at bottom */}
+      {isMobile && (
+        <AdaptiveNavigation 
+          currentLanguage={currentLanguage}
+          position="bottom"
+        />
+      )}
     </div>
   );
 };

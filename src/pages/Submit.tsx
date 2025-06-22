@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import Header from '@/components/Header';
+import SimplifiedHeader from '@/components/SimplifiedHeader';
+import AdaptiveNavigation from '@/components/AdaptiveNavigation';
 import DailyChallengeSection from '@/components/DailyChallengeSection';
 import HeroSection from '@/components/HeroSection';
 import DailyXPDashboard from '@/components/DailyXPDashboard';
@@ -12,6 +13,7 @@ import { useStreaks } from '@/hooks/useStreaks';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useDailyXP } from '@/hooks/useDailyXP';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Submit = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -21,6 +23,7 @@ const Submit = () => {
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
+  const isMobile = useIsMobile();
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
@@ -66,10 +69,18 @@ const Submit = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header 
+      <SimplifiedHeader 
         currentLanguage={currentLanguage}
         onLanguageToggle={handleLanguageToggle}
       />
+      
+      {/* Desktop navigation at top */}
+      {!isMobile && (
+        <AdaptiveNavigation 
+          currentLanguage={currentLanguage}
+          position="top"
+        />
+      )}
       
       {/* Mission Status - prominently displayed */}
       {user && (
@@ -104,13 +115,21 @@ const Submit = () => {
       
       {/* Progress Dashboard for authenticated users */}
       {user && (
-        <div className="bg-gray-50 py-8">
+        <div className="bg-gray-50 py-8 mb-20 md:mb-0">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <DailyXPDashboard currentLanguage={currentLanguage} />
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mobile navigation at bottom */}
+      {isMobile && (
+        <AdaptiveNavigation 
+          currentLanguage={currentLanguage}
+          position="bottom"
+        />
       )}
     </div>
   );
