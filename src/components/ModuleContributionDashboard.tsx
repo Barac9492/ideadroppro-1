@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
-import { Share, Lock, Unlock, Gift, Star, Users, Zap } from 'lucide-react';
+import { Share, Lock, Unlock, Gift, Star, Users, Zap, Plus } from 'lucide-react';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
+import { useAuth } from '@/contexts/AuthContext';
 import ModuleBrowser from './ModuleBrowser';
 
 interface ModuleContributionDashboardProps {
@@ -15,7 +16,8 @@ interface ModuleContributionDashboardProps {
 
 const ModuleContributionDashboard: React.FC<ModuleContributionDashboardProps> = ({ currentLanguage }) => {
   const [shareEnabled, setShareEnabled] = useState(true);
-  const { modules, loading } = useModularIdeas({ currentLanguage });
+  const { modules, loading, fetchModules } = useModularIdeas({ currentLanguage });
+  const { user } = useAuth();
 
   const text = {
     ko: {
@@ -29,6 +31,10 @@ const ModuleContributionDashboard: React.FC<ModuleContributionDashboardProps> = 
       myContributions: '내 기여 모듈',
       usageRights: '활용 권한',
       nextLevel: '다음 레벨까지',
+      createModule: '새 모듈 만들기',
+      browseModules: '모듈 둘러보기',
+      noModules: '아직 생성한 모듈이 없습니다',
+      createFirst: '첫 번째 모듈을 만들어보세요!',
       examples: {
         title: '성공 사례 예시',
         case1: {
@@ -60,6 +66,10 @@ const ModuleContributionDashboard: React.FC<ModuleContributionDashboardProps> = 
       myContributions: 'My Contributions',
       usageRights: 'Usage Rights',
       nextLevel: 'To next level',
+      createModule: 'Create New Module',
+      browseModules: 'Browse Modules',
+      noModules: 'No modules created yet',
+      createFirst: 'Create your first module!',
       examples: {
         title: 'Success Case Examples',
         case1: {
@@ -82,8 +92,13 @@ const ModuleContributionDashboard: React.FC<ModuleContributionDashboardProps> = 
     }
   };
 
-  // Mock data for demonstration
-  const myModulesCount = 7;
+  useEffect(() => {
+    fetchModules();
+  }, []);
+
+  // Filter modules created by current user
+  const myModules = modules.filter(module => module.created_by === user?.id);
+  const myModulesCount = myModules.length;
   const usageAllowance = Math.min(myModulesCount * 2, 50);
   const currentLevel = myModulesCount < 5 ? 'bronze' : myModulesCount < 10 ? 'silver' : myModulesCount < 20 ? 'gold' : 'platinum';
   const nextLevelProgress = myModulesCount < 5 ? (myModulesCount / 5) * 100 : myModulesCount < 10 ? ((myModulesCount - 5) / 5) * 100 : myModulesCount < 20 ? ((myModulesCount - 10) / 10) * 100 : 100;
@@ -137,6 +152,74 @@ const ModuleContributionDashboard: React.FC<ModuleContributionDashboardProps> = 
           </CardContent>
         </Card>
       </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button
+          onClick={() => window.location.href = '/builder'}
+          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          {text[currentLanguage].createModule}
+        </Button>
+        <Button variant="outline">
+          <Users className="w-4 h-4 mr-2" />
+          {text[currentLanguage].browseModules}
+        </Button>
+      </div>
+
+      {/* My Modules Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{text[currentLanguage].myContributions}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {myModules.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🧩</div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                {text[currentLanguage].noModules}
+              </h3>
+              <p className="text-gray-500 mb-6">
+                {text[currentLanguage].createFirst}
+              </p>
+              <Button
+                onClick={() => window.location.href = '/builder'}
+                className="bg-gradient-to-r from-purple-600 to-blue-600"
+              >
+                {text[currentLanguage].createModule}
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myModules.map((module) => (
+                <Card key={module.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <Badge variant="secondary" className="w-fit">
+                      {module.module_type}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700 line-clamp-3 mb-3">
+                      {module.content}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="flex items-center space-x-1">
+                        <Star className="w-3.5 h-3.5" />
+                        <span>{(module.quality_score || 0).toFixed(1)}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{module.usage_count || 0}</span>
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Sharing Settings */}
       <Card>

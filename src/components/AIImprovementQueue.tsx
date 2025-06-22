@@ -4,277 +4,250 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Brain, Clock, CheckCircle, ArrowRight, Lightbulb, Target, Zap } from 'lucide-react';
-import { generateSmartQuestions } from './SmartQuestionGenerator';
+import { Brain, Clock, Zap, CheckCircle, AlertCircle, Sparkles, ArrowRight } from 'lucide-react';
+import { useIdeas } from '@/hooks/useIdeas';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AIImprovementQueueProps {
   currentLanguage: 'ko' | 'en';
 }
 
-interface ImprovementSuggestion {
-  id: string;
-  ideaText: string;
-  currentScore: number;
-  targetScore: number;
-  questions: any[];
-  priority: 'high' | 'medium' | 'low';
-  status: 'pending' | 'in_progress' | 'completed';
-  createdAt: Date;
-}
-
 const AIImprovementQueue: React.FC<AIImprovementQueueProps> = ({ currentLanguage }) => {
-  const [suggestions, setSuggestions] = useState<ImprovementSuggestion[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { ideas, isLoading } = useIdeas(currentLanguage);
+  const { user } = useAuth();
+  const [processingItems, setProcessingItems] = useState<string[]>([]);
 
   const text = {
     ko: {
-      title: 'AI 개선 제안 큐',
-      subtitle: '아이디어를 한 단계 더 발전시킬 수 있는 맞춤형 제안',
-      generateSuggestions: '새 제안 생성',
-      noSuggestions: '개선 제안이 없습니다',
-      createSuggestions: '첫 번째 제안을 생성해보세요!',
-      startImprovement: '개선 시작',
+      title: 'AI 개선 제안',
+      subtitle: 'AI가 분석한 개선점과 자동 최적화 제안',
+      queueEmpty: '현재 개선 대기열이 비어있습니다',
+      startImproving: '아이디어 개선 시작하기',
+      processing: '처리 중',
+      completed: '완료',
+      pending: '대기 중',
+      highPriority: '높은 우선순위',
+      mediumPriority: '보통 우선순위',
+      lowPriority: '낮은 우선순위',
+      applyImprovement: '개선 적용하기',
       viewDetails: '자세히 보기',
-      priority: {
-        high: '높음',
-        medium: '보통',
-        low: '낮음'
-      },
-      status: {
-        pending: '대기중',
-        in_progress: '진행중',
-        completed: '완료'
-      },
-      scoreImprovement: '점수 향상 예상',
-      estimatedTime: '예상 소요시간',
-      questions: '질문',
-      minutes: '분'
+      autoImprove: '자동 개선',
+      suggestions: {
+        scoreBoost: '점수 향상 가능',
+        marketAnalysis: '시장 분석 필요',
+        competitiveEdge: '경쟁력 강화',
+        valueProposition: '가치 제안 개선',
+        revenueModel: '수익 모델 최적화'
+      }
     },
     en: {
       title: 'AI Improvement Queue',
-      subtitle: 'Personalized suggestions to take your ideas to the next level',
-      generateSuggestions: 'Generate New Suggestions',
-      noSuggestions: 'No improvement suggestions',
-      createSuggestions: 'Generate your first suggestions!',
-      startImprovement: 'Start Improvement',
+      subtitle: 'AI-analyzed improvements and automated optimization suggestions',
+      queueEmpty: 'No improvements in queue currently',
+      startImproving: 'Start Improving Ideas',
+      processing: 'Processing',
+      completed: 'Completed',
+      pending: 'Pending',
+      highPriority: 'High Priority',
+      mediumPriority: 'Medium Priority',
+      lowPriority: 'Low Priority',
+      applyImprovement: 'Apply Improvement',
       viewDetails: 'View Details',
-      priority: {
-        high: 'High',
-        medium: 'Medium',
-        low: 'Low'
-      },
-      status: {
-        pending: 'Pending',
-        in_progress: 'In Progress',
-        completed: 'Completed'
-      },
-      scoreImprovement: 'Expected Score Improvement',
-      estimatedTime: 'Estimated Time',
-      questions: 'Questions', 
-      minutes: 'min'
+      autoImprove: 'Auto Improve',
+      suggestions: {
+        scoreBoost: 'Score Boost Possible',
+        marketAnalysis: 'Market Analysis Needed',
+        competitiveEdge: 'Competitive Edge',
+        valueProposition: 'Value Proposition',
+        revenueModel: 'Revenue Model'
+      }
     }
   };
 
-  // Mock data for demonstration
-  const mockSuggestions: ImprovementSuggestion[] = [
-    {
-      id: '1',
-      ideaText: '카페 배달 앱',
-      currentScore: 6.5,
-      targetScore: 8.2,
-      questions: [],
-      priority: 'high',
-      status: 'pending',
-      createdAt: new Date()
-    },
-    {
-      id: '2', 
-      ideaText: '온라인 과외 플랫폼',
-      currentScore: 7.1,
-      targetScore: 8.5,
-      questions: [],
-      priority: 'medium',
-      status: 'in_progress',
-      createdAt: new Date()
-    }
-  ];
+  // Filter user's ideas that need improvement
+  const improvementCandidates = ideas
+    .filter(idea => idea.user_id === user?.id && idea.score < 8)
+    .map(idea => ({
+      id: idea.id,
+      text: idea.text,
+      score: idea.score,
+      priority: idea.score < 5 ? 'high' : idea.score < 7 ? 'medium' : 'low',
+      suggestions: [
+        idea.score < 6 ? 'scoreBoost' : null,
+        !idea.ai_analysis ? 'marketAnalysis' : null,
+        idea.score < 7 ? 'competitiveEdge' : null,
+        'valueProposition',
+        'revenueModel'
+      ].filter(Boolean) as string[]
+    }));
 
-  useEffect(() => {
-    // Load improvement suggestions for user's ideas
-    setSuggestions(mockSuggestions);
-  }, []);
-
-  const generateNewSuggestions = async () => {
-    setLoading(true);
-    try {
-      // In real implementation, this would fetch user's ideas and generate suggestions
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const newSuggestion: ImprovementSuggestion = {
-        id: Date.now().toString(),
-        ideaText: '스마트 홈 IoT 솔루션',
-        currentScore: 5.8,
-        targetScore: 7.9,
-        questions: await generateSmartQuestions('스마트 홈 IoT 솔루션', currentLanguage),
-        priority: 'high',
-        status: 'pending',
-        createdAt: new Date()
-      };
-      
-      setSuggestions(prev => [newSuggestion, ...prev]);
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startImprovement = (suggestionId: string) => {
-    setSuggestions(prev => 
-      prev.map(s => 
-        s.id === suggestionId 
-          ? { ...s, status: 'in_progress' as const }
-          : s
-      )
-    );
+  const handleApplyImprovement = async (ideaId: string) => {
+    setProcessingItems(prev => [...prev, ideaId]);
+    
+    // Simulate AI processing
+    setTimeout(() => {
+      setProcessingItems(prev => prev.filter(id => id !== ideaId));
+    }, 3000);
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'in_progress': return <Zap className="w-4 h-4" />;
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+  const getPriorityText = (priority: string) => {
+    switch (priority) {
+      case 'high': return text[currentLanguage].highPriority;
+      case 'medium': return text[currentLanguage].mediumPriority;
+      case 'low': return text[currentLanguage].lowPriority;
+      default: return '';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-6 bg-gray-200 rounded mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center">
-            <Brain className="w-8 h-8 mr-3 text-purple-500" />
-            {text[currentLanguage].title}
-          </h2>
-          <p className="text-gray-600 mt-2">{text[currentLanguage].subtitle}</p>
-        </div>
-        <Button
-          onClick={generateNewSuggestions}
-          disabled={loading}
-          className="bg-gradient-to-r from-purple-600 to-blue-600"
-        >
-          <Brain className="w-4 h-4 mr-2" />
-          {loading ? '생성 중...' : text[currentLanguage].generateSuggestions}
-        </Button>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold flex items-center justify-center space-x-2 mb-2">
+          <Brain className="w-6 h-6 text-purple-600" />
+          <span>{text[currentLanguage].title}</span>
+        </h2>
+        <p className="text-gray-600">{text[currentLanguage].subtitle}</p>
       </div>
 
-      {/* Suggestions List */}
-      {suggestions.length === 0 ? (
+      {/* Queue Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>개선 대기열 상태</span>
+            <Badge variant="secondary">
+              {improvementCandidates.length}개 아이디어
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-red-600">
+                {improvementCandidates.filter(item => item.priority === 'high').length}
+              </div>
+              <div className="text-sm text-gray-500">{text[currentLanguage].highPriority}</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {improvementCandidates.filter(item => item.priority === 'medium').length}
+              </div>
+              <div className="text-sm text-gray-500">{text[currentLanguage].mediumPriority}</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">
+                {improvementCandidates.filter(item => item.priority === 'low').length}
+              </div>
+              <div className="text-sm text-gray-500">{text[currentLanguage].lowPriority}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Improvement Queue */}
+      {improvementCandidates.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <Brain className="w-16 h-16 mx-auto mb-4 text-purple-300" />
+            <Brain className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              {text[currentLanguage].noSuggestions}
+              {text[currentLanguage].queueEmpty}
             </h3>
             <p className="text-gray-500 mb-6">
-              {text[currentLanguage].createSuggestions}
+              모든 아이디어가 이미 최적화되었거나 개선이 필요한 아이디어가 없습니다.
             </p>
             <Button
-              onClick={generateNewSuggestions}
-              disabled={loading}
+              onClick={() => window.location.href = '/submit'}
               className="bg-gradient-to-r from-purple-600 to-blue-600"
             >
-              <Brain className="w-4 h-4 mr-2" />
-              {text[currentLanguage].generateSuggestions}
+              {text[currentLanguage].startImproving}
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {suggestions.map((suggestion) => (
-            <Card key={suggestion.id} className="hover:shadow-md transition-shadow">
+          {improvementCandidates.map((item) => (
+            <Card key={item.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg mb-2 flex items-center">
-                      <Lightbulb className="w-5 h-5 mr-2 text-yellow-500" />
-                      {suggestion.ideaText}
-                    </CardTitle>
-                    <div className="flex items-center space-x-4">
-                      <Badge className={getPriorityColor(suggestion.priority)}>
-                        {text[currentLanguage].priority[suggestion.priority]}
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Badge className={getPriorityColor(item.priority)}>
+                        {getPriorityText(item.priority)}
                       </Badge>
-                      <div className="flex items-center text-sm text-gray-500">
-                        {getStatusIcon(suggestion.status)}
-                        <span className="ml-1">{text[currentLanguage].status[suggestion.status]}</span>
-                      </div>
+                      <Badge variant="outline">
+                        점수: {item.score.toFixed(1)}
+                      </Badge>
                     </div>
+                    <p className="text-gray-700 line-clamp-2">{item.text}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500 mb-1">
-                      {text[currentLanguage].scoreImprovement}
-                    </div>
-                    <div className="text-lg font-bold text-green-600">
-                      {suggestion.currentScore} → {suggestion.targetScore}
-                    </div>
+                  
+                  <div className="flex items-center space-x-2 ml-4">
+                    {processingItems.includes(item.id) ? (
+                      <div className="flex items-center space-x-2 text-blue-600">
+                        <Clock className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">{text[currentLanguage].processing}</span>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => handleApplyImprovement(item.id)}
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600"
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        {text[currentLanguage].autoImprove}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
+              
               <CardContent>
-                <div className="space-y-4">
-                  {/* Progress Bar */}
+                <div className="space-y-3">
                   <div>
-                    <div className="flex justify-between text-sm text-gray-500 mb-2">
-                      <span>{text[currentLanguage].scoreImprovement}</span>
-                      <span>+{(suggestion.targetScore - suggestion.currentScore).toFixed(1)}</span>
-                    </div>
-                    <Progress 
-                      value={((suggestion.targetScore - suggestion.currentScore) / 4) * 100} 
-                      className="h-2"
-                    />
-                  </div>
-
-                  {/* Quick Stats */}
-                  <div className="flex justify-between text-sm">
-                    <div className="flex items-center text-gray-500">
-                      <Target className="w-4 h-4 mr-1" />
-                      <span>{text[currentLanguage].questions}: {suggestion.questions.length || 3}</span>
-                    </div>
-                    <div className="flex items-center text-gray-500">
-                      <Clock className="w-4 h-4 mr-1" />
-                      <span>{text[currentLanguage].estimatedTime}: 15-20{text[currentLanguage].minutes}</span>
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">AI 개선 제안:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {item.suggestions.map((suggestion, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          <Zap className="w-3 h-3 mr-1" />
+                          {text[currentLanguage].suggestions[suggestion as keyof typeof text[typeof currentLanguage]['suggestions']]}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex space-x-3">
-                    <Button
-                      onClick={() => startImprovement(suggestion.id)}
-                      disabled={suggestion.status === 'completed'}
-                      className="flex-1"
-                    >
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      {suggestion.status === 'pending' 
-                        ? text[currentLanguage].startImprovement
-                        : suggestion.status === 'in_progress'
-                        ? '계속하기'
-                        : '완료됨'
-                      }
-                    </Button>
-                    <Button variant="outline">
-                      {text[currentLanguage].viewDetails}
-                    </Button>
-                  </div>
+                  
+                  {processingItems.includes(item.id) && (
+                    <div className="space-y-2">
+                      <Progress value={66} className="h-2" />
+                      <p className="text-xs text-gray-500">AI가 개선안을 생성하고 있습니다...</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

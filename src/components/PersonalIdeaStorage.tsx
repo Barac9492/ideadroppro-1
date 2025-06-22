@@ -36,6 +36,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
       createIdea: '아이디어 만들기',
       improve: '개선하기',
       favorite: '즐겨찾기',
+      decompose: '모듈로 분해하기',
       stats: {
         total: '총 아이디어',
         avgScore: '평균 점수',
@@ -56,6 +57,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
       createIdea: 'Create Idea',
       improve: 'Improve',
       favorite: 'Favorite',
+      decompose: 'Decompose to Modules',
       stats: {
         total: 'Total Ideas',
         avgScore: 'Avg Score',
@@ -100,7 +102,11 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
     navigate(`/builder?improve=${ideaId}`);
   };
 
-  const handleDelete = async (ideaId: string) => {
+  const handleDecompose = (ideaId: string) => {
+    navigate(`/builder?decompose=${ideaId}`);
+  };
+
+  const handleDelete = async (ideaId: string): Promise<void> => {
     // TODO: Implement delete functionality
     console.log('Delete idea:', ideaId);
   };
@@ -222,9 +228,21 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
                     isAuthenticated={true}
                   />
                   
-                  {/* Improvement Button Overlay */}
-                  {idea.score < 8 && (
-                    <div className="absolute top-4 right-4">
+                  {/* Action Button Overlays */}
+                  <div className="absolute top-4 right-4 flex space-x-2">
+                    {/* Decompose to Modules Button */}
+                    <Button
+                      onClick={() => handleDecompose(idea.id)}
+                      size="sm"
+                      variant="outline"
+                      className="bg-white/90 hover:bg-purple-50 border-purple-200 text-purple-600"
+                    >
+                      <Star className="w-4 h-4 mr-1" />
+                      {text[currentLanguage].decompose}
+                    </Button>
+                    
+                    {/* Improvement Button */}
+                    {idea.score < 8 && (
                       <Button
                         onClick={() => handleImprove(idea.id)}
                         size="sm"
@@ -233,8 +251,8 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
                         <ArrowRight className="w-4 h-4 mr-1" />
                         {text[currentLanguage].improve}
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

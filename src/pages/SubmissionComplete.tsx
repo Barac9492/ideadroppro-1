@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,10 @@ import {
   PlusCircle,
   ArrowRight,
   Sparkles,
-  Timer
+  Timer,
+  Brain,
+  Zap,
+  Plus
 } from 'lucide-react';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
 import AdaptiveNavigation from '@/components/AdaptiveNavigation';
@@ -49,11 +51,15 @@ const SubmissionComplete = () => {
       submitMoreIdeas: '더 많은 아이디어 제출',
       getCommunityFeedback: '커뮤니티 피드백 받기',
       viewDashboard: '대시보드 보기',
+      myWorkspace: '내 워크스페이스',
+      improveIdea: '이 아이디어 더 발전시키기',
+      decomposeToModules: '모듈로 분해해서 재활용하기',
       yourIdea: '제출한 아이디어',
       aiGenerated: 'AI 생성 이미지',
       completionBonus: '완성도 보너스',
       processing: '처리 중...',
-      ready: '준비 완료'
+      ready: '준비 완료',
+      loginRequired: '로그인이 필요합니다'
     },
     en: {
       title: 'Idea Submitted Successfully!',
@@ -67,11 +73,15 @@ const SubmissionComplete = () => {
       submitMoreIdeas: 'Submit More Ideas',
       getCommunityFeedback: 'Get Community Feedback',
       viewDashboard: 'View Dashboard',
+      myWorkspace: 'My Workspace',
+      improveIdea: 'Further Develop This Idea',
+      decomposeToModules: 'Decompose to Reusable Modules',
       yourIdea: 'Your Submitted Idea',
       aiGenerated: 'AI Generated Image',
       completionBonus: 'Completion Bonus',
       processing: 'Processing...',
-      ready: 'Ready'
+      ready: 'Ready',
+      loginRequired: 'Login required'
     }
   };
 
@@ -257,27 +267,60 @@ const SubmissionComplete = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Primary Actions - My Workspace */}
                 <Button
-                  onClick={() => navigate('/vcs')}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-auto p-4 justify-start"
+                  onClick={() => navigate('/my-workspace')}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-auto p-4 justify-start"
                 >
                   <div className="flex items-center space-x-3">
-                    <Building2 className="w-5 h-5" />
+                    <Brain className="w-5 h-5" />
                     <div className="text-left">
-                      <div className="font-semibold">{text[currentLanguage].checkVCStatus}</div>
-                      <div className="text-sm opacity-90">VC 관심도 확인하기</div>
+                      <div className="font-semibold">{text[currentLanguage].myWorkspace}</div>
+                      <div className="text-sm opacity-90">아이디어 관리 및 발전시키기</div>
                     </div>
                     <ArrowRight className="w-4 h-4 ml-auto" />
                   </div>
                 </Button>
 
+                {/* Improve This Idea */}
+                <Button
+                  onClick={() => navigate('/builder?improve=current')}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 h-auto p-4 justify-start"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Zap className="w-5 h-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">{text[currentLanguage].improveIdea}</div>
+                      <div className="text-sm opacity-90">점수를 높이고 완성도 개선</div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 ml-auto" />
+                  </div>
+                </Button>
+
+                {/* Decompose to Modules */}
+                <Button
+                  onClick={() => navigate('/builder?decompose=current')}
+                  variant="outline"
+                  className="h-auto p-4 justify-start border-2 hover:bg-purple-50 border-purple-200"
+                >
+                  <div className="flex items-center space-x-3">
+                    <PlusCircle className="w-5 h-5 text-purple-600" />
+                    <div className="text-left">
+                      <div className="font-semibold text-purple-700">{text[currentLanguage].decomposeToModules}</div>
+                      <div className="text-sm text-gray-500">다른 아이디어에 활용 가능</div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 ml-auto text-purple-600" />
+                  </div>
+                </Button>
+
+                {/* Submit More Ideas */}
                 <Button
                   onClick={() => navigate('/submit')}
                   variant="outline"
                   className="h-auto p-4 justify-start border-2 hover:bg-gray-50"
                 >
                   <div className="flex items-center space-x-3">
-                    <PlusCircle className="w-5 h-5" />
+                    <Plus className="w-5 h-5" />
                     <div className="text-left">
                       <div className="font-semibold">{text[currentLanguage].submitMoreIdeas}</div>
                       <div className="text-sm text-gray-500">연속 제출로 더 많은 기회</div>
@@ -286,6 +329,7 @@ const SubmissionComplete = () => {
                   </div>
                 </Button>
 
+                {/* Community Feedback */}
                 <Button
                   onClick={() => navigate('/ideas')}
                   variant="outline"
@@ -301,18 +345,19 @@ const SubmissionComplete = () => {
                   </div>
                 </Button>
 
+                {/* VC Status Check */}
                 <Button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/vcs')}
                   variant="outline"
-                  className="h-auto p-4 justify-start border-2 hover:bg-gray-50"
+                  className="h-auto p-4 justify-start border-2 hover:bg-blue-50 border-blue-200"
                 >
                   <div className="flex items-center space-x-3">
-                    <Eye className="w-5 h-5" />
+                    <Building2 className="w-5 h-5 text-blue-600" />
                     <div className="text-left">
-                      <div className="font-semibold">{text[currentLanguage].viewDashboard}</div>
-                      <div className="text-sm text-gray-500">전체 진행 상황</div>
+                      <div className="font-semibold text-blue-700">{text[currentLanguage].checkVCStatus}</div>
+                      <div className="text-sm text-gray-500">VC 관심도 확인하기</div>
                     </div>
-                    <ArrowRight className="w-4 h-4 ml-auto" />
+                    <ArrowRight className="w-4 h-4 ml-auto text-blue-600" />
                   </div>
                 </Button>
               </div>
