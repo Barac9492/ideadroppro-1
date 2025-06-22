@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -147,10 +146,16 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           .eq('idea_id', ideaId)
           .eq('user_id', user.id);
 
-        // Update likes count
+        // Update likes count by decrementing
+        const { data: currentIdea } = await supabase
+          .from('ideas')
+          .select('likes_count')
+          .eq('id', ideaId)
+          .single();
+
         await supabase
           .from('ideas')
-          .update({ likes_count: supabase.raw('likes_count - 1') })
+          .update({ likes_count: Math.max(0, (currentIdea?.likes_count || 1) - 1) })
           .eq('id', ideaId);
       } else {
         // Like
@@ -158,10 +163,16 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           .from('idea_likes')
           .insert({ idea_id: ideaId, user_id: user.id });
 
-        // Update likes count
+        // Update likes count by incrementing
+        const { data: currentIdea } = await supabase
+          .from('ideas')
+          .select('likes_count')
+          .eq('id', ideaId)
+          .single();
+
         await supabase
           .from('ideas')
-          .update({ likes_count: supabase.raw('likes_count + 1') })
+          .update({ likes_count: (currentIdea?.likes_count || 0) + 1 })
           .eq('id', ideaId);
       }
 
@@ -171,7 +182,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
           idea.id === ideaId 
             ? { 
                 ...idea, 
-                likes: existingLike ? idea.likes - 1 : idea.likes + 1,
+                likes: existingLike ? Math.max(0, idea.likes - 1) : idea.likes + 1,
                 hasLiked: !existingLike 
               } 
             : idea

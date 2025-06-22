@@ -1,19 +1,19 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Home, 
-  Lightbulb, 
-  Trophy, 
+  PlusCircle,
+  Bot, 
+  Users,
+  TrendingUp,
   Building2,
-  Shuffle,
   MoreHorizontal,
-  Menu,
-  X,
+  DollarSign,
+  Star,
   Info,
-  User,
-  PlusCircle
+  User
 } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDailyChallenge';
 import { useIdeas } from '@/hooks/useIdeas';
@@ -37,67 +37,72 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
 
   const text = {
     ko: {
-      home: '홈',
-      ideas: '아이디어',
-      ranking: '랭킹',
-      vcs: 'VC',
-      remix: '리믹스',
+      submit: '아이디어 제출',
+      elaborate: 'AI 구체화',
+      vcMatching: 'VC 매칭',
+      community: '커뮤니티',
+      investment: '투자 연결',
       more: '더보기',
       profile: '프로필',
       about: '서비스 소개',
-      submit: '제출',
-      new: 'NEW!'
+new: 'NEW!',
+      hot: 'HOT'
     },
     en: {
-      home: 'Home',
-      ideas: 'Ideas',
-      ranking: 'Ranking',
-      vcs: 'VCs',
-      remix: 'Remix',
+      submit: 'Submit Idea',
+      elaborate: 'AI Elaborate',
+      vcMatching: 'VC Matching',
+      community: 'Community', 
+      investment: 'Investment',
       more: 'More',
       profile: 'Profile',
       about: 'About',
-      submit: 'Submit',
-      new: 'NEW!'
+      new: 'NEW!',
+      hot: 'HOT'
     }
   };
 
-  // Core navigation items
+  // Investment-focused core navigation
   const coreNavItems = [
     {
-      id: 'home',
-      label: text[currentLanguage].home,
-      icon: Home,
-      path: '/',
+      id: 'submit',
+      label: text[currentLanguage].submit,
+      icon: PlusCircle,
+      path: '/submit',
+      badge: !hasParticipated ? text[currentLanguage].new : null,
+      color: 'text-blue-600'
+    },
+    {
+      id: 'elaborate',
+      label: text[currentLanguage].elaborate,
+      icon: Bot,
+      path: '/builder',
       badge: null,
+      color: 'text-purple-600'
     },
     {
-      id: 'ideas',
-      label: text[currentLanguage].ideas,
-      icon: Lightbulb,
-      path: '/ideas',
-      badge: ideas.length > 10 ? '10+' : (ideas.length > 5 ? '5+' : null),
-    },
-    {
-      id: 'ranking',
-      label: text[currentLanguage].ranking,
-      icon: Trophy,
-      path: '/ranking',
-      badge: null,
-    },
-    {
-      id: 'vcs',
-      label: text[currentLanguage].vcs,
+      id: 'vcMatching',
+      label: text[currentLanguage].vcMatching, 
       icon: Building2,
       path: '/vcs',
-      badge: null,
+      badge: text[currentLanguage].hot,
+      color: 'text-green-600'
     },
     {
-      id: 'remix',
-      label: text[currentLanguage].remix,
-      icon: Shuffle,
-      path: '/remix',
-      badge: null,
+      id: 'investment',
+      label: text[currentLanguage].investment,
+      icon: DollarSign,
+      path: '/ranking',
+      badge: '12건',
+      color: 'text-yellow-600'
+    },
+    {
+      id: 'community',
+      label: text[currentLanguage].community,
+      icon: Users,
+      path: '/ideas',
+      badge: ideas.length > 10 ? '10+' : (ideas.length > 5 ? '5+' : null),
+      color: 'text-indigo-600'
     }
   ];
 
@@ -116,13 +121,6 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
       icon: Info,
       path: '/about',
       badge: null,
-    },
-    {
-      id: 'submit',
-      label: text[currentLanguage].submit,
-      icon: PlusCircle,
-      path: '/submit',
-      badge: !hasParticipated ? text[currentLanguage].new : null,
     }
   ];
 
@@ -152,27 +150,29 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleNavClick(item.path)}
-                  className={`flex flex-col items-center justify-center space-y-1 px-3 py-3 min-h-[60px] min-w-[60px] relative rounded-lg transition-all ${
+                  className={`flex flex-col items-center justify-center space-y-1 px-2 py-3 min-h-[60px] min-w-[50px] relative rounded-lg transition-all ${
                     active 
-                      ? 'text-purple-600 bg-purple-100 shadow-sm scale-105' 
-                      : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                      ? `${item.color} bg-opacity-10 scale-105` 
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'animate-pulse' : ''}`} />
+                  <Icon className={`w-4 h-4 ${active ? 'animate-pulse' : ''}`} />
                   <span className="text-xs font-medium">{item.label}</span>
                   
                   {item.badge && (
-                    <Badge className={`absolute -top-1 -right-1 text-white text-xs px-1.5 py-0.5 min-w-[20px] h-5 flex items-center justify-center ${
-                      item.id === 'submit' 
-                        ? 'bg-red-500 animate-bounce' 
-                        : 'bg-purple-500 animate-pulse'
+                    <Badge className={`absolute -top-1 -right-1 text-white text-xs px-1.5 py-0.5 min-w-[18px] h-4 flex items-center justify-center ${
+                      item.id === 'investment' 
+                        ? 'bg-yellow-500 animate-bounce' 
+                        : item.id === 'vcMatching'
+                        ? 'bg-green-500 animate-pulse'
+                        : 'bg-blue-500'
                     }`}>
                       {item.badge}
                     </Badge>
                   )}
                   
                   {active && (
-                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-600 rounded-full"></div>
+                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-current rounded-full"></div>
                   )}
                 </Button>
               );
@@ -183,13 +183,13 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className={`flex flex-col items-center justify-center space-y-1 px-3 py-3 min-h-[60px] min-w-[60px] relative rounded-lg transition-all ${
+              className={`flex flex-col items-center justify-center space-y-1 px-2 py-3 min-h-[60px] min-w-[50px] relative rounded-lg transition-all ${
                 showMoreMenu 
-                  ? 'text-purple-600 bg-purple-100 shadow-sm' 
-                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                  ? 'text-gray-800 bg-gray-100 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
               }`}
             >
-              <MoreHorizontal className="w-5 h-5" />
+              <MoreHorizontal className="w-4 h-4" />
               <span className="text-xs font-medium">{text[currentLanguage].more}</span>
             </Button>
           </div>
@@ -215,8 +215,8 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
                       onClick={() => handleNavClick(item.path)}
                       className={`flex items-center space-x-3 p-4 h-auto justify-start rounded-xl transition-all ${
                         active 
-                          ? 'text-purple-600 bg-purple-50 border border-purple-200' 
-                          : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
+                          ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -243,6 +243,7 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
             {allNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
+              const itemColor = (item as any).color || 'text-gray-600';
               
               return (
                 <Button
@@ -252,8 +253,8 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
                   onClick={() => handleNavClick(item.path)}
                   className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all ${
                     active 
-                      ? 'text-purple-600 bg-purple-100 shadow-sm' 
-                      : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                      ? `${itemColor} bg-opacity-10 shadow-sm` 
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -261,9 +262,11 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
                   
                   {item.badge && (
                     <Badge className={`text-white text-xs px-1.5 py-0.5 min-w-[20px] h-5 flex items-center justify-center ${
-                      item.id === 'submit' 
-                        ? 'bg-red-500 animate-bounce' 
-                        : 'bg-purple-500'
+                      item.id === 'investment' 
+                        ? 'bg-yellow-500 animate-bounce' 
+                        : item.id === 'vcMatching'
+                        ? 'bg-green-500 animate-pulse'
+                        : 'bg-blue-500'
                     }`}>
                       {item.badge}
                     </Badge>
