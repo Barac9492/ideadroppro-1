@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
 import AdaptiveNavigation from '@/components/AdaptiveNavigation';
@@ -6,6 +7,7 @@ import HeroSection from '@/components/HeroSection';
 import DailyXPDashboard from '@/components/DailyXPDashboard';
 import LiveMissionTracker from '@/components/LiveMissionTracker';
 import RecentIdeasPreview from '@/components/RecentIdeasPreview';
+import InputModeSelector from '@/components/InputModeSelector';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -17,6 +19,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const Submit = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
+  const [inputMode, setInputMode] = useState<'simple' | 'builder' | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { ideas, submitIdea, toggleLike, fetchIdeas } = useIdeas(currentLanguage);
@@ -28,6 +31,13 @@ const Submit = () => {
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
+  };
+
+  const handleModeSelect = (mode: 'simple' | 'builder') => {
+    setInputMode(mode);
+    if (mode === 'builder') {
+      navigate('/builder');
+    }
   };
 
   const handleIdeaDrop = async (ideaText: string) => {
@@ -46,8 +56,6 @@ const Submit = () => {
 
       // Check if this idea is related to today's challenge
       if (challengeKeyword && ideaText.toLowerCase().includes(challengeKeyword.toLowerCase())) {
-        // Since submitIdea doesn't return the idea object, we'll fetch the latest ideas
-        // and find the most recent one by this user that matches the challenge
         await fetchIdeas();
         const userLatestIdea = ideas.find(idea => 
           idea.user_id === user.id && 
@@ -117,11 +125,23 @@ const Submit = () => {
         onJoinChallenge={handleJoinChallenge}
       />
       
-      {/* Idea Submission Interface */}
-      <HeroSection 
-        currentLanguage={currentLanguage}
-        onIdeaDrop={handleIdeaDrop}
-      />
+      {/* Input Mode Selection */}
+      {inputMode === null && (
+        <div className="container mx-auto px-4 py-12">
+          <InputModeSelector
+            currentLanguage={currentLanguage}
+            onModeSelect={handleModeSelect}
+          />
+        </div>
+      )}
+      
+      {/* Simple Input Mode - Original Hero Section */}
+      {inputMode === 'simple' && (
+        <HeroSection 
+          currentLanguage={currentLanguage}
+          onIdeaDrop={handleIdeaDrop}
+        />
+      )}
       
       {/* Recent Ideas Preview */}
       <RecentIdeasPreview 

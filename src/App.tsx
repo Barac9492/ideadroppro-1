@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Submit from "./pages/Submit";
+import Builder from "./pages/Builder";
 import Explore from "./pages/Explore";
 import Remix from "./pages/Remix";
 import VCs from "./pages/VCs";
@@ -31,6 +32,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/submit" element={<Submit />} />
+            <Route path="/builder" element={<Builder />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/remix" element={<Remix />} />
             <Route path="/vcs" element={<VCs />} />

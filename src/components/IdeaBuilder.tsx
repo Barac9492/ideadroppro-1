@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Lightbulb, Sparkles, Download, Share, X, Plus } from 'lucide-react';
+import { Lightbulb, Sparkles, Download, Share, X, Plus, HelpCircle } from 'lucide-react';
 import { useModularIdeas, IdeaModule } from '@/hooks/useModularIdeas';
 import ModuleBrowser from './ModuleBrowser';
+import ModuleWritingGuide from './ModuleWritingGuide';
 import type { Database } from '@/integrations/supabase/types';
 
 type ModuleType = Database['public']['Enums']['module_type'];
@@ -21,6 +21,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage }) => {
   const [selectedModules, setSelectedModules] = useState<IdeaModule[]>([]);
   const [freeTextIdea, setFreeTextIdea] = useState('');
   const [showBrowser, setShowBrowser] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [generatedIdea, setGeneratedIdea] = useState('');
 
   const text = {
@@ -31,6 +32,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage }) => {
       noModulesSelected: '아직 모듈을 선택하지 않았습니다',
       addModules: '모듈 추가하기',
       browseMoodules: '모듈 브라우저',
+      showGuide: '작성 가이드',
       generateIdea: '아이디어 생성',
       generatedIdea: '생성된 아이디어',
       copyIdea: '아이디어 복사',
@@ -62,6 +64,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage }) => {
       noModulesSelected: 'No modules selected yet',
       addModules: 'Add Modules',
       browseMoodules: 'Module Browser',
+      showGuide: 'Writing Guide',
       generateIdea: 'Generate Idea',
       generatedIdea: 'Generated Idea',
       copyIdea: 'Copy Idea',
@@ -202,6 +205,9 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage }) => {
         </h1>
         <p className="text-lg text-gray-600">{text[currentLanguage].subtitle}</p>
       </div>
+
+      {/* Writing Guide */}
+      <ModuleWritingGuide currentLanguage={currentLanguage} />
 
       {/* Free Text Input Section */}
       <Card>
