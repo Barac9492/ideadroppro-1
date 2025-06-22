@@ -40,10 +40,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50">
-      {/* Clean hero section */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-white">
+      {/* Ultra-clean hero section */}
+      <div className="container mx-auto px-4 py-24">
+        <div className="max-w-4xl mx-auto text-center">
           {/* Simplified hero text */}
           <SimpleHeroText currentLanguage={currentLanguage} />
 
