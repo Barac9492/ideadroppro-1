@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Bot } from 'lucide-react';
 
 interface AirbnbStyleInputProps {
   currentLanguage: 'ko' | 'en';
@@ -18,11 +19,11 @@ const AirbnbStyleInput: React.FC<AirbnbStyleInputProps> = ({
   const text = {
     ko: {
       placeholder: '아이디어를 입력하세요',
-      submitButton: '시작하기'
+      submitButton: 'AI로 구체화하기'
     },
     en: {
       placeholder: 'Enter your idea',
-      submitButton: 'Get Started'
+      submitButton: 'Elaborate with AI'
     }
   };
 
@@ -70,8 +71,9 @@ const AirbnbStyleInput: React.FC<AirbnbStyleInputProps> = ({
           <Button
             onClick={handleSubmit}
             disabled={!ideaText.trim() || isSubmitting}
-            className="bg-rose-500 hover:bg-rose-600 text-white px-10 py-6 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-6 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
           >
+            <Bot className="w-5 h-5 mr-2" />
             {text[currentLanguage].submitButton}
           </Button>
         </div>
@@ -80,16 +82,16 @@ const AirbnbStyleInput: React.FC<AirbnbStyleInputProps> = ({
       {/* Visual benefit indicators */}
       <div className="flex justify-center items-center mt-8 space-x-8 text-gray-500">
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="text-sm font-medium">30초 완료</span>
-        </div>
-        <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-          <span className="text-sm font-medium">즉시 피드백</span>
+          <span className="text-sm font-medium">AI 분석</span>
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-          <span className="text-sm font-medium">무료 분석</span>
+          <span className="text-sm font-medium">즉시 구체화</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-sm font-medium">VC 매칭</span>
         </div>
       </div>
     </div>

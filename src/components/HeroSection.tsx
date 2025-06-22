@@ -24,13 +24,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
     setShowReactionSystem(true);
     setIsSubmitting(true);
     
-    try {
-      await onIdeaDrop(ideaText);
-    } catch (error) {
-      console.error('Idea submit error:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Show immediate feedback before processing
+    setTimeout(async () => {
+      try {
+        await onIdeaDrop(ideaText);
+      } catch (error) {
+        console.error('Idea submit error:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }, 1000);
   };
 
   const handleReactionComplete = (reactions: any) => {

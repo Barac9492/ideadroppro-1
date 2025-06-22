@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Lightbulb, Bot, Users, DollarSign } from 'lucide-react';
+import { Lightbulb, Bot, Users, DollarSign, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import EnhancedIdeaModal from './EnhancedIdeaModal';
@@ -16,6 +16,7 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
   const [ideaText, setIdeaText] = useState('');
   const [showEnhancedModal, setShowEnhancedModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStep, setSubmissionStep] = useState<'input' | 'analyzing' | 'transitioning'>('input');
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -24,44 +25,70 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
       title: '간단한 아이디어가 실제 투자로',
       subtitle: 'AI가 구체화하면, 현직 VC가 직접 평가합니다',
       placeholder: '카페 배달 앱 아이디어',
-      submitButton: 'VC에게 보여주기',
+      submitButton: 'AI로 구체화하기',
+      analyzing: 'AI가 아이디어를 분석 중입니다...',
+      transitioning: 'AI 증강 단계로 이동 중...',
       liveVCs: '23명의 VC가 지금 활성 상태',
-      step1: '아이디어',
+      step1: '아이디어 입력',
       step2: 'AI 구체화',
-      step3: 'VC 평가'
+      step3: 'VC 평가',
+      currentStep: '현재 단계'
     },
     en: {
       title: 'Simple Ideas Become Real Investments',
       subtitle: 'AI elaborates, VCs evaluate directly',
       placeholder: 'Cafe delivery app idea',
-      submitButton: 'Show to VCs',
+      submitButton: 'Elaborate with AI',
+      analyzing: 'AI is analyzing your idea...',
+      transitioning: 'Moving to AI enhancement...',
       liveVCs: '23 VCs are currently active',
-      step1: 'Your Idea',
+      step1: 'Enter Idea',
       step2: 'AI Elaborate',
-      step3: 'VC Review'
+      step3: 'VC Review',
+      currentStep: 'Current Step'
     }
   };
 
   const handleSubmit = async () => {
     if (ideaText.trim()) {
       setIsSubmitting(true);
-      try {
-        await onIdeaDrop(ideaText.trim());
-        setIdeaText('');
-      } catch (error) {
-        console.error('Submit error:', error);
-      } finally {
-        setIsSubmitting(false);
-      }
+      setSubmissionStep('analyzing');
+      
+      // Show analyzing feedback for 1.5 seconds
+      setTimeout(() => {
+        setSubmissionStep('transitioning');
+        
+        // Then transition after another 1 second
+        setTimeout(async () => {
+          try {
+            await onIdeaDrop(ideaText.trim());
+            setIdeaText('');
+          } catch (error) {
+            console.error('Submit error:', error);
+          } finally {
+            setIsSubmitting(false);
+            setSubmissionStep('input');
+          }
+        }, 1000);
+      }, 1500);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (ideaText.trim()) {
+      if (ideaText.trim() && !isSubmitting) {
         handleSubmit();
       }
+    }
+  };
+
+  const getCurrentStepIndex = () => {
+    switch (submissionStep) {
+      case 'input': return 0;
+      case 'analyzing': return 1;
+      case 'transitioning': return 1;
+      default: return 0;
     }
   };
 
@@ -95,63 +122,135 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
             {text[currentLanguage].subtitle}
           </p>
 
-          {/* Main Input - Centered and Prominent */}
-          <div className={`w-full mx-auto mb-12 ${isMobile ? 'max-w-full' : 'max-w-2xl'}`}>
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-6">
-              <div className="flex flex-col space-y-4">
-                <textarea
-                  value={ideaText}
-                  onChange={(e) => setIdeaText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={text[currentLanguage].placeholder}
-                  className="w-full resize-none border-none outline-none text-gray-900 placeholder-gray-400 text-xl leading-relaxed font-medium"
-                  rows={3}
-                  style={{ minHeight: '80px' }}
-                />
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!ideaText.trim() || isSubmitting}
-                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-6 rounded-2xl font-bold text-lg shadow-lg"
-                >
-                  <DollarSign className="w-5 h-5 mr-2" />
-                  {text[currentLanguage].submitButton}
-                </Button>
+          {/* Submission Status Feedback */}
+          {isSubmitting && (
+            <div className="mb-8">
+              <div className="bg-white rounded-2xl shadow-lg border p-6 max-w-md mx-auto">
+                <div className="flex items-center justify-center space-x-3">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">
+                      {submissionStep === 'analyzing' ? text[currentLanguage].analyzing : text[currentLanguage].transitioning}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      "{ideaText.slice(0, 30)}..."
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Main Input - Centered and Prominent */}
+          {!isSubmitting && (
+            <div className={`w-full mx-auto mb-12 ${isMobile ? 'max-w-full' : 'max-w-2xl'}`}>
+              <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-6">
+                <div className="flex flex-col space-y-4">
+                  <textarea
+                    value={ideaText}
+                    onChange={(e) => setIdeaText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={text[currentLanguage].placeholder}
+                    className="w-full resize-none border-none outline-none text-gray-900 placeholder-gray-400 text-xl leading-relaxed font-medium"
+                    rows={3}
+                    style={{ minHeight: '80px' }}
+                  />
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!ideaText.trim()}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-6 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Bot className="w-5 h-5 mr-2" />
+                    {text[currentLanguage].submitButton}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Simple 3-Step Process */}
+        {/* Enhanced 3-Step Process with Current Step Highlighting */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-lg">
           <div className="flex items-center justify-center gap-8">
-            {/* Step 1: Idea */}
+            {/* Step 1: Idea Input */}
             <div className="text-center">
-              <div className="bg-gradient-to-r from-gray-400 to-gray-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Lightbulb className="w-6 h-6 text-white" />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 ${
+                getCurrentStepIndex() === 0 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-110' 
+                  : getCurrentStepIndex() > 0
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-400 text-white'
+              }`}>
+                <Lightbulb className="w-6 h-6" />
               </div>
-              <div className="text-sm font-medium text-gray-700">{text[currentLanguage].step1}</div>
+              <div className={`text-sm font-medium transition-colors duration-300 ${
+                getCurrentStepIndex() === 0 ? 'text-blue-700' : 'text-gray-700'
+              }`}>
+                {text[currentLanguage].step1}
+              </div>
+              {getCurrentStepIndex() === 0 && (
+                <div className="text-xs text-blue-600 mt-1 font-medium">
+                  {text[currentLanguage].currentStep}
+                </div>
+              )}
             </div>
 
             {/* Arrow */}
-            <div className="text-2xl text-blue-600">→</div>
+            <div className={`text-2xl transition-colors duration-300 ${
+              getCurrentStepIndex() >= 1 ? 'text-blue-600' : 'text-gray-400'
+            }`}>→</div>
 
-            {/* Step 2: AI */}
+            {/* Step 2: AI Enhancement */}
             <div className="text-center">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Bot className="w-6 h-6 text-white" />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 ${
+                getCurrentStepIndex() === 1 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-110' 
+                  : getCurrentStepIndex() > 1
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-400 text-white'
+              }`}>
+                {isSubmitting && getCurrentStepIndex() === 1 ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <Bot className="w-6 h-6" />
+                )}
               </div>
-              <div className="text-sm font-medium text-blue-700">{text[currentLanguage].step2}</div>
+              <div className={`text-sm font-medium transition-colors duration-300 ${
+                getCurrentStepIndex() === 1 ? 'text-blue-700' : 'text-gray-700'
+              }`}>
+                {text[currentLanguage].step2}
+              </div>
+              {getCurrentStepIndex() === 1 && (
+                <div className="text-xs text-blue-600 mt-1 font-medium">
+                  {text[currentLanguage].currentStep}
+                </div>
+              )}
             </div>
 
             {/* Arrow */}
-            <div className="text-2xl text-green-600">→</div>
+            <div className={`text-2xl transition-colors duration-300 ${
+              getCurrentStepIndex() >= 2 ? 'text-green-600' : 'text-gray-400'
+            }`}>→</div>
 
-            {/* Step 3: VC */}
+            {/* Step 3: VC Review */}
             <div className="text-center">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Users className="w-6 h-6 text-white" />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 ${
+                getCurrentStepIndex() === 2 
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg scale-110' 
+                  : 'bg-gray-400 text-white'
+              }`}>
+                <Users className="w-6 h-6" />
               </div>
-              <div className="text-sm font-medium text-green-700">{text[currentLanguage].step3}</div>
+              <div className={`text-sm font-medium transition-colors duration-300 ${
+                getCurrentStepIndex() === 2 ? 'text-green-700' : 'text-gray-700'
+              }`}>
+                {text[currentLanguage].step3}
+              </div>
+              {getCurrentStepIndex() === 2 && (
+                <div className="text-xs text-green-600 mt-1 font-medium">
+                  {text[currentLanguage].currentStep}
+                </div>
+              )}
             </div>
           </div>
         </div>
