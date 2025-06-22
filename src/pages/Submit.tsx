@@ -37,7 +37,7 @@ const Submit = () => {
     }
     
     try {
-      const submittedIdea = await submitIdea(ideaText);
+      await submitIdea(ideaText);
       await updateStreak();
       await scoreActions.keywordParticipation();
       
@@ -46,8 +46,19 @@ const Submit = () => {
 
       // Check if this idea is related to today's challenge
       if (challengeKeyword && ideaText.toLowerCase().includes(challengeKeyword.toLowerCase())) {
-        await markChallengeCompleted(submittedIdea.id);
-        await awardXP(100, '일일 챌린지 참여');
+        // Since submitIdea doesn't return the idea object, we'll fetch the latest ideas
+        // and find the most recent one by this user that matches the challenge
+        await fetchIdeas();
+        const userLatestIdea = ideas.find(idea => 
+          idea.user_id === user.id && 
+          (idea.text.toLowerCase().includes(challengeKeyword.toLowerCase()) ||
+           idea.tags?.includes('daily-challenge'))
+        );
+        
+        if (userLatestIdea) {
+          await markChallengeCompleted(userLatestIdea.id);
+          await awardXP(100, '일일 챌린지 참여');
+        }
       }
     } catch (error) {
       console.error('Error submitting idea:', error);
