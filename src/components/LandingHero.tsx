@@ -83,11 +83,11 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
     }
   };
 
-  const getCurrentStepIndex = () => {
+  const getCurrentStepIndex = (): 0 | 1 | 2 => {
     switch (submissionStep) {
       case 'input': return 0;
       case 'analyzing': return 1;
-      case 'transitioning': return 1;
+      case 'transitioning': return 1; // Still in AI processing step
       default: return 0;
     }
   };
