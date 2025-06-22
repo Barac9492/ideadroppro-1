@@ -2,10 +2,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
+
+type ModuleType = Database['public']['Enums']['module_type'];
 
 export interface IdeaModule {
   id: string;
-  module_type: string;
+  module_type: ModuleType;
   content: string;
   tags: string[];
   original_idea_id?: string;
@@ -19,7 +22,7 @@ export interface IdeaModule {
 
 export interface ModuleTemplate {
   id: string;
-  module_type: string;
+  module_type: ModuleType;
   template_name: string;
   description: string;
   example_content: string;
@@ -57,7 +60,7 @@ export const useModularIdeas = ({ currentLanguage }: UseModularIdeasProps) => {
   };
 
   // Fetch all modules
-  const fetchModules = async (moduleType?: string) => {
+  const fetchModules = async (moduleType?: ModuleType) => {
     setLoading(true);
     try {
       let query = supabase
@@ -145,7 +148,7 @@ export const useModularIdeas = ({ currentLanguage }: UseModularIdeasProps) => {
 
   // Create a new module
   const createModule = async (moduleData: {
-    module_type: string;
+    module_type: ModuleType;
     content: string;
     tags?: string[];
     original_idea_id?: string;
@@ -157,9 +160,11 @@ export const useModularIdeas = ({ currentLanguage }: UseModularIdeasProps) => {
       const { data, error } = await supabase
         .from('idea_modules')
         .insert({
-          ...moduleData,
-          created_by: user.id,
-          tags: moduleData.tags || []
+          module_type: moduleData.module_type,
+          content: moduleData.content,
+          tags: moduleData.tags || [],
+          original_idea_id: moduleData.original_idea_id,
+          created_by: user.id
         })
         .select()
         .single();
@@ -195,7 +200,7 @@ export const useModularIdeas = ({ currentLanguage }: UseModularIdeasProps) => {
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
-          version: supabase.sql`version + 1`
+          version: supabase.rpc('increment_version', { module_id: moduleId })
         })
         .eq('id', moduleId)
         .select()
@@ -251,7 +256,7 @@ export const useModularIdeas = ({ currentLanguage }: UseModularIdeasProps) => {
   // Get module recommendations
   const getModuleRecommendations = async (
     selectedModules: IdeaModule[],
-    targetModuleType: string
+    targetModuleType: ModuleType
   ) => {
     try {
       const { data, error } = await supabase.functions.invoke('recommend-modules', {
