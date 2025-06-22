@@ -22,7 +22,7 @@ const Explore = () => {
   
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { ideas, toggleLike, fetchIdeas, loading } = useIdeas(currentLanguage);
+  const { ideas, toggleLike, fetchIdeas, loading, generateAnalysis } = useIdeas(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
 
@@ -100,9 +100,9 @@ const Explore = () => {
         case 'score':
           return (b.score || 0) - (a.score || 0);
         case 'likes':
-          return (b.likes_count || 0) - (a.likes_count || 0);
+          return (b.likes || 0) - (a.likes || 0);
         default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
       }
     });
 
@@ -117,7 +117,7 @@ const Explore = () => {
         {/* Header Section */}
         <div className="text-center mb-12">
           <div className="flex justify-center items-center space-x-4 mb-6">
-            <LiveParticipantCounter />
+            <LiveParticipantCounter currentLanguage={currentLanguage} />
             <Badge className="bg-blue-100 text-blue-700">
               <TrendingUp className="w-3 h-3 mr-1" />
               실시간 활성화
@@ -224,6 +224,7 @@ const Explore = () => {
                 key={idea.id}
                 idea={idea}
                 onLike={handleLike}
+                onGenerateAnalysis={generateAnalysis}
                 currentLanguage={currentLanguage}
                 isAuthenticated={!!user}
               />
