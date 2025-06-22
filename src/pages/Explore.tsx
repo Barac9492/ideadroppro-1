@@ -22,7 +22,7 @@ const Explore = () => {
   
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { ideas, toggleLike, fetchIdeas, loading, generateAnalysis } = useIdeas(currentLanguage);
+  const { ideas, toggleLike, fetchIdeas, isLoading, generateAnalysis } = useIdeas(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
 
@@ -212,7 +212,7 @@ const Explore = () => {
         </div>
 
         {/* Ideas Grid */}
-        {loading ? (
+        {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">아이디어를 불러오는 중...</p>

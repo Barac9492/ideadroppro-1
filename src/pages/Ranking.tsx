@@ -9,7 +9,7 @@ import { useIdeas } from '@/hooks/useIdeas';
 
 const Ranking = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
-  const { ideas, loading } = useIdeas(currentLanguage);
+  const { ideas, isLoading } = useIdeas(currentLanguage);
 
   const text = {
     ko: {
@@ -96,7 +96,7 @@ const Ranking = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                {loading ? (
+                {isLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
                     <p className="mt-2 text-gray-500">{text[currentLanguage].loadingRanking}</p>

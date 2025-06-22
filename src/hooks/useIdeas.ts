@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -45,6 +46,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
       deleted: '아이디어가 삭제되었습니다',
       error: '오류가 발생했습니다',
       loginRequired: '로그인이 필요합니다',
+      seedGenerated: '데모 아이디어가 생성되었습니다',
     },
     en: {
       loading: 'Loading ideas...',
@@ -57,6 +59,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
       deleted: 'Idea deleted',
       error: 'An error occurred',
       loginRequired: 'Login required',
+      seedGenerated: 'Demo ideas generated',
     },
   };
 
@@ -70,11 +73,36 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
       const { data, error } = await supabase
         .from('ideas')
         .select('*')
-        .order('timestamp', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setIdeas(data || []);
+      // Transform database data to match Idea interface
+      const transformedIdeas: Idea[] = (data || []).map(item => ({
+        id: item.id,
+        text: item.text,
+        score: item.score || 0,
+        tags: item.tags || [],
+        likes: item.likes_count || 0,
+        hasLiked: false, // Will be updated by separate query if needed
+        timestamp: new Date(item.created_at),
+        aiAnalysis: item.ai_analysis,
+        improvements: item.improvements,
+        marketPotential: item.market_potential,
+        similarIdeas: item.similar_ideas,
+        pitchPoints: item.pitch_points,
+        finalVerdict: item.final_verdict,
+        globalAnalysis: item.global_analysis,
+        seed: item.seed,
+        user_id: item.user_id,
+        remix_parent_id: item.remix_parent_id,
+        remix_count: item.remix_count,
+        remix_chain_depth: item.remix_chain_depth,
+        is_modular: item.is_modular,
+        composition_version: item.composition_version,
+      }));
+
+      setIdeas(transformedIdeas);
       toast({
         title: text[currentLanguage].loaded,
         duration: 2000,
@@ -103,16 +131,50 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
         return;
       }
 
-      const { data, error } = await supabase.rpc('like_idea', {
-        idea_id: ideaId,
-        user_id: user.id,
-      });
+      // Check if user has already liked this idea
+      const { data: existingLike } = await supabase
+        .from('idea_likes')
+        .select('id')
+        .eq('idea_id', ideaId)
+        .eq('user_id', user.id)
+        .single();
 
-      if (error) throw error;
+      if (existingLike) {
+        // Unlike
+        await supabase
+          .from('idea_likes')
+          .delete()
+          .eq('idea_id', ideaId)
+          .eq('user_id', user.id);
 
+        // Update likes count
+        await supabase
+          .from('ideas')
+          .update({ likes_count: supabase.raw('likes_count - 1') })
+          .eq('id', ideaId);
+      } else {
+        // Like
+        await supabase
+          .from('idea_likes')
+          .insert({ idea_id: ideaId, user_id: user.id });
+
+        // Update likes count
+        await supabase
+          .from('ideas')
+          .update({ likes_count: supabase.raw('likes_count + 1') })
+          .eq('id', ideaId);
+      }
+
+      // Update local state
       setIdeas(prevIdeas =>
         prevIdeas.map(idea =>
-          idea.id === ideaId ? { ...idea, likes: data, hasLiked: !idea.hasLiked } : idea
+          idea.id === ideaId 
+            ? { 
+                ...idea, 
+                likes: existingLike ? idea.likes - 1 : idea.likes + 1,
+                hasLiked: !existingLike 
+              } 
+            : idea
         )
       );
 
@@ -190,7 +252,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     try {
       const { data, error } = await supabase
         .from('ideas')
-        .update({ finalVerdict: verdict })
+        .update({ final_verdict: verdict })
         .eq('id', ideaId)
         .select()
         .single();
@@ -199,7 +261,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
 
       setIdeas(prevIdeas =>
         prevIdeas.map(idea =>
-          idea.id === ideaId ? { ...idea, finalVerdict: data.finalVerdict } : idea
+          idea.id === ideaId ? { ...idea, finalVerdict: data.final_verdict } : idea
         )
       );
 
@@ -316,6 +378,30 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     }
   };
 
+  const generateSeedIdeas = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-seed-ideas', {
+        body: { language: currentLanguage, count: 5 }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: text[currentLanguage].seedGenerated,
+        duration: 3000,
+      });
+
+      await fetchIdeas();
+    } catch (error: any) {
+      console.error('Error generating seed ideas:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return {
     ideas,
     isLoading,
@@ -326,6 +412,7 @@ export const useIdeas = (currentLanguage: 'ko' | 'en') => {
     generateAnalysis,
     generateGlobalAnalysis,
     saveFinalVerdict,
-    deleteIdea
+    deleteIdea,
+    generateSeedIdeas
   };
 };
