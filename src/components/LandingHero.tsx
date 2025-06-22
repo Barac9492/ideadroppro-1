@@ -10,7 +10,7 @@ import AIElaborationResults from './AIElaborationResults';
 
 interface LandingHeroProps {
   currentLanguage: 'ko' | 'en';
-  onIdeaDrop: (idea: string) => void;
+  onIdeaDrop: (idea: string, aiAnalysis?: any) => void;
 }
 
 const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }) => {
