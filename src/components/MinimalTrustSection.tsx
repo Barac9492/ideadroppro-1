@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Users, CheckCircle, Star } from 'lucide-react';
+import { Users, TrendingUp, Star } from 'lucide-react';
 
 interface MinimalTrustSectionProps {
   currentLanguage: 'ko' | 'en';
