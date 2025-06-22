@@ -61,7 +61,7 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
       
       // Show analyzing feedback for 2 seconds
       setTimeout(() => {
-        // Mock AI analysis result
+        // Mock AI analysis result with modules
         const mockAnalysis = {
           score: 7.2,
           analysis: currentLanguage === 'ko' 
@@ -70,7 +70,13 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
           improvements: ['구체적인 실행 계획', '경쟁사 분석', '수익 모델 정교화'],
           marketPotential: ['대규모 시장', '성장 가능성 높음'],
           similarIdeas: ['기존 서비스와 차별화 요소 존재'],
-          pitchPoints: ['독창성', '시장 적합성', '확장 가능성']
+          pitchPoints: ['독창성', '시장 적합성', '확장 가능성'],
+          modules: {
+            problem: currentLanguage === 'ko' ? '사용자의 일상적인 불편함을 해결' : 'Solving everyday user inconveniences',
+            solution: currentLanguage === 'ko' ? '혁신적이고 실용적인 접근 방식' : 'Innovative and practical approach',
+            target_customer: currentLanguage === 'ko' ? '디지털 네이티브 세대' : 'Digital native generation',
+            value_proposition: currentLanguage === 'ko' ? '시간 절약과 편의성 증대' : 'Time saving and convenience enhancement'
+          }
         };
         
         setAnalysisResult(mockAnalysis);
@@ -86,10 +92,10 @@ const LandingHero: React.FC<LandingHeroProps> = ({ currentLanguage, onIdeaDrop }
     setSubmissionStep('transitioning');
     setIsSubmitting(true);
     
-    // Transition to progressive builder
+    // Transition to progressive builder with AI analysis
     setTimeout(async () => {
       try {
-        await onIdeaDrop(ideaText.trim());
+        await onIdeaDrop(ideaText.trim(), analysisResult);
         setIdeaText('');
       } catch (error) {
         console.error('Submit error:', error);

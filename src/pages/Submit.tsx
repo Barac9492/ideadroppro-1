@@ -23,6 +23,7 @@ const Submit = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [inputMode, setInputMode] = useState<'simple' | 'builder' | 'progressive' | null>(null);
   const [builderIdea, setBuilderIdea] = useState<string>('');
+  const [aiAnalysisData, setAiAnalysisData] = useState<any>(null);
   const [showProgressiveBuilder, setShowProgressiveBuilder] = useState(false);
   const [showChallengeSection, setShowChallengeSection] = useState(false);
   
@@ -46,14 +47,15 @@ const Submit = () => {
     }
   };
 
-  const handleIdeaDrop = async (ideaText: string) => {
+  const handleIdeaDrop = async (ideaText: string, aiAnalysis?: any) => {
     if (!user) {
       navigate('/auth', { state: { ideaText } });
       return;
     }
     
-    // Show progressive builder option
+    // Show progressive builder option with AI analysis data
     setBuilderIdea(ideaText);
+    setAiAnalysisData(aiAnalysis);
     setShowProgressiveBuilder(true);
   };
 
@@ -105,6 +107,7 @@ const Submit = () => {
   const handleProgressiveCancel = () => {
     setShowProgressiveBuilder(false);
     setBuilderIdea('');
+    setAiAnalysisData(null);
   };
 
   const handleLike = async (ideaId: string) => {
@@ -156,6 +159,7 @@ const Submit = () => {
             <div className="p-6">
               <ProgressiveIdeaBuilder
                 initialIdea={builderIdea}
+                aiAnalysis={aiAnalysisData}
                 currentLanguage={currentLanguage}
                 onComplete={handleProgressiveComplete}
                 onCancel={handleProgressiveCancel}

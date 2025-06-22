@@ -11,7 +11,7 @@ import AIElaborationResults from './AIElaborationResults';
 
 interface HeroSectionProps {
   currentLanguage: 'ko' | 'en';
-  onIdeaDrop: (idea: string) => void;
+  onIdeaDrop: (idea: string, aiAnalysis?: any) => void;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }) => {
@@ -33,6 +33,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
         analysis: currentLanguage === 'ko' 
           ? '창의적이고 실현 가능한 아이디어입니다. 시장 수요가 있으며 기술적 구현이 가능해 보입니다.'
           : 'Creative and feasible idea. Market demand exists and technical implementation seems possible.',
+        modules: {
+          problem: currentLanguage === 'ko' ? '사용자의 일상적인 불편함을 해결' : 'Solving everyday user inconveniences',
+          solution: currentLanguage === 'ko' ? '혁신적이고 실용적인 접근 방식' : 'Innovative and practical approach',
+          target_customer: currentLanguage === 'ko' ? '디지털 네이티브 세대' : 'Digital native generation',
+          value_proposition: currentLanguage === 'ko' ? '시간 절약과 편의성 증대' : 'Time saving and convenience enhancement'
+        }
       };
       
       setAnalysisResult(mockAnalysis);
@@ -45,10 +51,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
     setShowAIResults(false);
     setShowReactionSystem(true);
     
-    // Continue with existing flow
+    // Pass both idea and AI analysis to Progressive Builder
     setTimeout(async () => {
       try {
-        await onIdeaDrop(submittedIdea);
+        await onIdeaDrop(submittedIdea, analysisResult);
       } catch (error) {
         console.error('Idea submit error:', error);
       }
@@ -58,7 +64,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
   const handleSubmitAsIs = async () => {
     setShowAIResults(false);
     
-    // Submit directly
+    // Submit directly without Progressive Builder
     try {
       await onIdeaDrop(submittedIdea);
       setSubmittedIdea('');
