@@ -100,6 +100,11 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
     navigate(`/builder?improve=${ideaId}`);
   };
 
+  const handleDelete = async (ideaId: string) => {
+    // TODO: Implement delete functionality
+    console.log('Delete idea:', ideaId);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -213,7 +218,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
                     onGenerateAnalysis={generateAnalysis}
                     onGenerateGlobalAnalysis={() => {}}
                     onSaveFinalVerdict={() => {}}
-                    onDelete={() => {}}
+                    onDelete={handleDelete}
                     isAuthenticated={true}
                   />
                   
