@@ -85,6 +85,16 @@ const Submit = () => {
         }
       }
 
+      // Navigate to submission complete page with state
+      navigate('/submission-complete', {
+        state: {
+          ideaText: completedIdea.originalText,
+          aiImage: completedIdea.aiImage,
+          completionScore: completedIdea.completionScore,
+          modules: completedIdea.modules
+        }
+      });
+
       setShowProgressiveBuilder(false);
       setBuilderIdea('');
       setInputMode(null);

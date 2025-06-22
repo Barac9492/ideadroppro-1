@@ -1,56 +1,56 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Routes, Route } from "react-router-dom";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
-import Submit from "./pages/Submit";
-import Builder from "./pages/Builder";
 import Ideas from "./pages/Ideas";
-import Remix from "./pages/Remix";
-import VCs from "./pages/VCs";
-import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
+import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import Guide from "./pages/Guide";
+import Auth from "./pages/Auth";
+import Submit from "./pages/Submit";
+import Builder from "./pages/Builder";
+import VCs from "./pages/VCs";
 import Ranking from "./pages/Ranking";
-import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
+import Explore from "./pages/Explore";
+import Remix from "./pages/Remix";
+import SubmissionComplete from "./pages/SubmissionComplete";
 import NotFound from "./pages/NotFound";
-import TabNavigation from "./components/TabNavigation";
-import { useLocation } from "react-router-dom";
 
-const App = () => {
-  const location = useLocation();
-  const hideTabsOn = ['/auth', '/admin', '/about', '/guide'];
-  const showTabs = !hideTabsOn.includes(location.pathname);
+const queryClient = new QueryClient();
 
-  return (
-    <>
-      <Toaster />
-      <Sonner />
-      <div className="min-h-screen flex flex-col">
-        <div className="flex-1">
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/submit" element={<Submit />} />
-            <Route path="/builder" element={<Builder />} />
             <Route path="/ideas" element={<Ideas />} />
-            <Route path="/remix" element={<Remix />} />
-            <Route path="/vcs" element={<VCs />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/about" element={<About />} />
             <Route path="/guide" element={<Guide />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/submit" element={<Submit />} />
+            <Route path="/builder" element={<Builder />} />
+            <Route path="/vcs" element={<VCs />} />
             <Route path="/ranking" element={<Ranking />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/remix" element={<Remix />} />
+            <Route path="/submission-complete" element={<SubmissionComplete />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </div>
-        
-        {showTabs && (
-          <TabNavigation currentLanguage="ko" />
-        )}
-      </div>
-    </>
-  );
-};
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

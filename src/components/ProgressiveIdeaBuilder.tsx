@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ChevronRight, ChevronLeft, Check, Lightbulb, Target, Users, DollarSign } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Lightbulb, Target, Users, DollarSign, Image } from 'lucide-react';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
+import { useAIImageGeneration } from '@/hooks/useAIImageGeneration';
 import { toast } from '@/hooks/use-toast';
 
 interface ProgressiveIdeaBuilderProps {
@@ -42,7 +42,9 @@ const ProgressiveIdeaBuilder: React.FC<ProgressiveIdeaBuilderProps> = ({
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { decomposeIdea, decomposing } = useModularIdeas({ currentLanguage });
+  const { generateIdeaImage, isGenerating: isGeneratingImage } = useAIImageGeneration();
 
   const text = {
     ko: {
@@ -58,7 +60,9 @@ const ProgressiveIdeaBuilder: React.FC<ProgressiveIdeaBuilderProps> = ({
       cancel: '취소',
       answerPlaceholder: '답변을 입력해주세요...',
       generatingQuestions: 'AI가 맞춤형 질문을 생성하는 중...',
-      completionReward: '완성 보상'
+      completionReward: '완성 보상',
+      generatingImage: 'AI 이미지 생성 중...',
+      imageGenerated: 'AI 이미지 생성 완료!'
     },
     en: {
       title: 'Complete Your Idea',
@@ -73,7 +77,9 @@ const ProgressiveIdeaBuilder: React.FC<ProgressiveIdeaBuilderProps> = ({
       cancel: 'Cancel',
       answerPlaceholder: 'Enter your answer...',
       generatingQuestions: 'AI is generating personalized questions...',
-      completionReward: 'Completion Reward'
+      completionReward: 'Completion Reward',
+      generatingImage: 'Generating AI image...',
+      imageGenerated: 'AI image generated!'
     }
   };
 
@@ -177,12 +183,21 @@ const ProgressiveIdeaBuilder: React.FC<ProgressiveIdeaBuilderProps> = ({
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    // Generate AI image before completing
+    if (!generatedImage) {
+      const image = await generateIdeaImage(initialIdea);
+      if (image) {
+        setGeneratedImage(image);
+      }
+    }
+
     const completedIdea = {
       originalText: initialIdea,
       modules: modules,
       completionScore: calculateCompletionScore(),
-      isModular: true
+      isModular: true,
+      aiImage: generatedImage
     };
     
     toast({
@@ -197,7 +212,8 @@ const ProgressiveIdeaBuilder: React.FC<ProgressiveIdeaBuilderProps> = ({
 
   const calculateCompletionScore = () => {
     const completedModules = Object.keys(modules).length;
-    return Math.min(30 + (completedModules * 14), 100); // Base 30 + up to 70 for completion
+    const imageBonus = generatedImage ? 20 : 0;
+    return Math.min(30 + (completedModules * 14) + imageBonus, 100);
   };
 
   const progressPercentage = questions.length > 0 ? ((currentStep + 1) / questions.length) * 100 : 0;
@@ -220,6 +236,38 @@ const ProgressiveIdeaBuilder: React.FC<ProgressiveIdeaBuilderProps> = ({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* AI Image Generation Status */}
+      {isGeneratingImage && (
+        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full" />
+              <div>
+                <p className="font-medium text-purple-800">{text[currentLanguage].generatingImage}</p>
+                <p className="text-sm text-purple-600">AI가 아이디어에 맞는 이미지를 생성하고 있습니다</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Generated Image Display */}
+      {generatedImage && (
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3 mb-3">
+              <Image className="w-5 h-5 text-green-600" />
+              <p className="font-medium text-green-800">{text[currentLanguage].imageGenerated}</p>
+            </div>
+            <img 
+              src={generatedImage} 
+              alt="AI Generated" 
+              className="w-full h-32 object-cover rounded-lg"
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Progress Header */}
       <Card>
         <CardHeader>
@@ -337,7 +385,8 @@ const ProgressiveIdeaBuilder: React.FC<ProgressiveIdeaBuilderProps> = ({
               <div>
                 <p className="font-medium text-green-800">{text[currentLanguage].completionReward}</p>
                 <p className="text-sm text-green-600">
-                  {Object.keys(modules).length}개 모듈 완성 → {calculateCompletionScore()}점
+                  {Object.keys(modules).length}개 모듈 완성 
+                  {generatedImage && ' + AI 이미지'} → {calculateCompletionScore()}점
                 </p>
               </div>
               <Badge className="bg-green-500 text-white">
