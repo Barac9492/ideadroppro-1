@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,7 +34,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
       trustIndicators: '수천 명의 혁신가들이 이미 아이디어를 던졌습니다.',
       keyboardHint: 'Shift+Enter: 줄바꿈 | Enter: 빠른 제출 | Ctrl+Enter: 상세 작성',
       draftSaved: '임시저장 완료',
-      recentDrafts: '최근 초안'
+      recentDrafts: '최근 초안',
+      exampleIdeas: '예시 아이디어',
+      example1: 'AI 농업 솔루션',
+      example2: '블록체인 투표',
+      example3: '친환경 앱',
+      example4: '스마트 헬스케어',
+      example5: 'AR 교육 플랫폼'
     },
     en: {
       title: 'Drop Your Idea, Catch Opportunity',
@@ -46,7 +53,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
       trustIndicators: 'Thousands of innovators have already dropped their ideas.',
       keyboardHint: 'Shift+Enter: New line | Enter: Quick submit | Ctrl+Enter: Detailed writing',
       draftSaved: 'Draft saved',
-      recentDrafts: 'Recent Drafts'
+      recentDrafts: 'Recent Drafts',
+      exampleIdeas: 'Example Ideas',
+      example1: 'AI Agriculture',
+      example2: 'Blockchain Voting',
+      example3: 'Green Tech App',
+      example4: 'Smart Healthcare',
+      example5: 'AR Education'
     }
   };
 
