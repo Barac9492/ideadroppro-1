@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SimpleHeroText from './SimpleHeroText';
-import SimpleIdeaInput from './SimpleIdeaInput';
+import AirbnbStyleInput from './AirbnbStyleInput';
 import MinimalTrustSection from './MinimalTrustSection';
+import SuccessStoriesSection from './SuccessStoriesSection';
 import IdeaReactionSystem from './IdeaReactionSystem';
 import EnhancedIdeaModal from './EnhancedIdeaModal';
 
@@ -41,22 +42,22 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Ultra-clean hero section */}
-      <div className="container mx-auto px-4 py-24">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Simplified hero text */}
+      {/* Hero section with Airbnb-style clean layout */}
+      <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="max-w-6xl mx-auto">
+          {/* Hero text */}
           <SimpleHeroText currentLanguage={currentLanguage} />
 
           {/* Main input or reaction system */}
           {!showReactionSystem ? (
-            <SimpleIdeaInput
+            <AirbnbStyleInput
               currentLanguage={currentLanguage}
               onSubmit={handleIdeaSubmit}
               isSubmitting={isSubmitting}
             />
           ) : (
-            <div className="w-full max-w-3xl mx-auto">
-              <Card className="shadow-lg border border-gray-200">
+            <div className="w-full max-w-4xl mx-auto">
+              <Card className="shadow-lg border border-gray-200 rounded-2xl">
                 <CardContent className="p-8">
                   <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
                     💫 "{submittedIdea.split('\n')[0]}" 분석 중...
@@ -73,7 +74,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
         </div>
       </div>
 
-      {/* Minimal trust section at bottom */}
+      {/* Success stories section */}
+      <SuccessStoriesSection currentLanguage={currentLanguage} />
+
+      {/* Minimal trust section */}
       <MinimalTrustSection currentLanguage={currentLanguage} />
 
       {/* Enhanced Idea Modal */}
