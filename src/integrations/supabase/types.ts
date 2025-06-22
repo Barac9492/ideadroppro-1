@@ -33,6 +33,42 @@ export type Database = {
         }
         Relationships: []
       }
+      idea_compositions: {
+        Row: {
+          created_at: string
+          id: string
+          idea_id: string
+          module_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          idea_id: string
+          module_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          idea_id?: string
+          module_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_compositions_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "ideas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "idea_compositions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "idea_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       idea_likes: {
         Row: {
           created_at: string
@@ -62,15 +98,67 @@ export type Database = {
           },
         ]
       }
+      idea_modules: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          module_type: Database["public"]["Enums"]["module_type"]
+          original_idea_id: string | null
+          quality_score: number | null
+          tags: string[] | null
+          updated_at: string
+          usage_count: number | null
+          version: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          module_type: Database["public"]["Enums"]["module_type"]
+          original_idea_id?: string | null
+          quality_score?: number | null
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number | null
+          version?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
+          original_idea_id?: string | null
+          quality_score?: number | null
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_modules_original_idea_id_fkey"
+            columns: ["original_idea_id"]
+            isOneToOne: false
+            referencedRelation: "ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ideas: {
         Row: {
           ai_analysis: string | null
+          composition_version: number | null
           created_at: string
           final_verdict: string | null
           global_analysis: Json | null
           id: string
           improvements: string[] | null
           influence_boost: number | null
+          is_modular: boolean | null
           likes_count: number | null
           market_potential: string[] | null
           pitch_points: string[] | null
@@ -87,12 +175,14 @@ export type Database = {
         }
         Insert: {
           ai_analysis?: string | null
+          composition_version?: number | null
           created_at?: string
           final_verdict?: string | null
           global_analysis?: Json | null
           id?: string
           improvements?: string[] | null
           influence_boost?: number | null
+          is_modular?: boolean | null
           likes_count?: number | null
           market_potential?: string[] | null
           pitch_points?: string[] | null
@@ -109,12 +199,14 @@ export type Database = {
         }
         Update: {
           ai_analysis?: string | null
+          composition_version?: number | null
           created_at?: string
           final_verdict?: string | null
           global_analysis?: Json | null
           id?: string
           improvements?: string[] | null
           influence_boost?: number | null
+          is_modular?: boolean | null
           likes_count?: number | null
           market_potential?: string[] | null
           pitch_points?: string[] | null
@@ -183,6 +275,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      module_recommendations: {
+        Row: {
+          compatibility_score: number | null
+          created_at: string
+          id: string
+          recommendation_reason: string | null
+          recommended_module_id: string
+          source_module_id: string
+        }
+        Insert: {
+          compatibility_score?: number | null
+          created_at?: string
+          id?: string
+          recommendation_reason?: string | null
+          recommended_module_id: string
+          source_module_id: string
+        }
+        Update: {
+          compatibility_score?: number | null
+          created_at?: string
+          id?: string
+          recommendation_reason?: string | null
+          recommended_module_id?: string
+          source_module_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_recommendations_recommended_module_id_fkey"
+            columns: ["recommended_module_id"]
+            isOneToOne: false
+            referencedRelation: "idea_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_recommendations_source_module_id_fkey"
+            columns: ["source_module_id"]
+            isOneToOne: false
+            referencedRelation: "idea_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          example_content: string | null
+          id: string
+          module_type: Database["public"]["Enums"]["module_type"]
+          template_name: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          example_content?: string | null
+          id?: string
+          module_type: Database["public"]["Enums"]["module_type"]
+          template_name: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          example_content?: string | null
+          id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
+          template_name?: string
+          validation_rules?: Json | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -432,6 +596,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      module_type:
+        | "problem"
+        | "solution"
+        | "target_customer"
+        | "value_proposition"
+        | "revenue_model"
+        | "key_activities"
+        | "key_resources"
+        | "channels"
+        | "competitive_advantage"
+        | "market_size"
+        | "team"
+        | "potential_risks"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -548,6 +725,20 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      module_type: [
+        "problem",
+        "solution",
+        "target_customer",
+        "value_proposition",
+        "revenue_model",
+        "key_activities",
+        "key_resources",
+        "channels",
+        "competitive_advantage",
+        "market_size",
+        "team",
+        "potential_risks",
+      ],
     },
   },
 } as const
