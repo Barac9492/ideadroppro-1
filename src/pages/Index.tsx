@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
 import AdaptiveNavigation from '@/components/AdaptiveNavigation';
 import BetaAnnouncementBanner from '@/components/BetaAnnouncementBanner';
-import LandingHero from '@/components/LandingHero';
+import InputModeSelector from '@/components/InputModeSelector';
 import SocialProofSection from '@/components/SocialProofSection';
 import FinalCTASection from '@/components/FinalCTASection';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,15 +46,19 @@ const Index = () => {
     }
   };
 
+  const handleModeSelect = (mode: 'simple' | 'builder') => {
+    if (mode === 'simple') {
+      navigate('/submit');
+    } else {
+      navigate('/builder');
+    }
+  };
+
   // Handle auth redirect with the custom hook
   useAuthRedirect({ onIdeaDrop: handleIdeaDrop });
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
-  };
-
-  const scrollToHero = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Show loading only during initial auth check
@@ -87,11 +91,25 @@ const Index = () => {
       {/* Beta Announcement Banner */}
       <BetaAnnouncementBanner currentLanguage={currentLanguage} />
       
-      {/* Landing Hero - Main conversion focus */}
-      <LandingHero 
-        currentLanguage={currentLanguage}
-        onIdeaDrop={handleIdeaDrop}
-      />
+      {/* Main Content - Input Mode Selection */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            {currentLanguage === 'ko' ? '아이디어를 현실로' : 'Turn Ideas into Reality'}
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            {currentLanguage === 'ko' 
+              ? 'AI가 당신의 아이디어를 분석하고 개선 방향을 제시합니다. 간단한 입력부터 체계적인 모듈 구성까지, 원하는 방식을 선택하세요.'
+              : 'AI analyzes your ideas and suggests improvements. Choose from simple input to systematic module composition.'
+            }
+          </p>
+        </div>
+
+        <InputModeSelector
+          currentLanguage={currentLanguage}
+          onModeSelect={handleModeSelect}
+        />
+      </div>
       
       {/* Social Proof - Build trust */}
       <SocialProofSection 
@@ -101,7 +119,7 @@ const Index = () => {
       {/* Final CTA - Convert visitors */}
       <FinalCTASection 
         currentLanguage={currentLanguage}
-        onDropIdea={scrollToHero}
+        onDropIdea={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       />
 
       {/* Mobile navigation at bottom */}
