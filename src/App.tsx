@@ -1,56 +1,49 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Ideas from "./pages/Ideas";
-import Dashboard from "./pages/Dashboard";
-import About from "./pages/About";
-import Guide from "./pages/Guide";
-import Auth from "./pages/Auth";
-import Submit from "./pages/Submit";
-import Builder from "./pages/Builder";
-import VCs from "./pages/VCs";
-import Ranking from "./pages/Ranking";
-import Admin from "./pages/Admin";
-import Explore from "./pages/Explore";
-import Remix from "./pages/Remix";
-import SubmissionComplete from "./pages/SubmissionComplete";
-import NotFound from "./pages/NotFound";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Landing from '@/pages/Landing';
+import Submit from '@/pages/Submit';
+import Ideas from '@/pages/Ideas';
+import Builder from '@/pages/Builder';
+import SubmissionComplete from '@/pages/SubmissionComplete';
+import Auth from '@/pages/Auth';
+import Legal from '@/pages/Legal';
+import Privacy from '@/pages/Privacy';
+import Terms from '@/pages/Terms';
+import Contact from '@/pages/Contact';
+import Pricing from '@/pages/Pricing';
+import MyWorkspace from '@/pages/MyWorkspace';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/ideas" element={<Ideas />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/guide" element={<Guide />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/submit" element={<Submit />} />
-            <Route path="/builder" element={<Builder />} />
-            <Route path="/vcs" element={<VCs />} />
-            <Route path="/ranking" element={<Ranking />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/remix" element={<Remix />} />
-            <Route path="/submission-complete" element={<SubmissionComplete />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <div className="min-h-screen bg-white">
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/submit" element={<Submit />} />
+              <Route path="/ideas" element={<Ideas />} />
+              <Route path="/builder" element={<Builder />} />
+              <Route path="/submission-complete" element={<SubmissionComplete />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/legal" element={<Legal />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/my-workspace" element={<MyWorkspace />} />
+            </Routes>
+          </div>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </Router>
+  );
+}
 
 export default App;
