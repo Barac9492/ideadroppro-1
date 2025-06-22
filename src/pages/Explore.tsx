@@ -1,259 +1,240 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import Header from '@/components/Header';
+import IdeaCard from '@/components/IdeaCard';
+import ExampleIdeas from '@/components/ExampleIdeas';
+import SuccessJourneyStories from '@/components/SuccessJourneyStories';
+import EnhancedRemixExplanation from '@/components/EnhancedRemixExplanation';
+import LiveParticipantCounter from '@/components/LiveParticipantCounter';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
-import IdeaCard from '@/components/IdeaCard';
-import Header from '@/components/Header';
-import EmergencyZeroScoreFixer from '@/components/EmergencyZeroScoreFixer';
-import ScoreRefreshHandler from '@/components/ScoreRefreshHandler';
+import { useNavigate } from 'react-router-dom';
+import { useInfluenceScore } from '@/hooks/useInfluenceScore';
+import { useDailyXP } from '@/hooks/useDailyXP';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Trash2, Zap } from 'lucide-react';
+import { TrendingUp, Filter, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-const Explore: React.FC = () => {
-  const [currentLanguage, setCurrentLanguage] = React.useState<'ko' | 'en'>('ko');
+const Explore = () => {
+  const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
+  const [sortBy, setSortBy] = useState<'recent' | 'score' | 'likes'>('recent');
+  const [filterSeed, setFilterSeed] = useState<boolean | null>(null);
+  
   const { user } = useAuth();
-  const { isAdmin } = useUserRole();
-  const {
-    ideas,
-    loading,
-    fetchIdeas,
-    toggleLike,
-    generateAnalysis,
-    generateGlobalAnalysis,
-    saveFinalVerdict,
-    deleteIdea
-  } = useIdeas(currentLanguage);
+  const navigate = useNavigate();
+  const { ideas, toggleLike, fetchIdeas, loading } = useIdeas(currentLanguage);
+  const { scoreActions } = useInfluenceScore();
+  const { updateMissionProgress, awardXP } = useDailyXP();
 
-  const toggleLanguage = () => {
+  const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  const handleEmergencyFixComplete = () => {
-    console.log('🔄 Emergency fix completed, refreshing ideas...');
-    // Clear all caches before fetching
-    performComprehensiveCacheClear();
-    fetchIdeas();
-  };
-
-  // 강화된 캐시 무효화 시스템
-  const performComprehensiveCacheClear = () => {
-    console.log('🧹 Performing comprehensive cache clearing...');
-    
-    // 1. Service Worker 캐시 완전 삭제
-    if ('caches' in window) {
-      caches.keys().then(async (cacheNames) => {
-        const deletePromises = cacheNames.map(cacheName => {
-          console.log('🗑️ Deleting cache:', cacheName);
-          return caches.delete(cacheName);
-        });
-        await Promise.all(deletePromises);
-        console.log('✅ All service worker caches cleared');
-      }).catch(e => console.warn('Could not clear service worker caches:', e));
+  const handleLike = async (ideaId: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
     }
     
-    // 2. localStorage 완전 정리
     try {
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.includes('idea') || 
-          key.includes('score') || 
-          key.includes('supabase') ||
-          key.includes('analysis') ||
-          key.includes('cache')
-        )) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-        console.log('🗑️ Removed localStorage key:', key);
-      });
-      console.log(`✅ Cleared ${keysToRemove.length} localStorage entries`);
-    } catch (e) {
-      console.warn('Could not clear localStorage:', e);
-    }
-    
-    // 3. sessionStorage 완전 정리
-    try {
-      const sessionKeys = Object.keys(sessionStorage);
-      sessionStorage.clear();
-      console.log(`✅ Cleared ${sessionKeys.length} sessionStorage entries`);
-    } catch (e) {
-      console.warn('Could not clear sessionStorage:', e);
-    }
-    
-    // 4. IndexedDB 정리 (가능한 경우)
-    if ('indexedDB' in window) {
-      try {
-        // 일반적인 캐시 DB들 정리
-        const dbNamesToClear = ['keyval-store', 'supabase-cache', 'app-cache'];
-        dbNamesToClear.forEach(dbName => {
-          const deleteReq = indexedDB.deleteDatabase(dbName);
-          deleteReq.onsuccess = () => console.log(`✅ Cleared IndexedDB: ${dbName}`);
-          deleteReq.onerror = () => console.warn(`Could not clear IndexedDB: ${dbName}`);
-        });
-      } catch (e) {
-        console.warn('Could not clear IndexedDB:', e);
-      }
-    }
-    
-    // 5. Memory 정리
-    if (typeof window.gc === 'function') {
-      window.gc();
-      console.log('✅ Manual garbage collection triggered');
+      await toggleLike(ideaId);
+      await scoreActions.ideaLike();
+      updateMissionProgress('like_ideas');
+      await awardXP(10, '아이디어 좋아요');
+    } catch (error) {
+      console.error('Error liking idea:', error);
     }
   };
 
-  const handleForceRefresh = () => {
-    console.log('🔄 Force refreshing with comprehensive cache clear...');
-    performComprehensiveCacheClear();
-    
-    // React 상태 강제 리셋
-    setTimeout(() => {
-      console.log('🔄 Fetching fresh data...');
-      fetchIdeas();
-    }, 200);
+  const handleStartRemix = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    navigate('/remix');
   };
 
-  const handleNuclearRefresh = () => {
-    console.log('💥 Nuclear refresh - clearing everything and reloading...');
-    performComprehensiveCacheClear();
-    
-    // 전체 페이지 리로드
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-  };
-
-  // UI 렌더링 강제 업데이트
-  const handleInstantRefresh = () => {
-    console.log('⚡ Instant UI refresh...');
-    
-    // 강제 리렌더링을 위한 상태 변경
-    const timestamp = Date.now();
-    window.dispatchEvent(new CustomEvent('force-refresh', { detail: timestamp }));
-    
+  useEffect(() => {
     fetchIdeas();
-  };
+  }, [fetchIdeas]);
 
   const text = {
     ko: {
-      title: '아이디어 탐색',
-      loading: '아이디어를 불러오는 중...',
-      noIdeas: '아직 아이디어가 없습니다.',
-      refresh: '새로고침',
-      forceRefresh: '강제 새로고침',
-      nuclearRefresh: '완전 새로고침',
-      instantRefresh: '즉시 새로고침'
+      title: '아이디어 둘러보기',
+      subtitle: '다른 사람들의 혁신적인 아이디어를 확인하고 영감을 받아보세요',
+      sortBy: '정렬',
+      filterBy: '필터',
+      recent: '최신순',
+      score: '점수순',
+      likes: '인기순',
+      allIdeas: '전체',
+      userIdeas: '사용자 아이디어',
+      seedIdeas: 'AI 시드 아이디어',
+      noIdeas: '아직 아이디어가 없습니다',
+      loadMore: '더 보기'
     },
     en: {
       title: 'Explore Ideas',
-      loading: 'Loading ideas...',
-      noIdeas: 'No ideas yet.',
-      refresh: 'Refresh',
-      forceRefresh: 'Force Refresh',
-      nuclearRefresh: 'Nuclear Refresh',
-      instantRefresh: 'Instant Refresh'
+      subtitle: 'Discover innovative ideas from others and get inspired',
+      sortBy: 'Sort by',
+      filterBy: 'Filter',
+      recent: 'Recent',
+      score: 'Score',
+      likes: 'Popular',
+      allIdeas: 'All Ideas',
+      userIdeas: 'User Ideas',
+      seedIdeas: 'AI Seed Ideas',
+      noIdeas: 'No ideas yet',
+      loadMore: 'Load More'
     }
   };
 
+  // Filter and sort ideas
+  const filteredAndSortedIdeas = ideas
+    .filter(idea => {
+      if (filterSeed === null) return true;
+      return idea.seed === filterSeed;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'score':
+          return (b.score || 0) - (a.score || 0);
+        case 'likes':
+          return (b.likes_count || 0) - (a.likes_count || 0);
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <Header currentLanguage={currentLanguage} onLanguageToggle={toggleLanguage} />
-      
-      {/* Score Refresh Handler */}
-      <ScoreRefreshHandler 
-        onScoreUpdate={fetchIdeas} 
-        currentLanguage={currentLanguage} 
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
+      <Header 
+        currentLanguage={currentLanguage}
+        onLanguageToggle={handleLanguageToggle}
       />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              {text[currentLanguage].title}
-            </h1>
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <div className="flex justify-center items-center space-x-4 mb-6">
+            <LiveParticipantCounter />
+            <Badge className="bg-blue-100 text-blue-700">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              실시간 활성화
+            </Badge>
+          </div>
+          
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            {text[currentLanguage].title}
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            {text[currentLanguage].subtitle}
+          </p>
+        </div>
+
+        {/* Success Stories Section */}
+        <SuccessJourneyStories currentLanguage={currentLanguage} />
+
+        {/* Remix Explanation */}
+        <div className="mb-12">
+          <EnhancedRemixExplanation 
+            currentLanguage={currentLanguage}
+            onStartRemix={handleStartRemix}
+          />
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
+          <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                {text[currentLanguage].filterBy}:
+              </span>
+            </div>
+            <div className="flex space-x-2">
               <Button
-                onClick={fetchIdeas}
-                variant="outline"
+                variant={filterSeed === null ? "default" : "outline"}
                 size="sm"
-                disabled={loading}
+                onClick={() => setFilterSeed(null)}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                {text[currentLanguage].refresh}
+                {text[currentLanguage].allIdeas}
               </Button>
               <Button
-                onClick={handleInstantRefresh}
-                variant="outline"
+                variant={filterSeed === false ? "default" : "outline"}
                 size="sm"
-                disabled={loading}
-                className="border-green-200 text-green-600 hover:bg-green-50"
+                onClick={() => setFilterSeed(false)}
               >
-                <Zap className={`h-4 w-4 mr-2`} />
-                {text[currentLanguage].instantRefresh}
+                <Users className="w-3 h-3 mr-1" />
+                {text[currentLanguage].userIdeas}
               </Button>
               <Button
-                onClick={handleForceRefresh}
-                variant="outline"
+                variant={filterSeed === true ? "default" : "outline"}
                 size="sm"
-                disabled={loading}
-                className="border-orange-200 text-orange-600 hover:bg-orange-50"
+                onClick={() => setFilterSeed(true)}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                {text[currentLanguage].forceRefresh}
-              </Button>
-              <Button
-                onClick={handleNuclearRefresh}
-                variant="outline"
-                size="sm"
-                disabled={loading}
-                className="border-red-200 text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className={`h-4 w-4 mr-2`} />
-                {text[currentLanguage].nuclearRefresh}
+                {text[currentLanguage].seedIdeas}
               </Button>
             </div>
           </div>
 
-          {/* Emergency Zero Score Fixer - Only show for admins */}
-          {isAdmin && (
-            <EmergencyZeroScoreFixer 
-              currentLanguage={currentLanguage}
-              onComplete={handleEmergencyFixComplete}
-            />
-          )}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                {text[currentLanguage].sortBy}:
+              </span>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant={sortBy === 'recent' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortBy('recent')}
+              >
+                {text[currentLanguage].recent}
+              </Button>
+              <Button
+                variant={sortBy === 'score' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortBy('score')}
+              >
+                {text[currentLanguage].score}
+              </Button>
+              <Button
+                variant={sortBy === 'likes' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortBy('likes')}
+              >
+                {text[currentLanguage].likes}
+              </Button>
+            </div>
+          </div>
         </div>
 
+        {/* Ideas Grid */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">{text[currentLanguage].loading}</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">아이디어를 불러오는 중...</p>
           </div>
-        ) : ideas.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">{text[currentLanguage].noIdeas}</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {ideas.map((idea) => (
+        ) : filteredAndSortedIdeas.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {filteredAndSortedIdeas.map((idea) => (
               <IdeaCard
-                key={`ideacard-${idea.id}-${idea.timestamp.getTime()}-${Date.now()}`}
+                key={idea.id}
                 idea={idea}
+                onLike={handleLike}
                 currentLanguage={currentLanguage}
-                currentUserId={user?.id}
-                onLike={toggleLike}
-                onGenerateAnalysis={generateAnalysis}
-                onGenerateGlobalAnalysis={generateGlobalAnalysis}
-                onSaveFinalVerdict={saveFinalVerdict}
-                onDelete={deleteIdea}
-                isAdmin={isAdmin}
                 isAuthenticated={!!user}
               />
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg mb-6">
+              {text[currentLanguage].noIdeas}
+            </p>
+            <ExampleIdeas currentLanguage={currentLanguage} />
           </div>
         )}
       </div>
