@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building2, Eye, MessageSquare, Heart, TrendingUp, Clock, Zap } from 'lucide-react';
+import { Building2, Eye, MessageSquare, Heart, TrendingUp, Clock, Zap, Crown, Lock } from 'lucide-react';
 import VCPrivacyIndicator from './VCPrivacyIndicator';
 import VCStatsDisplay from './VCStatsDisplay';
+import VCInvitationExclusivity from './VCInvitationExclusivity';
+import SmartTimeIndicator from './SmartTimeIndicator';
 import { VC_PROFILES, getVCByIndex } from '@/utils/vcConfig';
 
 interface VCProfile {
@@ -62,13 +64,13 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
         {
           type: 'remix',
           ideaId: 'idea-123',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000),
+          timestamp: new Date(Date.now() - 3 * 60 * 1000), // 3 minutes ago
           description: 'AI 반려동물 건강 모니터링 아이디어를 리믹스'
         },
         {
           type: 'comment',
           ideaId: 'idea-124',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000),
+          timestamp: new Date(Date.now() - 8 * 60 * 1000), // 8 minutes ago
           description: '스마트 펫 피딩 시스템에 코멘트'
         }
       ]
@@ -95,7 +97,7 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
         {
           type: 'dm',
           ideaId: 'idea-125',
-          timestamp: new Date(Date.now() - 3 * 60 * 1000),
+          timestamp: new Date(Date.now() - 25 * 1000), // 25 seconds ago
           description: 'DeFi 프로토콜 창업자에게 DM 요청'
         }
       ]
@@ -122,7 +124,7 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
         {
           type: 'view',
           ideaId: 'idea-126',
-          timestamp: new Date(Date.now() - 45 * 60 * 1000),
+          timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
           description: '자율주행 배송 로봇 아이디어 검토'
         }
       ]
@@ -133,34 +135,36 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
 
   const text = {
     ko: {
-      title: '💼 활성 VC 프로필',
-      subtitle: '실시간으로 당신의 아이디어를 검토하는 투자자들',
+      title: '💼 초대받은 VC 프로필',
+      subtitle: '주인장이 직접 선별한 투자자들이 실시간으로 아이디어를 검토합니다',
       online: '온라인',
       offline: '오프라인',
       specialty: '전문 분야',
       currentActivity: '현재 활동',
       recentActions: '최근 활동',
-      minutesAgo: '분 전',
       sendDM: 'DM 보내기',
       viewProfile: '프로필 보기',
       fundType: '펀드 유형',
       anonymousName: '익명 투자자',
-      liveActivity: '실시간 활동'
+      liveActivity: '실시간 활동',
+      invitationOnly: '초대 전용',
+      exclusiveAccess: '독점 접근'
     },
     en: {
-      title: '💼 Active VC Profiles',
-      subtitle: 'Investors reviewing your ideas in real-time',
+      title: '💼 Invited VC Profiles',
+      subtitle: 'Personally selected investors reviewing ideas in real-time',
       online: 'Online',
       offline: 'Offline',
       specialty: 'Specialties',
       currentActivity: 'Current Activity',
       recentActions: 'Recent Actions',
-      minutesAgo: 'min ago',
       sendDM: 'Send DM',
       viewProfile: 'View Profile',
       fundType: 'Fund Type',
       anonymousName: 'Anonymous Investor',
-      liveActivity: 'Live Activity'
+      liveActivity: 'Live Activity',
+      invitationOnly: 'Invitation Only',
+      exclusiveAccess: 'Exclusive Access'
     }
   };
 
@@ -212,23 +216,40 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
     }
   };
 
-  const getTimeAgo = (timestamp: Date) => {
-    const minutes = Math.floor((Date.now() - timestamp.getTime()) / (1000 * 60));
-    return `${minutes}${text[currentLanguage].minutesAgo}`;
-  };
-
   return (
     <div className="space-y-8">
+      {/* Header with Invitation Emphasis */}
       <div className="text-center mb-10">
+        <div className="flex justify-center items-center space-x-3 mb-6">
+          <Crown className="w-8 h-8 text-purple-600" />
+          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 text-lg">
+            <Lock className="w-4 h-4 mr-2" />
+            {text[currentLanguage].invitationOnly}
+          </Badge>
+        </div>
+        
         <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
           {text[currentLanguage].title}
         </h2>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">{text[currentLanguage].subtitle}</p>
       </div>
 
+      {/* Exclusivity Notice */}
+      <div className="max-w-md mx-auto mb-8">
+        <VCInvitationExclusivity currentLanguage={currentLanguage} compact />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {vcProfiles.map(vc => (
           <Card key={vc.id} className="group relative overflow-hidden bg-white border-2 border-purple-100 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:border-purple-200">
+            {/* Invitation Badge */}
+            <div className="absolute -top-2 -right-2 z-10">
+              <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-2 py-1 text-xs">
+                <Crown className="w-3 h-3 mr-1" />
+                INVITED
+              </Badge>
+            </div>
+
             {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             
@@ -334,9 +355,12 @@ const VCProfileSystem: React.FC<VCProfileSystemProps> = ({ currentLanguage }) =>
                         {getActivityIcon(action.type)}
                       </div>
                       <span className="text-gray-700 flex-1 truncate font-medium">{action.description}</span>
-                      <span className="text-gray-500 text-xs bg-white px-2 py-1 rounded-full">
-                        {getTimeAgo(action.timestamp)}
-                      </span>
+                      <SmartTimeIndicator 
+                        timestamp={action.timestamp}
+                        currentLanguage={currentLanguage}
+                        showBadge={false}
+                        size="sm"
+                      />
                     </div>
                   ))}
                 </div>
