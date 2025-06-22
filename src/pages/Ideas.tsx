@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
 import AdaptiveNavigation from '@/components/AdaptiveNavigation';
@@ -55,7 +54,7 @@ const Ideas = () => {
     try {
       await generateAnalysis(ideaId);
       await scoreActions.keywordParticipation();
-      updateMissionProgress('generate_analysis');
+      updateMissionProgress('vote_participate');
       await awardXP(20, 'AI 분석 생성');
     } catch (error) {
       console.error('Error generating analysis:', error);
@@ -65,7 +64,7 @@ const Ideas = () => {
   const handleGenerateGlobalAnalysis = async (ideaId: string) => {
     try {
       await generateGlobalAnalysis(ideaId);
-      await scoreActions.globalAnalysisGeneration();
+      await scoreActions.keywordParticipation();
       await awardXP(50, '글로벌 분석 생성');
     } catch (error) {
       console.error('Error generating global analysis:', error);
