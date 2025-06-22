@@ -8,6 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { Lightbulb, Sparkles, Download, Share, X, Plus } from 'lucide-react';
 import { useModularIdeas, IdeaModule } from '@/hooks/useModularIdeas';
 import ModuleBrowser from './ModuleBrowser';
+import type { Database } from '@/integrations/supabase/types';
+
+type ModuleType = Database['public']['Enums']['module_type'];
 
 interface IdeaBuilderProps {
   currentLanguage: 'ko' | 'en';
@@ -131,10 +134,10 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage }) => {
     try {
       const decomposition = await decomposeIdea(freeTextIdea);
       
-      // Convert decomposition to modules
-      const newModules: Partial<IdeaModule>[] = Object.entries(decomposition).map(([type, content]) => ({
+      // Convert decomposition to modules with proper type casting
+      const newModules: IdeaModule[] = Object.entries(decomposition).map(([type, content]) => ({
         id: `temp-${type}-${Date.now()}`,
-        module_type: type,
+        module_type: type as ModuleType,
         content: content as string,
         tags: [],
         created_by: 'temp',
@@ -145,7 +148,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage }) => {
         usage_count: 0
       }));
 
-      setSelectedModules(newModules as IdeaModule[]);
+      setSelectedModules(newModules);
       setFreeTextIdea('');
     } catch (error) {
       console.error('Decomposition failed:', error);

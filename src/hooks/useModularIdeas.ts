@@ -195,12 +195,21 @@ export const useModularIdeas = ({ currentLanguage }: UseModularIdeasProps) => {
     tags?: string[];
   }) => {
     try {
+      // First get current version
+      const { data: currentModule, error: fetchError } = await supabase
+        .from('idea_modules')
+        .select('version')
+        .eq('id', moduleId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { data, error } = await supabase
         .from('idea_modules')
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
-          version: supabase.rpc('increment_version', { module_id: moduleId })
+          version: (currentModule.version || 1) + 1
         })
         .eq('id', moduleId)
         .select()
