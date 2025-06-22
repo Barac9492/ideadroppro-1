@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
 import AdaptiveNavigation from '@/components/AdaptiveNavigation';
@@ -9,6 +8,8 @@ import LiveMissionTracker from '@/components/LiveMissionTracker';
 import RecentIdeasPreview from '@/components/RecentIdeasPreview';
 import InputModeSelector from '@/components/InputModeSelector';
 import ProgressiveIdeaBuilder from '@/components/ProgressiveIdeaBuilder';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -23,6 +24,7 @@ const Submit = () => {
   const [inputMode, setInputMode] = useState<'simple' | 'builder' | 'progressive' | null>(null);
   const [builderIdea, setBuilderIdea] = useState<string>('');
   const [showProgressiveBuilder, setShowProgressiveBuilder] = useState(false);
+  const [showChallengeSection, setShowChallengeSection] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -57,7 +59,6 @@ const Submit = () => {
 
   const handleProgressiveComplete = async (completedIdea: any) => {
     try {
-      // Submit the enhanced idea with modular structure
       await submitIdea(completedIdea.originalText, {
         modules: completedIdea.modules,
         isModular: true,
@@ -70,7 +71,6 @@ const Submit = () => {
       updateMissionProgress('idea_submit');
       await awardXP(completedIdea.completionScore, '완성된 아이디어 제출');
 
-      // Check challenge completion
       if (challengeKeyword && completedIdea.originalText.toLowerCase().includes(challengeKeyword.toLowerCase())) {
         await fetchIdeas();
         const userLatestIdea = ideas.find(idea => 
@@ -85,7 +85,6 @@ const Submit = () => {
         }
       }
 
-      // Navigate to submission complete page with state
       navigate('/submission-complete', {
         state: {
           ideaText: completedIdea.originalText,
@@ -125,7 +124,12 @@ const Submit = () => {
   };
 
   const handleJoinChallenge = (keyword: string) => {
-    window.scrollTo({ top: 400, behavior: 'smooth' });
+    setShowChallengeSection(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleToggleChallenge = () => {
+    setShowChallengeSection(!showChallengeSection);
   };
 
   return (
@@ -133,6 +137,8 @@ const Submit = () => {
       <SimplifiedHeader 
         currentLanguage={currentLanguage}
         onLanguageToggle={handleLanguageToggle}
+        showChallengeButton={!showChallengeSection && !showProgressiveBuilder}
+        onChallengeClick={handleToggleChallenge}
       />
       
       {/* Desktop navigation at top */}
@@ -160,7 +166,7 @@ const Submit = () => {
       )}
       
       {/* Mission Status - prominently displayed */}
-      {user && (
+      {user && !showChallengeSection && (
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 py-4">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
@@ -170,49 +176,65 @@ const Submit = () => {
         </div>
       )}
       
-      {/* Daily Challenge - Main focus */}
-      <DailyChallengeSection 
-        currentLanguage={currentLanguage}
-        onJoinChallenge={handleJoinChallenge}
-      />
-      
-      {/* Input Mode Selection */}
-      {inputMode === null && !showProgressiveBuilder && (
-        <div className="container mx-auto px-4 py-12">
-          <InputModeSelector
+      {/* Daily Challenge - Only show when explicitly requested */}
+      {showChallengeSection && (
+        <div className="relative">
+          <Button
+            onClick={() => setShowChallengeSection(false)}
+            className="absolute top-4 right-4 z-10 bg-white hover:bg-gray-50 text-gray-700 shadow-md rounded-full p-2"
+            size="sm"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+          <DailyChallengeSection 
             currentLanguage={currentLanguage}
-            onModeSelect={handleModeSelect}
+            onJoinChallenge={handleJoinChallenge}
           />
         </div>
       )}
       
-      {/* Simple Input Mode - Original Hero Section */}
-      {inputMode === 'simple' && !showProgressiveBuilder && (
-        <HeroSection 
-          currentLanguage={currentLanguage}
-          onIdeaDrop={handleIdeaDrop}
-        />
-      )}
-      
-      {/* Recent Ideas Preview */}
-      {!showProgressiveBuilder && (
-        <RecentIdeasPreview 
-          ideas={ideas}
-          currentLanguage={currentLanguage}
-          onLike={handleLike}
-          isAuthenticated={!!user}
-        />
-      )}
-      
-      {/* Progress Dashboard for authenticated users */}
-      {user && !showProgressiveBuilder && (
-        <div className="bg-gray-50 py-8 mb-20 md:mb-0">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <DailyXPDashboard currentLanguage={currentLanguage} />
+      {/* Main Workflow - Clean and focused */}
+      {!showChallengeSection && (
+        <>
+          {/* Input Mode Selection */}
+          {inputMode === null && !showProgressiveBuilder && (
+            <div className="container mx-auto px-4 py-12">
+              <InputModeSelector
+                currentLanguage={currentLanguage}
+                onModeSelect={handleModeSelect}
+              />
             </div>
-          </div>
-        </div>
+          )}
+          
+          {/* Simple Input Mode - Original Hero Section */}
+          {inputMode === 'simple' && !showProgressiveBuilder && (
+            <HeroSection 
+              currentLanguage={currentLanguage}
+              onIdeaDrop={handleIdeaDrop}
+            />
+          )}
+          
+          {/* Recent Ideas Preview */}
+          {!showProgressiveBuilder && (
+            <RecentIdeasPreview 
+              ideas={ideas}
+              currentLanguage={currentLanguage}
+              onLike={handleLike}
+              isAuthenticated={!!user}
+            />
+          )}
+          
+          {/* Progress Dashboard for authenticated users */}
+          {user && !showProgressiveBuilder && (
+            <div className="bg-gray-50 py-8 mb-20 md:mb-0">
+              <div className="container mx-auto px-4">
+                <div className="max-w-4xl mx-auto">
+                  <DailyXPDashboard currentLanguage={currentLanguage} />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Mobile navigation at bottom */}
