@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -68,7 +67,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     fetchIdeas: async () => {} // This will be handled by parent component
   });
 
-  // 완전히 안전한 텍스트 처리 - "0" 접두사 문제 근본 해결
+  // 강화된 텍스트 처리 - 모든 숫자 접두사 패턴 제거
   const getSafeIdeaText = (text: string | null | undefined): string => {
     if (!text) {
       console.warn('❌ Empty or null idea text detected:', text);
@@ -76,41 +75,69 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     }
     
     // 문자열로 확실히 변환
-    const stringText = String(text).trim();
+    let processedText = String(text).trim();
     
     // 빈 문자열 체크
-    if (!stringText) {
-      console.warn('❌ Empty string after conversion:', stringText);
+    if (!processedText) {
+      console.warn('❌ Empty string after conversion:', processedText);
       return '아이디어 내용을 불러올 수 없습니다.';
     }
     
-    // 숫자로만 시작하는 경우 제거 (예: "0", "123 ")
-    const cleanedText = stringText.replace(/^\d+\s*/, '');
+    console.log('🔍 Original text:', processedText);
     
-    // 정리 후에도 내용이 있는지 확인
-    const finalText = cleanedText.trim() || stringText;
+    // 다양한 숫자 접두사 패턴 제거
+    const patterns = [
+      /^0+\s*/, // "0", "00", "000" 등
+      /^\d+\.\s*/, // "1.", "2.", "123." 등  
+      /^\d+\)\s*/, // "1)", "2)", "123)" 등
+      /^\d+\s+/, // "1 ", "2 ", "123 " 등 (숫자 뒤 공백)
+      /^\d+$/, // 숫자만 있는 경우
+      /^\d+[^\w\s가-힣]*\s*/ // 숫자 뒤 특수문자가 있는 경우 (예: "1-", "2:", "3#")
+    ];
     
-    console.log('🔍 Text processing:', {
-      original: text,
-      stringConverted: stringText,
-      afterNumberRemoval: cleanedText,
-      final: finalText
-    });
+    // 각 패턴을 순차적으로 적용
+    for (const pattern of patterns) {
+      const beforePattern = processedText;
+      processedText = processedText.replace(pattern, '');
+      
+      if (beforePattern !== processedText) {
+        console.log(`🧹 Pattern ${pattern} applied:`, {
+          before: beforePattern,
+          after: processedText
+        });
+      }
+    }
     
-    return finalText;
+    // 앞뒤 공백 제거
+    processedText = processedText.trim();
+    
+    // 처리 후 빈 문자열이 되면 원본 사용 (단, 맨 앞 숫자만 제거)
+    if (!processedText) {
+      processedText = String(text).replace(/^[0-9]+[^\w\s가-힣]*\s*/, '').trim();
+      console.log('⚠️ Text became empty after cleaning, using fallback:', processedText);
+    }
+    
+    // 여전히 빈 문자열이면 에러 메시지
+    if (!processedText) {
+      console.error('❌ Could not extract meaningful text from:', text);
+      return '아이디어 내용을 처리할 수 없습니다.';
+    }
+    
+    console.log('✅ Final processed text:', processedText);
+    
+    return processedText;
   };
 
   // 안전한 텍스트 추출
   const safeIdeaText = getSafeIdeaText(idea.text);
 
-  // Debug logging to catch any issues
-  console.log('🔍 IdeaCard rendering:', {
+  // Debug logging to track any remaining issues
+  console.log('🎯 IdeaCard final render:', {
     id: idea.id,
     originalText: idea.text,
     processedText: safeIdeaText,
     score: idea.score,
-    textType: typeof idea.text,
-    textLength: idea.text?.length
+    hasNumberPrefix: /^[0-9]/.test(String(idea.text || ''))
   });
 
   const handleGenerateAnalysis = async () => {
@@ -199,7 +226,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         </div>
       )}
 
-      {/* Idea Text - 완전히 안전한 렌더링 */}
+      {/* Idea Text - 강화된 안전한 렌더링 */}
       <div className={`text-slate-800 leading-relaxed mb-4 ${
         isMobile ? 'text-base' : 'text-lg'
       }`}>
