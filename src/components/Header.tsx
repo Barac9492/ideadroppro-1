@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, LogOut, Share2, Bell, Settings, Menu, X } from 'lucide-react';
+import { Globe, LogOut, Share2, Bell, Settings, Menu, X, Info, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import InfluenceScoreDisplay from './InfluenceScoreDisplay';
@@ -23,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
   const { isAdmin, loading: roleLoading } = useUserRole();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [infoDropdownOpen, setInfoDropdownOpen] = useState(false);
 
   const text = {
     ko: {
@@ -32,7 +34,10 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
       invite: '친구 초대',
       mission: '오늘 미션',
       admin: '관리자',
-      menu: '메뉴'
+      menu: '메뉴',
+      info: '정보',
+      about: '서비스 소개',
+      guide: '사용법'
     },
     en: {
       title: 'IdeaDrop Pro',
@@ -41,7 +46,10 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
       invite: 'Invite Friends',
       mission: 'Daily Mission',
       admin: 'Admin',
-      menu: 'Menu'
+      menu: 'Menu',
+      info: 'Info',
+      about: 'About',
+      guide: 'Guide'
     }
   };
 
@@ -81,6 +89,18 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
   const handleMissionClick = () => {
     navigate('/submit');
     setMobileMenuOpen(false);
+  };
+
+  const handleAboutClick = () => {
+    navigate('/about');
+    setMobileMenuOpen(false);
+    setInfoDropdownOpen(false);
+  };
+
+  const handleGuideClick = () => {
+    navigate('/guide');
+    setMobileMenuOpen(false);
+    setInfoDropdownOpen(false);
   };
 
   if (isMobile) {
@@ -149,6 +169,27 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
                     <InfluenceScoreDisplay variant="compact" />
                   </div>
                 )}
+
+                {/* Info Section */}
+                <div className="space-y-2">
+                  <Button
+                    variant="ghost"
+                    onClick={handleAboutClick}
+                    className="justify-start min-h-[44px] w-full"
+                  >
+                    <Info className="w-4 h-4 mr-2" />
+                    {text[currentLanguage].about}
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    onClick={handleGuideClick}
+                    className="justify-start min-h-[44px] w-full"
+                  >
+                    <Info className="w-4 h-4 mr-2" />
+                    {text[currentLanguage].guide}
+                  </Button>
+                </div>
 
                 {/* Language Toggle */}
                 <Button
@@ -221,6 +262,7 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
     );
   }
 
+  // Desktop header
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3">
@@ -252,6 +294,45 @@ const Header: React.FC<HeaderProps> = ({ currentLanguage, onLanguageToggle }) =>
                 {text[currentLanguage].mission}
               </Button>
             )}
+
+            {/* Info Dropdown */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setInfoDropdownOpen(!infoDropdownOpen)}
+                className="flex items-center space-x-1"
+              >
+                <Info className="w-4 h-4" />
+                <span>{text[currentLanguage].info}</span>
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+              
+              {infoDropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10"
+                    onClick={() => setInfoDropdownOpen(false)}
+                  />
+                  <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                    <button
+                      onClick={handleAboutClick}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    >
+                      <Info className="w-4 h-4" />
+                      <span>{text[currentLanguage].about}</span>
+                    </button>
+                    <button
+                      onClick={handleGuideClick}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    >
+                      <Info className="w-4 h-4" />
+                      <span>{text[currentLanguage].guide}</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Language Toggle */}
             <Button

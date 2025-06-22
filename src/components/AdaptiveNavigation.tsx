@@ -13,7 +13,8 @@ import {
   Shuffle, 
   Building2,
   Menu,
-  X 
+  X,
+  Info
 } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDailyChallenge';
 import { useIdeas } from '@/hooks/useIdeas';
@@ -45,6 +46,7 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
       more: '더보기',
       remix: '리믹스',
       vcs: 'VC',
+      about: '정보',
       new: 'NEW!'
     },
     en: {
@@ -56,6 +58,7 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
       more: 'More',
       remix: 'Remix',
       vcs: 'VCs',
+      about: 'About',
       new: 'NEW!'
     }
   };
@@ -106,6 +109,13 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
       label: text[currentLanguage].remix,
       icon: Shuffle,
       path: '/remix',
+      badge: null,
+    },
+    {
+      id: 'about',
+      label: text[currentLanguage].about,
+      icon: Info,
+      path: '/about',
       badge: null,
     },
     {

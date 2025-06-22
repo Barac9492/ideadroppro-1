@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, PlusCircle, Search, Trophy, User, MoreHorizontal, Shuffle, Building2 } from 'lucide-react';
+import { Home, PlusCircle, Search, Trophy, User, MoreHorizontal, Shuffle, Building2, Info } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDailyChallenge';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -30,6 +29,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({currentLanguage }) => {
       more: '더보기',
       remix: '리믹스',
       vcs: 'VC',
+      about: '정보',
       new: 'NEW!'
     },
     en: {
@@ -41,6 +41,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({currentLanguage }) => {
       more: 'More',
       remix: 'Remix',
       vcs: 'VCs',
+      about: 'About',
       new: 'NEW!'
     }
   };
@@ -91,6 +92,13 @@ const TabNavigation: React.FC<TabNavigationProps> = ({currentLanguage }) => {
       label: text[currentLanguage].remix,
       icon: Shuffle,
       path: '/remix',
+      badge: null,
+    },
+    {
+      id: 'about',
+      label: text[currentLanguage].about,
+      icon: Info,
+      path: '/about',
       badge: null,
     },
     {
