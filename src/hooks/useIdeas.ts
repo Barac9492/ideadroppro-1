@@ -1,10 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useIdeaOperations } from './useIdeaOperations';
-import { useSeedIdeas } from './useSeedIdeas';
-import { useIdeaLikes } from './useIdeaLikes';
-import { subscriptionManager } from '@/utils/subscriptionManager';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Idea {
   id: string;
@@ -21,171 +17,315 @@ interface Idea {
   pitchPoints?: string[];
   finalVerdict?: string;
   globalAnalysis?: any;
-  user_id: string;
+  vcAnalysis?: any;
   seed?: boolean;
+  user_id: string;
   remix_parent_id?: string;
   remix_count?: number;
   remix_chain_depth?: number;
+  is_modular?: boolean;
+  composition_version?: number;
 }
 
 export const useIdeas = (currentLanguage: 'ko' | 'en') => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const componentId = useRef(`ideas-${Math.random().toString(36).substring(7)}`);
-  const subscriptionKey = useRef<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const text = {
+    ko: {
+      loading: '아이디어를 불러오는 중...',
+      loaded: '아이디어를 불러왔습니다',
+      submitted: '아이디어가 제출되었습니다!',
+      liked: '아이디어를 좋아합니다',
+      analysisGenerated: 'AI 분석이 생성되었습니다',
+      globalAnalysisGenerated: '글로벌 분석이 생성되었습니다',
+      finalVerdictSaved: '최종 평결이 저장되었습니다',
+      deleted: '아이디어가 삭제되었습니다',
+      error: '오류가 발생했습니다',
+      loginRequired: '로그인이 필요합니다',
+    },
+    en: {
+      loading: 'Loading ideas...',
+      loaded: 'Ideas loaded',
+      submitted: 'Idea submitted!',
+      liked: 'Idea liked',
+      analysisGenerated: 'AI analysis generated',
+      globalAnalysisGenerated: 'Global analysis generated',
+      finalVerdictSaved: 'Final verdict saved',
+      deleted: 'Idea deleted',
+      error: 'An error occurred',
+      loginRequired: 'Login required',
+    },
+  };
 
   const fetchIdeas = async () => {
-    console.log('🔄 Fetching ideas for main app...');
-    
+    setIsLoading(true);
     try {
-      const { data: ideasData, error } = await supabase
+      toast({
+        title: text[currentLanguage].loading,
+        duration: 2000,
+      });
+      const { data, error } = await supabase
         .from('ideas')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('timestamp', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error fetching ideas:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('✅ Fetched ideas for main app:', ideasData?.length);
-
-      const ideasWithLikes = await Promise.all((ideasData || []).map(async (idea) => {
-        const { data: likesData } = await supabase
-          .from('idea_likes')
-          .select('user_id')
-          .eq('idea_id', idea.id);
-
-        // Only check if user has liked if they are logged in
-        const hasLiked = user ? likesData?.some(like => like.user_id === user.id) || false : false;
-
-        return {
-          id: idea.id,
-          text: idea.text,
-          score: parseFloat(idea.score?.toString() || '0'),
-          tags: idea.tags || [],
-          likes: likesData?.length || 0,
-          hasLiked,
-          timestamp: new Date(idea.created_at),
-          aiAnalysis: idea.ai_analysis,
-          improvements: idea.improvements,
-          marketPotential: idea.market_potential,
-          similarIdeas: idea.similar_ideas,
-          pitchPoints: idea.pitch_points,
-          finalVerdict: idea.final_verdict,
-          globalAnalysis: idea.global_analysis,
-          user_id: idea.user_id,
-          seed: idea.seed || false,
-          remix_parent_id: idea.remix_parent_id,
-          remix_count: idea.remix_count || 0,
-          remix_chain_depth: idea.remix_chain_depth || 0
-        };
-      }));
-
-      setIdeas(ideasWithLikes);
-    } catch (error) {
-      console.error('❌ Error fetching ideas:', error);
+      setIdeas(data || []);
+      toast({
+        title: text[currentLanguage].loaded,
+        duration: 2000,
+      });
+    } catch (error: any) {
+      console.error('Error fetching ideas:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Set up real-time subscription for ideas
-  useEffect(() => {
-    // Initial fetch
-    fetchIdeas();
-
-    // Clean up any existing subscription
-    if (subscriptionKey.current) {
-      subscriptionManager.unsubscribe(subscriptionKey.current);
-      subscriptionKey.current = null;
-    }
-
-    // Set up new subscription
-    const newSubscriptionKey = subscriptionManager.subscribe(
-      'ideas-main-changes',
-      componentId.current,
-      {
-        event: '*',
-        schema: 'public',
-        table: 'ideas'
-      },
-      (payload) => {
-        console.log('🔄 Real-time ideas change on main:', payload);
-        
-        if (payload.eventType === 'DELETE') {
-          console.log('🗑️ Removing deleted idea from main state:', payload.old.id);
-          setIdeas(prev => {
-            const filtered = prev.filter(idea => idea.id !== payload.old.id);
-            console.log('📊 Main app ideas updated. Remaining:', filtered.length);
-            return filtered;
-          });
-        } else {
-          // For INSERT and UPDATE, refetch to get complete data
-          console.log('➕/✏️ Idea changed, refetching...');
-          fetchIdeas();
-        }
+  const toggleLike = async (ideaId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: text[currentLanguage].error,
+          description: text[currentLanguage].loginRequired,
+          variant: 'destructive',
+        });
+        return;
       }
-    );
 
-    subscriptionKey.current = newSubscriptionKey;
+      const { data, error } = await supabase.rpc('like_idea', {
+        idea_id: ideaId,
+        user_id: user.id,
+      });
 
-    return () => {
-      if (subscriptionKey.current) {
-        subscriptionManager.unsubscribe(subscriptionKey.current);
-        subscriptionKey.current = null;
-      }
-    };
-  }, []); // Remove user dependency to avoid re-subscriptions
+      if (error) throw error;
 
-  // Update like status when user changes
-  useEffect(() => {
-    if (ideas.length > 0) {
-      console.log('👤 User changed, updating like status...');
-      fetchIdeas();
+      setIdeas(prevIdeas =>
+        prevIdeas.map(idea =>
+          idea.id === ideaId ? { ...idea, likes: data, hasLiked: !idea.hasLiked } : idea
+        )
+      );
+
+      toast({
+        title: text[currentLanguage].liked,
+        duration: 2000,
+      });
+    } catch (error: any) {
+      console.error('Error liking idea:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
     }
-  }, [user]);
-
-  const ideaOperations = useIdeaOperations({ currentLanguage, user, fetchIdeas });
-  const seedIdeas = useSeedIdeas({ currentLanguage, fetchIdeas });
-  const ideaLikes = useIdeaLikes({ user, ideas, fetchIdeas });
+  };
 
   const generateAnalysis = async (ideaId: string) => {
-    const idea = ideas.find(i => i.id === ideaId);
-    if (!idea || idea.seed) return;
-    
-    return ideaOperations.generateAnalysis(ideaId, idea.text);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-analysis', {
+        body: { ideaId, language: currentLanguage }
+      });
+
+      if (error) throw error;
+
+      setIdeas(prevIdeas =>
+        prevIdeas.map(idea =>
+          idea.id === ideaId ? { ...idea, ...data } : idea
+        )
+      );
+
+      toast({
+        title: text[currentLanguage].analysisGenerated,
+        duration: 2000,
+      });
+    } catch (error: any) {
+      console.error('Error generating analysis:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const generateGlobalAnalysis = async (ideaId: string) => {
-    const idea = ideas.find(i => i.id === ideaId);
-    if (!idea || idea.seed) return;
-    
-    return ideaOperations.generateGlobalAnalysis(ideaId);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-global-analysis', {
+        body: { ideaId, language: currentLanguage }
+      });
+
+      if (error) throw error;
+
+      setIdeas(prevIdeas =>
+        prevIdeas.map(idea =>
+          idea.id === ideaId ? { ...idea, globalAnalysis: data } : idea
+        )
+      );
+
+      toast({
+        title: text[currentLanguage].globalAnalysisGenerated,
+        duration: 2000,
+      });
+    } catch (error: any) {
+      console.error('Error generating global analysis:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const saveFinalVerdict = async (ideaId: string, verdict: string) => {
-    const idea = ideas.find(i => i.id === ideaId);
-    if (idea?.seed) return;
-    
-    return ideaOperations.saveFinalVerdict(ideaId, verdict);
+    try {
+      const { data, error } = await supabase
+        .from('ideas')
+        .update({ finalVerdict: verdict })
+        .eq('id', ideaId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setIdeas(prevIdeas =>
+        prevIdeas.map(idea =>
+          idea.id === ideaId ? { ...idea, finalVerdict: data.finalVerdict } : idea
+        )
+      );
+
+      toast({
+        title: text[currentLanguage].finalVerdictSaved,
+        duration: 2000,
+      });
+    } catch (error: any) {
+      console.error('Error saving final verdict:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const deleteIdea = async (ideaId: string) => {
-    return ideaOperations.deleteIdea(ideaId);
+    try {
+      const { error } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('id', ideaId);
+
+      if (error) throw error;
+
+      setIdeas(prevIdeas => prevIdeas.filter(idea => idea.id !== ideaId));
+
+      toast({
+        title: text[currentLanguage].deleted,
+        duration: 2000,
+      });
+    } catch (error: any) {
+      console.error('Error deleting idea:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const submitIdea = async (ideaText: string, additionalData?: {
+    modules?: any;
+    isModular?: boolean;
+    completionScore?: number;
+  }) => {
+    setIsSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: text[currentLanguage].error,
+          description: text[currentLanguage].loginRequired,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Clean the idea text first
+      const cleanedText = ideaText.trim();
+      
+      const { data, error } = await supabase
+        .from('ideas')
+        .insert({
+          text: cleanedText,
+          user_id: user.id,
+          is_modular: additionalData?.isModular || false,
+          composition_version: additionalData?.isModular ? 1 : undefined
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // If this is a modular idea, create module entries
+      if (additionalData?.modules && additionalData?.isModular) {
+        const moduleEntries = Object.entries(additionalData.modules).map(([moduleType, content]) => ({
+          module_type: moduleType as any,
+          content: String(content),
+          original_idea_id: data.id,
+          created_by: user.id
+        }));
+
+        if (moduleEntries.length > 0) {
+          const { error: moduleError } = await supabase
+            .from('idea_modules')
+            .insert(moduleEntries);
+
+          if (moduleError) {
+            console.error('Error creating modules:', moduleError);
+          }
+        }
+      }
+
+      toast({
+        title: text[currentLanguage].submitted,
+        description: additionalData?.completionScore 
+          ? `${additionalData.completionScore}점 획득!` 
+          : text[currentLanguage].submitted,
+        duration: 3000,
+      });
+
+      await fetchIdeas();
+    } catch (error: any) {
+      console.error('Error submitting idea:', error);
+      toast({
+        title: text[currentLanguage].error,
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return {
     ideas,
-    loading,
+    isLoading,
+    isSubmitting,
+    submitIdea,
     fetchIdeas,
-    submitIdea: ideaOperations.submitIdea,
-    toggleLike: ideaLikes.toggleLike,
+    toggleLike,
     generateAnalysis,
     generateGlobalAnalysis,
     saveFinalVerdict,
-    deleteIdea,
-    generateSeedIdeas: seedIdeas.generateSeedIdeas
+    deleteIdea
   };
 };

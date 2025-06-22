@@ -8,6 +8,7 @@ import DailyXPDashboard from '@/components/DailyXPDashboard';
 import LiveMissionTracker from '@/components/LiveMissionTracker';
 import RecentIdeasPreview from '@/components/RecentIdeasPreview';
 import InputModeSelector from '@/components/InputModeSelector';
+import ProgressiveIdeaBuilder from '@/components/ProgressiveIdeaBuilder';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -19,7 +20,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const Submit = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
-  const [inputMode, setInputMode] = useState<'simple' | 'builder' | null>(null);
+  const [inputMode, setInputMode] = useState<'simple' | 'builder' | 'progressive' | null>(null);
+  const [builderIdea, setBuilderIdea] = useState<string>('');
+  const [showProgressiveBuilder, setShowProgressiveBuilder] = useState(false);
+  
   const { user } = useAuth();
   const navigate = useNavigate();
   const { ideas, submitIdea, toggleLike, fetchIdeas } = useIdeas(currentLanguage);
@@ -46,16 +50,28 @@ const Submit = () => {
       return;
     }
     
+    // Show progressive builder option
+    setBuilderIdea(ideaText);
+    setShowProgressiveBuilder(true);
+  };
+
+  const handleProgressiveComplete = async (completedIdea: any) => {
     try {
-      await submitIdea(ideaText);
+      // Submit the enhanced idea with modular structure
+      await submitIdea(completedIdea.originalText, {
+        modules: completedIdea.modules,
+        isModular: true,
+        completionScore: completedIdea.completionScore
+      });
+      
       await updateStreak();
       await scoreActions.keywordParticipation();
       
       updateMissionProgress('idea_submit');
-      await awardXP(50, '아이디어 제출');
+      await awardXP(completedIdea.completionScore, '완성된 아이디어 제출');
 
-      // Check if this idea is related to today's challenge
-      if (challengeKeyword && ideaText.toLowerCase().includes(challengeKeyword.toLowerCase())) {
+      // Check challenge completion
+      if (challengeKeyword && completedIdea.originalText.toLowerCase().includes(challengeKeyword.toLowerCase())) {
         await fetchIdeas();
         const userLatestIdea = ideas.find(idea => 
           idea.user_id === user.id && 
@@ -68,9 +84,18 @@ const Submit = () => {
           await awardXP(100, '일일 챌린지 참여');
         }
       }
+
+      setShowProgressiveBuilder(false);
+      setBuilderIdea('');
+      setInputMode(null);
     } catch (error) {
-      console.error('Error submitting idea:', error);
+      console.error('Error submitting completed idea:', error);
     }
+  };
+
+  const handleProgressiveCancel = () => {
+    setShowProgressiveBuilder(false);
+    setBuilderIdea('');
   };
 
   const handleLike = async (ideaId: string) => {
@@ -108,6 +133,22 @@ const Submit = () => {
         />
       )}
       
+      {/* Progressive Idea Builder Modal */}
+      {showProgressiveBuilder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <ProgressiveIdeaBuilder
+                initialIdea={builderIdea}
+                currentLanguage={currentLanguage}
+                onComplete={handleProgressiveComplete}
+                onCancel={handleProgressiveCancel}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Mission Status - prominently displayed */}
       {user && (
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 py-4">
@@ -126,7 +167,7 @@ const Submit = () => {
       />
       
       {/* Input Mode Selection */}
-      {inputMode === null && (
+      {inputMode === null && !showProgressiveBuilder && (
         <div className="container mx-auto px-4 py-12">
           <InputModeSelector
             currentLanguage={currentLanguage}
@@ -136,7 +177,7 @@ const Submit = () => {
       )}
       
       {/* Simple Input Mode - Original Hero Section */}
-      {inputMode === 'simple' && (
+      {inputMode === 'simple' && !showProgressiveBuilder && (
         <HeroSection 
           currentLanguage={currentLanguage}
           onIdeaDrop={handleIdeaDrop}
@@ -144,15 +185,17 @@ const Submit = () => {
       )}
       
       {/* Recent Ideas Preview */}
-      <RecentIdeasPreview 
-        ideas={ideas}
-        currentLanguage={currentLanguage}
-        onLike={handleLike}
-        isAuthenticated={!!user}
-      />
+      {!showProgressiveBuilder && (
+        <RecentIdeasPreview 
+          ideas={ideas}
+          currentLanguage={currentLanguage}
+          onLike={handleLike}
+          isAuthenticated={!!user}
+        />
+      )}
       
       {/* Progress Dashboard for authenticated users */}
-      {user && (
+      {user && !showProgressiveBuilder && (
         <div className="bg-gray-50 py-8 mb-20 md:mb-0">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
