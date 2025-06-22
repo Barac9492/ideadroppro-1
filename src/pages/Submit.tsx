@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
 import AdaptiveNavigation from '@/components/AdaptiveNavigation';
@@ -12,6 +11,7 @@ import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useDailyXP } from '@/hooks/useDailyXP';
+import { useDailyChallenge } from '@/hooks/useDailyChallenge';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
