@@ -7,6 +7,7 @@ import MinimalTrustSection from './MinimalTrustSection';
 import SuccessStoriesSection from './SuccessStoriesSection';
 import IdeaReactionSystem from './IdeaReactionSystem';
 import EnhancedIdeaModal from './EnhancedIdeaModal';
+import AIElaborationResults from './AIElaborationResults';
 
 interface HeroSectionProps {
   currentLanguage: 'ko' | 'en';
@@ -16,24 +17,54 @@ interface HeroSectionProps {
 const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }) => {
   const [showReactionSystem, setShowReactionSystem] = useState(false);
   const [showEnhancedModal, setShowEnhancedModal] = useState(false);
+  const [showAIResults, setShowAIResults] = useState(false);
   const [submittedIdea, setSubmittedIdea] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleIdeaSubmit = async (ideaText: string) => {
     setSubmittedIdea(ideaText);
-    setShowReactionSystem(true);
     setIsSubmitting(true);
     
-    // Show immediate feedback before processing
+    // Show AI analysis simulation for 2 seconds
+    setTimeout(() => {
+      const mockAnalysis = {
+        score: 7.5,
+        analysis: currentLanguage === 'ko' 
+          ? '창의적이고 실현 가능한 아이디어입니다. 시장 수요가 있으며 기술적 구현이 가능해 보입니다.'
+          : 'Creative and feasible idea. Market demand exists and technical implementation seems possible.',
+      };
+      
+      setAnalysisResult(mockAnalysis);
+      setShowAIResults(true);
+      setIsSubmitting(false);
+    }, 2000);
+  };
+
+  const handleContinueToBuilder = () => {
+    setShowAIResults(false);
+    setShowReactionSystem(true);
+    
+    // Continue with existing flow
     setTimeout(async () => {
       try {
-        await onIdeaDrop(ideaText);
+        await onIdeaDrop(submittedIdea);
       } catch (error) {
         console.error('Idea submit error:', error);
-      } finally {
-        setIsSubmitting(false);
       }
     }, 1000);
+  };
+
+  const handleSubmitAsIs = async () => {
+    setShowAIResults(false);
+    
+    // Submit directly
+    try {
+      await onIdeaDrop(submittedIdea);
+      setSubmittedIdea('');
+    } catch (error) {
+      console.error('Direct submit error:', error);
+    }
   };
 
   const handleReactionComplete = (reactions: any) => {
@@ -45,6 +76,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
 
   return (
     <div className="min-h-screen bg-white">
+      {/* AI Elaboration Results Modal */}
+      <AIElaborationResults
+        originalIdea={submittedIdea}
+        analysisResult={analysisResult}
+        currentLanguage={currentLanguage}
+        onContinueToBuilder={handleContinueToBuilder}
+        onSubmitAsIs={handleSubmitAsIs}
+        isVisible={showAIResults}
+      />
+
       {/* Hero section with ultra-clean layout */}
       <div className="container mx-auto px-4 py-20 md:py-32">
         <div className="max-w-7xl mx-auto">
@@ -52,13 +93,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
           <SimpleHeroText currentLanguage={currentLanguage} />
 
           {/* Large centered search or reaction system */}
-          {!showReactionSystem ? (
+          {!showReactionSystem && !showAIResults ? (
             <AirbnbStyleInput
               currentLanguage={currentLanguage}
               onSubmit={handleIdeaSubmit}
               isSubmitting={isSubmitting}
             />
-          ) : (
+          ) : showReactionSystem ? (
             <div className="w-full max-w-5xl mx-auto">
               <Card className="shadow-2xl border-0 rounded-3xl">
                 <CardContent className="p-12">
@@ -73,29 +114,31 @@ const HeroSection: React.FC<HeroSectionProps> = ({ currentLanguage, onIdeaDrop }
                 </CardContent>
               </Card>
             </div>
-          )}
+          ) : null}
 
           {/* Visual service explanation */}
-          <div className="mt-20 text-center">
-            <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-purple-50 to-blue-50 px-8 py-4 rounded-full">
-              <div className="flex space-x-2">
-                <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
-                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse delay-100"></div>
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse delay-200"></div>
+          {!showAIResults && (
+            <div className="mt-20 text-center">
+              <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-purple-50 to-blue-50 px-8 py-4 rounded-full">
+                <div className="flex space-x-2">
+                  <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+                  <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse delay-100"></div>
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse delay-200"></div>
+                </div>
+                <span className="text-lg font-semibold text-gray-700">
+                  {currentLanguage === 'ko' ? 'AI가 실시간으로 분석합니다' : 'AI analyzes in real-time'}
+                </span>
               </div>
-              <span className="text-lg font-semibold text-gray-700">
-                {currentLanguage === 'ko' ? 'AI가 실시간으로 분석합니다' : 'AI analyzes in real-time'}
-              </span>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Visual-first success stories */}
-      <SuccessStoriesSection currentLanguage={currentLanguage} />
+      {!showAIResults && <SuccessStoriesSection currentLanguage={currentLanguage} />}
 
       {/* Minimal icon-only trust indicators */}
-      <MinimalTrustSection currentLanguage={currentLanguage} />
+      {!showAIResults && <MinimalTrustSection currentLanguage={currentLanguage} />}
 
       {/* Enhanced Idea Modal */}
       <EnhancedIdeaModal
