@@ -1,20 +1,19 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Home, 
-  PlusCircle, 
-  Search, 
+  Lightbulb, 
   Trophy, 
-  User, 
-  MoreHorizontal, 
-  Shuffle, 
   Building2,
+  Shuffle,
+  MoreHorizontal,
   Menu,
   X,
-  Info
+  Info,
+  User,
+  PlusCircle
 } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDailyChallenge';
 import { useIdeas } from '@/hooks/useIdeas';
@@ -39,26 +38,26 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
   const text = {
     ko: {
       home: '홈',
-      submit: '제출',
-      explore: '탐색',
+      ideas: '아이디어',
       ranking: '랭킹',
-      profile: '프로필',
-      more: '더보기',
-      remix: '리믹스',
       vcs: 'VC',
-      about: '정보',
+      remix: '리믹스',
+      more: '더보기',
+      profile: '프로필',
+      about: '서비스 소개',
+      submit: '제출',
       new: 'NEW!'
     },
     en: {
       home: 'Home',
-      submit: 'Submit',
-      explore: 'Explore',
+      ideas: 'Ideas',
       ranking: 'Ranking',
-      profile: 'Profile',
-      more: 'More',
-      remix: 'Remix',
       vcs: 'VCs',
+      remix: 'Remix',
+      more: 'More',
+      profile: 'Profile',
       about: 'About',
+      submit: 'Submit',
       new: 'NEW!'
     }
   };
@@ -73,30 +72,12 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
       badge: null,
     },
     {
-      id: 'submit',
-      label: text[currentLanguage].submit,
-      icon: PlusCircle,
-      path: '/submit',
-      badge: !hasParticipated ? text[currentLanguage].new : null,
+      id: 'ideas',
+      label: text[currentLanguage].ideas,
+      icon: Lightbulb,
+      path: '/ideas',
+      badge: ideas.length > 10 ? '10+' : (ideas.length > 5 ? '5+' : null),
     },
-    {
-      id: 'explore',
-      label: text[currentLanguage].explore,
-      icon: Search,
-      path: '/explore',
-      badge: ideas.length > 5 ? '5+' : (ideas.length > 0 ? ideas.length.toString() : null),
-    },
-    {
-      id: 'profile',
-      label: text[currentLanguage].profile,
-      icon: User,
-      path: '/dashboard',
-      badge: null,
-    }
-  ];
-
-  // Additional items for more menu
-  const additionalNavItems = [
     {
       id: 'ranking',
       label: text[currentLanguage].ranking,
@@ -105,10 +86,28 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
       badge: null,
     },
     {
+      id: 'vcs',
+      label: text[currentLanguage].vcs,
+      icon: Building2,
+      path: '/vcs',
+      badge: null,
+    },
+    {
       id: 'remix',
       label: text[currentLanguage].remix,
       icon: Shuffle,
       path: '/remix',
+      badge: null,
+    }
+  ];
+
+  // Additional items for more menu
+  const additionalNavItems = [
+    {
+      id: 'profile',
+      label: text[currentLanguage].profile,
+      icon: User,
+      path: '/dashboard',
       badge: null,
     },
     {
@@ -119,11 +118,11 @@ const AdaptiveNavigation: React.FC<AdaptiveNavigationProps> = ({
       badge: null,
     },
     {
-      id: 'vcs',
-      label: text[currentLanguage].vcs,
-      icon: Building2,
-      path: '/vcs',
-      badge: null,
+      id: 'submit',
+      label: text[currentLanguage].submit,
+      icon: PlusCircle,
+      path: '/submit',
+      badge: !hasParticipated ? text[currentLanguage].new : null,
     }
   ];
 
