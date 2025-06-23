@@ -107,6 +107,10 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
     navigate(`/builder?decompose=${ideaId}`);
   };
 
+  const handleDelete = async (ideaId: string): Promise<void> => {
+    await deleteIdea(ideaId);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -220,7 +224,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
                     onGenerateAnalysis={generateAnalysis}
                     onGenerateGlobalAnalysis={() => {}}
                     onSaveFinalVerdict={() => {}}
-                    onDelete={deleteIdea}
+                    onDelete={handleDelete}
                     isAuthenticated={true}
                   />
                   
