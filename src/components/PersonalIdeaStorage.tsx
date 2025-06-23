@@ -108,7 +108,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
   };
 
   const handleDelete = async (ideaId: string): Promise<void> => {
-    await deleteIdea(ideaId);
+    return await deleteIdea(ideaId);
   };
 
   if (isLoading) {
