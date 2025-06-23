@@ -78,6 +78,7 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
     }
   };
 
+  // Fixed handleDelete to properly pass ideaId to onDelete
   const handleDelete = async () => {
     if (onDelete) {
       await onDelete(ideaId);

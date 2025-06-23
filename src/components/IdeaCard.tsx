@@ -176,6 +176,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     await createRemix(idea.id, remixText, idea.score);
   };
 
+  // Fixed handleDelete to match the expected signature
   const handleDelete = async (ideaId: string): Promise<void> => {
     if (onDelete) {
       await onDelete(ideaId);
