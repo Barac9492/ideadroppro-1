@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,7 +43,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [smartQuestions, setSmartQuestions] = useState<SmartQuestion[]>([]);
   const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
   const [conversationContext, setConversationContext] = useState('');
-  const [questionAsked, setQuestionAsked] = useState(false);
 
   const text = {
     ko: {
@@ -74,7 +72,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const generateSmartQuestions = async () => {
     try {
       setIsLoading(true);
-      console.log('Generating business validation questions for idea:', initialIdea);
+      console.log('🔄 Generating business validation questions for idea:', initialIdea);
 
       const { data, error } = await supabase.functions.invoke('generate-smart-questions', {
         body: {
@@ -86,7 +84,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
       if (error) throw error;
 
-      console.log('Generated questions response:', data);
+      console.log('📝 Generated questions response:', data);
 
       if (data?.questions && Array.isArray(data.questions) && data.questions.length === 5) {
         // Ensure proper ordering
@@ -102,17 +100,17 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         
         if (orderedQuestions.length === 5) {
           setSmartQuestions(orderedQuestions);
-          console.log('Questions set with proper order:', orderedQuestions.map(q => q.moduleType));
+          console.log('✅ Questions set with proper order:', orderedQuestions.map(q => q.moduleType));
         } else {
-          console.log('Ordering failed, using original questions');
-          setSmartQuestions(data.questions.slice(0, 5));
+          console.log('⚠️ Ordering failed, using fallback questions');
+          setSmartQuestions(getFallbackQuestions());
         }
       } else {
-        console.log('Invalid questions format, using fallback');
+        console.log('⚠️ Invalid questions format, using fallback');
         setSmartQuestions(getFallbackQuestions());
       }
     } catch (error) {
-      console.error('Error generating smart questions:', error);
+      console.error('❌ Error generating smart questions:', error);
       setSmartQuestions(getFallbackQuestions());
     } finally {
       setIsLoading(false);
@@ -165,20 +163,27 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     generateSmartQuestions();
   }, []);
 
-  // Ask first question when questions are loaded
+  // Auto-ask questions when available and conditions are met
   useEffect(() => {
-    if (smartQuestions.length > 0 && currentQuestionIndex === 0 && !questionAsked) {
-      console.log('Asking first question:', smartQuestions[0]);
-      setTimeout(() => {
+    console.log('🔍 Effect triggered - Questions length:', smartQuestions.length, 'Current index:', currentQuestionIndex, 'Messages length:', messages.length);
+    
+    if (smartQuestions.length > 0 && currentQuestionIndex < smartQuestions.length) {
+      // Check if we need to ask the next question
+      const lastMessage = messages[messages.length - 1];
+      const shouldAskQuestion = messages.length === 1 || // First question after welcome
+        (lastMessage?.role === 'ai' && !lastMessage.content.includes('?')); // After AI response that's not a question
+
+      if (shouldAskQuestion) {
+        console.log('🎯 Asking question', currentQuestionIndex + 1, 'of', smartQuestions.length);
         askCurrentQuestion();
-      }, 1000);
+      }
     }
-  }, [smartQuestions]);
+  }, [smartQuestions, currentQuestionIndex, messages]);
 
   const askCurrentQuestion = () => {
-    if (currentQuestionIndex < smartQuestions.length && !questionAsked) {
+    if (currentQuestionIndex < smartQuestions.length) {
       const question = smartQuestions[currentQuestionIndex];
-      console.log(`Asking question ${currentQuestionIndex + 1}:`, question);
+      console.log(`❓ Asking question ${currentQuestionIndex + 1}:`, question);
       
       const questionMessage: ChatMessage = {
         id: `question-${currentQuestionIndex}-${Date.now()}`,
@@ -189,7 +194,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       };
       
       setMessages(prev => [...prev, questionMessage]);
-      setQuestionAsked(true);
     }
   };
 
@@ -223,7 +227,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
       return insights;
     } catch (error) {
-      console.error('Error generating AI response:', error);
+      console.error('❌ Error generating AI response:', error);
       const fallbackResponses = currentLanguage === 'ko' 
         ? ['흥미로운 관점이네요!', '구체적이고 실용적입니다!', '창의적인 접근이에요!', '시장성이 있어 보입니다!']
         : ['Interesting perspective!', 'Concrete and practical!', 'Creative approach!', 'Looks marketable!'];
@@ -237,7 +241,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const handleUserResponse = async () => {
     if (!currentInput.trim()) return;
 
-    console.log(`Processing user response for question ${currentQuestionIndex + 1}`);
+    console.log(`🗣️ Processing user response for question ${currentQuestionIndex + 1}`);
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -251,7 +255,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     // Save answer to current module
     const currentQuestion = smartQuestions[currentQuestionIndex];
     if (currentQuestion) {
-      console.log('Saving answer for module:', currentQuestion.moduleType);
+      console.log('💾 Saving answer for module:', currentQuestion.moduleType);
       setIdeaData(prev => ({
         ...prev,
         modules: {
@@ -265,9 +269,9 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     }
 
     setCurrentInput('');
+    setIsLoading(true);
 
     // Generate contextual AI response
-    setIsLoading(true);
     const aiResponseText = await generateContextualAIResponse(
       currentInput.trim(), 
       currentQuestion?.moduleType || 'general'
@@ -285,28 +289,23 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
     // Move to next question
     const nextIndex = currentQuestionIndex + 1;
-    setCurrentQuestionIndex(nextIndex);
-    setQuestionAsked(false);
-
-    console.log(`Moving to question index ${nextIndex} of ${smartQuestions.length}`);
-
-    // Ask next question or complete
-    setTimeout(() => {
-      if (nextIndex < smartQuestions.length) {
-        askCurrentQuestion();
-      } else {
-        // All questions completed
-        const finalMessage: ChatMessage = {
-          id: 'final',
-          role: 'ai',
-          content: currentLanguage === 'ko' 
-            ? '완벽합니다! 이제 AI가 종합적인 평가를 진행하겠습니다.' 
-            : 'Perfect! Now AI will conduct a comprehensive evaluation.',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, finalMessage]);
-      }
-    }, 500);
+    console.log(`➡️ Moving to question index ${nextIndex} of ${smartQuestions.length}`);
+    
+    if (nextIndex < smartQuestions.length) {
+      setCurrentQuestionIndex(nextIndex);
+      // The useEffect will handle asking the next question
+    } else {
+      // All questions completed
+      const finalMessage: ChatMessage = {
+        id: 'final',
+        role: 'ai',
+        content: currentLanguage === 'ko' 
+          ? '완벽합니다! 이제 AI가 종합적인 평가를 진행하겠습니다.' 
+          : 'Perfect! Now AI will conduct a comprehensive evaluation.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, finalMessage]);
+    }
   };
 
   const handleComplete = () => {
