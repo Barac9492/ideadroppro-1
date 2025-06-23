@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -109,7 +108,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
   };
 
   const handleDelete = async (ideaId: string): Promise<void> => {
-    await deleteIdea(ideaId);
+    return await deleteIdea(ideaId);
   };
 
   if (isLoading) {
