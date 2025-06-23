@@ -224,7 +224,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
                     onGenerateAnalysis={generateAnalysis}
                     onGenerateGlobalAnalysis={() => {}}
                     onSaveFinalVerdict={() => {}}
-                    onDelete={handleDelete}
+                    onDelete={deleteIdea}
                     isAuthenticated={true}
                   />
                   
