@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lightbulb, ArrowRight } from 'lucide-react';
+import { Lightbulb, ArrowRight, Search, Shuffle, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface UltraSimpleHeroProps {
@@ -24,14 +24,32 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       subtitle: '30초면 충분합니다',
       placeholder: '예: "비 오는 날 신발 안 젖는 앱"',
       submitButton: '던지기',
-      enhanceButton: '더 구체화하기'
+      enhanceButton: '더 구체화하기',
+      quickActions: {
+        title: '또는 이런 것들도 해보세요',
+        explore: '다른 아이디어 둘러보기',
+        exploreDesc: '커뮤니티의 창의적인 아이디어들을 구경해보세요',
+        remix: '아이디어 리믹스하기',
+        remixDesc: '기존 아이디어를 조합해서 새로운 것을 만들어보세요',
+        myInfo: '내 활동 보기',
+        myInfoDesc: '지금까지의 아이디어와 성과를 확인해보세요'
+      }
     },
     en: {
       title: 'Drop your idea',
       subtitle: '30 seconds is enough',
       placeholder: 'e.g., "App that keeps shoes dry in rain"',
       submitButton: 'Drop it',
-      enhanceButton: 'Make it better'
+      enhanceButton: 'Make it better',
+      quickActions: {
+        title: 'Or try these actions',
+        explore: 'Explore other ideas',
+        exploreDesc: 'Browse creative ideas from the community',
+        remix: 'Remix ideas',
+        remixDesc: 'Combine existing ideas to create something new',
+        myInfo: 'View my activity',
+        myInfoDesc: 'Check your ideas and achievements so far'
+      }
     }
   };
 
@@ -56,9 +74,36 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
     }
   };
 
+  const quickActions = [
+    {
+      id: 'explore',
+      icon: Search,
+      title: text[currentLanguage].quickActions.explore,
+      description: text[currentLanguage].quickActions.exploreDesc,
+      path: '/explore',
+      color: 'from-blue-500 to-cyan-500'
+    },
+    {
+      id: 'remix',
+      icon: Shuffle,
+      title: text[currentLanguage].quickActions.remix,
+      description: text[currentLanguage].quickActions.remixDesc,
+      path: '/remix',
+      color: 'from-purple-500 to-pink-500'
+    },
+    {
+      id: 'myinfo',
+      icon: User,
+      title: text[currentLanguage].quickActions.myInfo,
+      description: text[currentLanguage].quickActions.myInfoDesc,
+      path: '/my-workspace',
+      color: 'from-green-500 to-emerald-500'
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-4xl">
         {/* Simple title */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -70,7 +115,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
         </div>
 
         {/* Single input card */}
-        <Card className="shadow-xl border-0 rounded-3xl bg-white/90 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 rounded-3xl bg-white/90 backdrop-blur-sm mb-12">
           <CardContent className="p-8">
             <div className="space-y-6">
               <Textarea
@@ -110,8 +155,42 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
           </CardContent>
         </Card>
 
+        {/* Quick actions section */}
+        <div className="text-center space-y-8">
+          <h2 className="text-2xl font-semibold text-gray-800">
+            {text[currentLanguage].quickActions.title}
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Card 
+                  key={action.id} 
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 bg-white/70 backdrop-blur-sm hover:bg-white/90"
+                  onClick={() => navigate(action.path)}
+                >
+                  <CardContent className="p-6 text-center space-y-4">
+                    <div className={`w-12 h-12 mx-auto rounded-full bg-gradient-to-r ${action.color} flex items-center justify-center`}>
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {action.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Simple success indicators */}
-        <div className="text-center mt-8 space-y-4">
+        <div className="text-center mt-12 space-y-4">
           <div className="flex justify-center items-center space-x-6 text-gray-500">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
