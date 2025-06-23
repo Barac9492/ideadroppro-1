@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ interface PersonalIdeaStorageProps {
 const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLanguage }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
-  const { ideas, isLoading, fetchIdeas, toggleLike, generateAnalysis } = useIdeas(currentLanguage);
+  const { ideas, isLoading, fetchIdeas, toggleLike, generateAnalysis, deleteIdea } = useIdeas(currentLanguage);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -107,8 +106,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
   };
 
   const handleDelete = async (ideaId: string): Promise<void> => {
-    // TODO: Implement delete functionality
-    console.log('Delete idea:', ideaId);
+    return deleteIdea(ideaId);
   };
 
   if (isLoading) {

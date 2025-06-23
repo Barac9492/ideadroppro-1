@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,7 +81,7 @@ const IdeaEvolutionVisualizer: React.FC<IdeaEvolutionVisualizerProps> = ({ curre
     currentScore: idea.score,
     improvements: idea.improvements?.length || 0,
     stage: getEvolutionStage(idea.score, idea.improvements?.length || 0),
-    createdAt: new Date(idea.created_at),
+    createdAt: idea.timestamp, // Use timestamp instead of created_at
     progress: Math.min((idea.score / 10) * 100, 100)
   }));
 
@@ -93,17 +92,6 @@ const IdeaEvolutionVisualizer: React.FC<IdeaEvolutionVisualizerProps> = ({ curre
     if (score > 0) return 'analysis';
     return 'initial';
   }
-
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'initial': return 'bg-gray-100 text-gray-800';
-      case 'analysis': return 'bg-blue-100 text-blue-800';
-      case 'improvement': return 'bg-yellow-100 text-yellow-800';
-      case 'optimization': return 'bg-orange-100 text-orange-800';
-      case 'completion': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   // Calculate metrics
   const metrics = {

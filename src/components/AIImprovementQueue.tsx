@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,7 +73,7 @@ const AIImprovementQueue: React.FC<AIImprovementQueueProps> = ({ currentLanguage
       priority: idea.score < 5 ? 'high' : idea.score < 7 ? 'medium' : 'low',
       suggestions: [
         idea.score < 6 ? 'scoreBoost' : null,
-        !idea.ai_analysis ? 'marketAnalysis' : null,
+        !idea.aiAnalysis ? 'marketAnalysis' : null,
         idea.score < 7 ? 'competitiveEdge' : null,
         'valueProposition',
         'revenueModel'
