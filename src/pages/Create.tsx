@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import IdeaBuilder from '@/components/IdeaBuilder';
 import ModuleMixMatch from '@/components/ModuleMixMatch';
@@ -14,6 +13,7 @@ import UnifiedNavigation from '@/components/UnifiedNavigation';
 
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { submitIdea } = useIdeas(currentLanguage);
@@ -31,6 +31,7 @@ const Create = () => {
       return;
     }
     
+    setIsSubmitting(true);
     try {
       if (analysisData && analysisData.modules) {
         await submitIdea(ideaText, {
@@ -51,6 +52,8 @@ const Create = () => {
       navigate('/ideas');
     } catch (error) {
       console.error('Error submitting idea:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -100,6 +103,7 @@ const Create = () => {
             <SimpleIdeaInput 
               currentLanguage={currentLanguage}
               onSubmit={handleIdeaSubmit}
+              isSubmitting={isSubmitting}
             />
           </TabsContent>
 

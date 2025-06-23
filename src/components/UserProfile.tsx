@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Calendar, Trophy, Star } from 'lucide-react';
+import { User, Mail, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -17,17 +17,11 @@ interface UserProfileProps {
 
 interface Profile {
   username: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
   const [profile, setProfile] = useState<Profile>({
-    username: null,
-    full_name: null,
-    avatar_url: null,
-    bio: null
+    username: null
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,8 +31,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
     ko: {
       title: '내 프로필',
       username: '사용자명',
-      fullName: '이름',
-      bio: '소개',
       email: '이메일',
       joinDate: '가입일',
       save: '저장',
@@ -50,8 +42,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
     en: {
       title: 'My Profile',
       username: 'Username',
-      fullName: 'Full Name',
-      bio: 'Bio',
       email: 'Email',
       joinDate: 'Join Date',
       save: 'Save',
@@ -72,7 +62,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('username')
         .eq('id', user?.id)
         .single();
 
@@ -81,7 +71,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
       }
 
       if (data) {
-        setProfile(data);
+        setProfile({ username: data.username });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -103,7 +93,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
         .from('profiles')
         .upsert({
           id: user.id,
-          ...profile,
+          username: profile.username,
           updated_at: new Date().toISOString()
         });
 
@@ -145,7 +135,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-6">
           <Avatar className="w-20 h-20">
-            <AvatarImage src={profile.avatar_url || ''} />
             <AvatarFallback className="text-2xl">
               {profile.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
@@ -164,35 +153,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentLanguage }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">{text[currentLanguage].username}</Label>
-            <Input
-              id="username"
-              value={profile.username || ''}
-              onChange={(e) => setProfile(prev => ({ ...prev, username: e.target.value }))}
-              placeholder="Enter username"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="fullName">{text[currentLanguage].fullName}</Label>
-            <Input
-              id="fullName"
-              value={profile.full_name || ''}
-              onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
-              placeholder="Enter full name"
-            />
-          </div>
-        </div>
-
         <div className="space-y-2">
-          <Label htmlFor="bio">{text[currentLanguage].bio}</Label>
+          <Label htmlFor="username">{text[currentLanguage].username}</Label>
           <Input
-            id="bio"
-            value={profile.bio || ''}
-            onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
-            placeholder="Tell us about yourself"
+            id="username"
+            value={profile.username || ''}
+            onChange={(e) => setProfile(prev => ({ ...prev, username: e.target.value }))}
+            placeholder="Enter username"
           />
         </div>
 

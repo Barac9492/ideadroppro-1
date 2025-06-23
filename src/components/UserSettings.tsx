@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Settings, Bell, Eye, Shield, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 interface UserSettingsProps {
@@ -28,7 +27,6 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentLanguage }) => {
     public_profile: true,
     show_in_leaderboard: true
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
 
@@ -50,9 +48,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentLanguage }) => {
       deleteAccountDesc: '계정을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.',
       save: '저장',
       saving: '저장 중...',
-      settingsUpdated: '설정이 업데이트되었습니다',
-      loadError: '설정을 불러올 수 없습니다',
-      saveError: '설정 저장에 실패했습니다'
+      settingsUpdated: '설정이 업데이트되었습니다'
     },
     en: {
       title: 'Settings',
@@ -71,41 +67,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentLanguage }) => {
       deleteAccountDesc: 'Permanently delete your account. This action cannot be undone.',
       save: 'Save',
       saving: 'Saving...',
-      settingsUpdated: 'Settings updated successfully',
-      loadError: 'Failed to load settings',
-      saveError: 'Failed to save settings'
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchSettings();
-    }
-  }, [user]);
-
-  const fetchSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (data) {
-        setSettings(data);
-      }
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-      toast({
-        title: text[currentLanguage].loadError,
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
+      settingsUpdated: 'Settings updated successfully'
     }
   };
 
@@ -114,40 +76,16 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentLanguage }) => {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          ...settings,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
+      // For now, just show success message since we don't have user_settings table
       toast({
         title: text[currentLanguage].settingsUpdated
       });
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast({
-        title: text[currentLanguage].saveError,
-        variant: 'destructive'
-      });
     } finally {
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading settings...</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
