@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import IdeaBuilder from '@/components/IdeaBuilder';
 import ModuleMixMatch from '@/components/ModuleMixMatch';
 import SimpleIdeaInput from '@/components/SimpleIdeaInput';
@@ -14,16 +16,21 @@ import UnifiedNavigation from '@/components/UnifiedNavigation';
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialIdea, setInitialIdea] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { submitIdea } = useIdeas(currentLanguage);
   const { updateStreak } = useStreaks(currentLanguage);
   const { scoreActions } = useInfluenceScore();
   const { updateMissionProgress, awardXP } = useDailyXP();
 
-  const handleLanguageToggle = () => {
-    setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
-  };
+  // Get initial idea from navigation state
+  useEffect(() => {
+    if (location.state?.initialIdea) {
+      setInitialIdea(location.state.initialIdea);
+    }
+  }, [location.state]);
 
   const handleIdeaSubmit = async (ideaText: string, analysisData?: any) => {
     if (!user) {
@@ -49,7 +56,7 @@ const Create = () => {
       updateMissionProgress('idea_submit');
       await awardXP(analysisData?.modules ? 100 : 50, '아이디어 제출');
       
-      navigate('/ideas');
+      navigate('/explore');
     } catch (error) {
       console.error('Error submitting idea:', error);
     } finally {
@@ -59,8 +66,8 @@ const Create = () => {
 
   const text = {
     ko: {
-      title: '✨ 아이디어 만들기',
-      subtitle: 'AI와 함께 창의적인 아이디어를 만들어보세요',
+      title: '✨ 아이디어 구체화하기',
+      subtitle: 'AI와 함께 더 완성도 높은 아이디어를 만들어보세요',
       tabs: {
         simple: '간단 제출',
         builder: 'AI 빌더',
@@ -68,8 +75,8 @@ const Create = () => {
       }
     },
     en: {
-      title: '✨ Create Ideas',
-      subtitle: 'Create innovative ideas with AI assistance',
+      title: '✨ Enhance Your Idea',
+      subtitle: 'Create more complete ideas with AI assistance',
       tabs: {
         simple: 'Quick Submit',
         builder: 'AI Builder',
@@ -104,11 +111,15 @@ const Create = () => {
               currentLanguage={currentLanguage}
               onSubmit={handleIdeaSubmit}
               isSubmitting={isSubmitting}
+              initialIdea={initialIdea}
             />
           </TabsContent>
 
           <TabsContent value="builder">
-            <IdeaBuilder currentLanguage={currentLanguage} />
+            <IdeaBuilder 
+              currentLanguage={currentLanguage}
+              initialIdea={initialIdea}
+            />
           </TabsContent>
 
           <TabsContent value="mixmatch">

@@ -1,10 +1,9 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SimplifiedHeader from '@/components/SimplifiedHeader';
+import UltraSimpleHero from '@/components/UltraSimpleHero';
+import SimpleTopBar from '@/components/SimpleTopBar';
 import UnifiedNavigation from '@/components/UnifiedNavigation';
-import BetaAnnouncementBanner from '@/components/BetaAnnouncementBanner';
-import SimplifiedLandingHero from '@/components/SimplifiedLandingHero';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
@@ -23,38 +22,28 @@ const Index = () => {
   const { updateMissionProgress, awardXP } = useDailyXP();
   const isMobile = useIsMobile();
 
-  const handleIdeaDrop = async (ideaText: string, analysisData?: any) => {
+  const handleIdeaDrop = async (ideaText: string) => {
     if (!user) {
-      navigate('/auth', { state: { ideaText, analysisData } });
+      navigate('/auth', { state: { ideaText } });
       return;
     }
     
     try {
-      // 분석 데이터가 있으면 모듈러 아이디어로, 없으면 기본 아이디어로 제출
-      if (analysisData && analysisData.modules) {
-        await submitIdea(ideaText, {
-          modules: analysisData.modules,
-          isModular: true,
-          completionScore: 8.5 // AI 대화로 완성된 아이디어는 높은 점수
-        });
-      } else {
-        await submitIdea(ideaText);
-      }
-      
+      await submitIdea(ideaText);
       await updateStreak();
       await scoreActions.keywordParticipation();
       
       updateMissionProgress('idea_submit');
-      await awardXP(analysisData?.modules ? 100 : 50, '아이디어 제출');
+      await awardXP(50, '아이디어 제출');
       
-      // 제출 완료 후 아이디어 목록 페이지로 이동
+      // 제출 완료 후 탐색 페이지로 이동
       navigate('/explore');
     } catch (error) {
       console.error('Error submitting idea:', error);
     }
   };
 
-  // Handle auth redirect with the custom hook
+  // Handle auth redirect
   useAuthRedirect({ onIdeaDrop: handleIdeaDrop });
 
   const handleLanguageToggle = () => {
@@ -64,10 +53,10 @@ const Index = () => {
   // Show loading only during initial auth check
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 md:h-32 md:w-32 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-slate-600">Loading...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-lg text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -75,17 +64,26 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Beta Announcement Banner */}
-      <BetaAnnouncementBanner currentLanguage={currentLanguage} />
-      
-      {/* Unified Navigation */}
-      <UnifiedNavigation currentLanguage={currentLanguage} />
-      
-      {/* 단순화된 메인 히어로 */}
-      <SimplifiedLandingHero 
+      {/* Ultra-simple top bar with beta banner */}
+      <SimpleTopBar 
         currentLanguage={currentLanguage}
-        onIdeaDrop={handleIdeaDrop}
+        onLanguageToggle={handleLanguageToggle}
+        showBeta={true}
       />
+      
+      {/* Add padding for fixed header */}
+      <div className="pt-20">
+        {/* Ultra-simple hero - this is the main focus */}
+        <UltraSimpleHero 
+          currentLanguage={currentLanguage}
+          onIdeaDrop={handleIdeaDrop}
+        />
+      </div>
+      
+      {/* Bottom navigation for mobile, hidden on desktop */}
+      <div className={isMobile ? 'block' : 'hidden'}>
+        <UnifiedNavigation currentLanguage={currentLanguage} />
+      </div>
     </div>
   );
 };
