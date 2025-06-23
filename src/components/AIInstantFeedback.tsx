@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,39 +61,63 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
     }
   };
 
-  const calculateOverallGrade = (modules: any, score: number) => {
+  const calculateOverallGrade = (modules: any, score: number, moduleProgress: any) => {
     const moduleCount = Object.keys(modules || {}).length;
-    const completionBonus = moduleCount >= 4 ? 1 : 0;
-    const scoreBonus = score >= 7 ? 1 : score >= 5 ? 0.5 : 0;
     
-    const totalPoints = completionBonus + scoreBonus;
+    // 모듈 완성도 점수 (더 엄격하게)
+    let completionScore = 0;
+    if (moduleCount >= 5) completionScore = 3;
+    else if (moduleCount >= 4) completionScore = 2;
+    else if (moduleCount >= 3) completionScore = 1;
+    else completionScore = 0;
     
-    if (totalPoints >= 1.8) return { grade: 'A+', color: 'text-green-600 bg-green-100', description: '뛰어남' };
-    if (totalPoints >= 1.5) return { grade: 'A', color: 'text-green-600 bg-green-100', description: '우수함' };
-    if (totalPoints >= 1.2) return { grade: 'B+', color: 'text-blue-600 bg-blue-100', description: '좋음' };
-    if (totalPoints >= 1.0) return { grade: 'B', color: 'text-blue-600 bg-blue-100', description: '양호함' };
-    if (totalPoints >= 0.7) return { grade: 'C+', color: 'text-yellow-600 bg-yellow-100', description: '보통' };
-    if (totalPoints >= 0.5) return { grade: 'C', color: 'text-yellow-600 bg-yellow-100', description: '개선 필요' };
+    // AI 분석 점수 (더 중요하게 반영)
+    let aiScore = 0;
+    if (score >= 8.5) aiScore = 4;
+    else if (score >= 7.5) aiScore = 3;
+    else if (score >= 6.5) aiScore = 2;
+    else if (score >= 5.5) aiScore = 1;
+    else aiScore = 0;
+    
+    // 모듈별 완성도 품질 점수
+    let qualityScore = 0;
+    if (moduleProgress) {
+      const completenessScores = Object.values(moduleProgress).map((p: any) => p.completeness || 0);
+      const avgCompleteness = completenessScores.reduce((a: number, b: number) => a + b, 0) / completenessScores.length;
+      if (avgCompleteness >= 90) qualityScore = 2;
+      else if (avgCompleteness >= 80) qualityScore = 1.5;
+      else if (avgCompleteness >= 70) qualityScore = 1;
+      else qualityScore = 0;
+    }
+    
+    const totalPoints = completionScore + aiScore + qualityScore; // 최대 9점
+    
+    // 더 엄격한 등급 기준
+    if (totalPoints >= 8.5) return { grade: 'A+', color: 'text-green-600 bg-green-100', description: '뛰어남' };
+    if (totalPoints >= 7.5) return { grade: 'A', color: 'text-green-600 bg-green-100', description: '우수함' };
+    if (totalPoints >= 6.5) return { grade: 'B+', color: 'text-blue-600 bg-blue-100', description: '좋음' };
+    if (totalPoints >= 5.5) return { grade: 'B', color: 'text-blue-600 bg-blue-100', description: '양호함' };
+    if (totalPoints >= 4.0) return { grade: 'C+', color: 'text-yellow-600 bg-yellow-100', description: '보통' };
+    if (totalPoints >= 2.5) return { grade: 'C', color: 'text-yellow-600 bg-yellow-100', description: '개선 필요' };
     return { grade: 'D', color: 'text-red-600 bg-red-100', description: '많은 개선 필요' };
   };
 
-  const calculateVCInterest = (modules: any, score: number) => {
+  const calculateVCInterest = (modules: any, score: number, moduleProgress: any) => {
     const moduleCount = Object.keys(modules || {}).length;
-    let interest = 'Low';
-    let color = 'text-gray-600 bg-gray-100';
+    const overallGrade = calculateOverallGrade(modules, score, moduleProgress);
     
-    if (moduleCount >= 4 && score >= 7) {
-      interest = 'High';
-      color = 'text-green-600 bg-green-100';
-    } else if (moduleCount >= 3 && score >= 6) {
-      interest = 'Medium';
-      color = 'text-blue-600 bg-blue-100';
-    } else if (moduleCount >= 2 && score >= 5) {
-      interest = 'Moderate';
-      color = 'text-yellow-600 bg-yellow-100';
+    // VC 관심도도 더 엄격하게
+    if (overallGrade.grade === 'A+' && score >= 8.0) {
+      return { interest: 'Very High', color: 'text-green-600 bg-green-100' };
+    } else if (overallGrade.grade === 'A' && score >= 7.5) {
+      return { interest: 'High', color: 'text-green-600 bg-green-100' };
+    } else if (overallGrade.grade === 'B+' && score >= 6.5) {
+      return { interest: 'Medium', color: 'text-blue-600 bg-blue-100' };
+    } else if (overallGrade.grade === 'B' && score >= 5.5) {
+      return { interest: 'Moderate', color: 'text-yellow-600 bg-yellow-100' };
+    } else {
+      return { interest: 'Low', color: 'text-gray-600 bg-gray-100' };
     }
-    
-    return { interest, color };
   };
 
   const performEnhancedAIAnalysis = async () => {
@@ -129,8 +152,8 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
       console.log('Analysis results:', { analysisData, insightsData });
 
       const score = analysisData?.score || 6.5;
-      const overallGrade = calculateOverallGrade(ideaData.modules, score);
-      const vcInterest = calculateVCInterest(ideaData.modules, score);
+      const overallGrade = calculateOverallGrade(ideaData.modules, score, ideaData.moduleProgress);
+      const vcInterest = calculateVCInterest(ideaData.modules, score, ideaData.moduleProgress);
 
       const comprehensiveAnalysis = {
         score: score,
@@ -156,10 +179,10 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
       console.error('Enhanced AI analysis error:', error);
       setAnalysisError(error.message || 'Analysis failed');
       
-      // Enhanced fallback analysis
-      const score = 7.0;
-      const overallGrade = calculateOverallGrade(ideaData.modules, score);
-      const vcInterest = calculateVCInterest(ideaData.modules, score);
+      // Enhanced fallback analysis with stricter grading
+      const score = 5.5; // Lower fallback score
+      const overallGrade = calculateOverallGrade(ideaData.modules, score, ideaData.moduleProgress);
+      const vcInterest = calculateVCInterest(ideaData.modules, score, ideaData.moduleProgress);
       
       const fallbackAnalysis = {
         score: score,
@@ -228,7 +251,7 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-      {/* Enhanced Header */}
+      {/* Enhanced Header with improved grade display */}
       <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-green-600 text-white p-6">
         <div className="flex items-center space-x-3 mb-3">
           <CheckCircle className="w-8 h-8" />
@@ -238,7 +261,7 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white/20 rounded-xl p-3 flex items-center space-x-3">
             <Award className="w-5 h-5 text-yellow-300" />
-            <span className="font-semibold">등급: {analysis?.overallGrade?.grade}</span>
+            <span className="font-semibold">등급: {analysis?.overallGrade?.grade} ({analysis?.overallGrade?.description})</span>
           </div>
           <div className="bg-white/20 rounded-xl p-3 flex items-center space-x-3">
             <Star className="w-5 h-5 text-yellow-300" />
@@ -246,7 +269,7 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
           </div>
           <div className="bg-white/20 rounded-xl p-3 flex items-center space-x-3">
             <Brain className="w-5 h-5 text-purple-300" />
-            <span className="font-semibold">모듈: {analysis?.moduleCompleteness}개</span>
+            <span className="font-semibold">AI 점수: {analysis?.score?.toFixed(1)}/10</span>
           </div>
         </div>
       </div>

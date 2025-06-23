@@ -9,6 +9,7 @@ import SubmissionComplete from '@/pages/SubmissionComplete';
 import Auth from '@/pages/Auth';
 import MyWorkspace from '@/pages/MyWorkspace';
 import Community from '@/pages/Community';
+import Remix from '@/pages/Remix';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -30,6 +31,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/my-workspace" element={<MyWorkspace />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/remix" element={<Remix />} />
             </Routes>
           </div>
           <Toaster />
