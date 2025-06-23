@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,6 +43,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [smartQuestions, setSmartQuestions] = useState<SmartQuestion[]>([]);
   const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
   const [conversationContext, setConversationContext] = useState('');
+  const [hasAskedCurrentQuestion, setHasAskedCurrentQuestion] = useState(false);
 
   const text = {
     ko: {
@@ -88,11 +88,22 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       console.log('Generated smart questions:', data);
 
       if (data?.questions && data.questions.length > 0) {
-        // Remove duplicates based on question content
-        const uniqueQuestions = data.questions.filter((question: SmartQuestion, index: number, arr: SmartQuestion[]) => 
-          arr.findIndex(q => q.question === question.question) === index
-        );
-        setSmartQuestions(uniqueQuestions.slice(0, 5)); // Limit to 5 questions
+        // 더 엄격한 중복 제거 로직
+        const uniqueQuestions = data.questions.filter((question: SmartQuestion, index: number, arr: SmartQuestion[]) => {
+          const normalizedQuestion = question.question.toLowerCase().trim();
+          return arr.findIndex(q => q.question.toLowerCase().trim() === normalizedQuestion) === index;
+        });
+        
+        // 각 모듈별로 하나씩만 선택
+        const moduleMap = new Map<string, SmartQuestion>();
+        uniqueQuestions.forEach((question: SmartQuestion) => {
+          if (!moduleMap.has(question.moduleType)) {
+            moduleMap.set(question.moduleType, question);
+          }
+        });
+        
+        const finalQuestions = Array.from(moduleMap.values()).slice(0, 5);
+        setSmartQuestions(finalQuestions);
       } else {
         console.log('No questions returned, using fallback');
         setSmartQuestions(getFallbackQuestions());
@@ -152,18 +163,18 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   }, []);
 
   useEffect(() => {
-    if (smartQuestions.length > 0 && currentQuestionIndex === 0) {
+    if (smartQuestions.length > 0 && currentQuestionIndex === 0 && !hasAskedCurrentQuestion) {
       setTimeout(() => {
         askCurrentQuestion();
       }, 1000);
     }
-  }, [smartQuestions]);
+  }, [smartQuestions, currentQuestionIndex, hasAskedCurrentQuestion]);
 
   const askCurrentQuestion = () => {
-    if (currentQuestionIndex < smartQuestions.length) {
+    if (currentQuestionIndex < smartQuestions.length && !hasAskedCurrentQuestion) {
       const question = smartQuestions[currentQuestionIndex];
       const questionMessage: ChatMessage = {
-        id: `question-${currentQuestionIndex}`,
+        id: `question-${currentQuestionIndex}-${Date.now()}`,
         role: 'ai',
         content: question.question,
         moduleType: question.moduleType,
@@ -171,6 +182,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       };
       
       setMessages(prev => [...prev, questionMessage]);
+      setHasAskedCurrentQuestion(true);
     }
   };
 
@@ -264,6 +276,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     // Move to next question
     const nextIndex = currentQuestionIndex + 1;
     setCurrentQuestionIndex(nextIndex);
+    setHasAskedCurrentQuestion(false);
 
     // Ask next question or complete
     setTimeout(() => {

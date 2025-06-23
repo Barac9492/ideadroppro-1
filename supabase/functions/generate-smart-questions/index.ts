@@ -63,9 +63,12 @@ serve(async (req) => {
 - revenue_model (수익 모델)
 - competitive_advantage (경쟁 우위)
 
-질문은 개방형이고 사용자의 창의적 사고를 자극해야 합니다.
-각 질문은 서로 다르고 중복되지 않아야 합니다.
-구체적이고 실용적인 질문을 만들어주세요.
+중요한 요구사항:
+1. 각 질문은 완전히 다르고 독특해야 합니다
+2. 절대 유사하거나 중복되는 질문을 만들지 마세요
+3. 각 모듈당 정확히 하나의 질문만 생성하세요
+4. 질문은 구체적이고 실용적이어야 합니다
+5. 개방형 질문으로 사용자의 창의적 사고를 자극해야 합니다
 
 JSON 형식으로 응답:
 {
@@ -73,6 +76,22 @@ JSON 형식으로 응답:
     {
       "moduleType": "problem_definition",
       "question": "구체적이고 생각을 자극하는 질문"
+    },
+    {
+      "moduleType": "target_customer", 
+      "question": "완전히 다른 각도의 질문"
+    },
+    {
+      "moduleType": "value_proposition",
+      "question": "또 다른 독특한 질문"
+    },
+    {
+      "moduleType": "revenue_model",
+      "question": "수익에 대한 구체적 질문"
+    },
+    {
+      "moduleType": "competitive_advantage",
+      "question": "경쟁 우위에 대한 질문"
     }
   ]
 }
@@ -89,9 +108,12 @@ Each question should relate to these business modules:
 - revenue_model
 - competitive_advantage
 
-Questions should be open-ended and stimulate creative thinking.
-Each question must be unique and non-repetitive.
-Create specific and practical questions.
+Critical requirements:
+1. Each question must be completely different and unique
+2. Never create similar or duplicate questions
+3. Generate exactly one question per module
+4. Questions should be specific and practical
+5. Questions should be open-ended and stimulate creative thinking
 
 Respond in JSON format:
 {
@@ -99,6 +121,22 @@ Respond in JSON format:
     {
       "moduleType": "problem_definition",
       "question": "Specific and thought-provoking question"
+    },
+    {
+      "moduleType": "target_customer",
+      "question": "Completely different angle question"
+    },
+    {
+      "moduleType": "value_proposition", 
+      "question": "Another unique question"
+    },
+    {
+      "moduleType": "revenue_model",
+      "question": "Specific revenue question"
+    },
+    {
+      "moduleType": "competitive_advantage",
+      "question": "Competitive advantage question"
     }
   ]
 }
@@ -115,14 +153,14 @@ Respond in JSON format:
             messages: [
               {
                 role: 'system',
-                content: 'You are an expert business consultant. Generate unique, non-repetitive questions. Always respond with valid JSON only, no additional text.',
+                content: 'You are an expert business consultant. Generate unique, non-repetitive questions for each module. Each question must be completely different. Always respond with valid JSON only, no additional text.',
               },
               {
                 role: 'user',
                 content: prompt,
               },
             ],
-            temperature: 0.8,
+            temperature: 0.9,
             max_tokens: 1000,
           }),
         });
@@ -135,17 +173,29 @@ Respond in JSON format:
             try {
               const questions = JSON.parse(content);
               
-              // Ensure no duplicate questions
-              const uniqueQuestions = questions.questions.filter((question: any, index: number, arr: any[]) => 
-                arr.findIndex((q: any) => q.question === question.question) === index
-              );
+              // 엄격한 중복 제거 및 검증
+              const uniqueQuestions = questions.questions.filter((question: any, index: number, arr: any[]) => {
+                const normalizedQuestion = question.question.toLowerCase().trim();
+                const firstIndex = arr.findIndex((q: any) => q.question.toLowerCase().trim() === normalizedQuestion);
+                return firstIndex === index;
+              });
+              
+              // 각 모듈 타입별로 하나씩만 유지
+              const moduleMap = new Map();
+              uniqueQuestions.forEach((question: any) => {
+                if (!moduleMap.has(question.moduleType)) {
+                  moduleMap.set(question.moduleType, question);
+                }
+              });
+              
+              const finalQuestions = Array.from(moduleMap.values()).slice(0, 5);
               
               console.log('OpenAI questions generated successfully');
               
               return new Response(
                 JSON.stringify({
                   success: true,
-                  questions: uniqueQuestions.slice(0, 5), // Limit to 5 questions
+                  questions: finalQuestions,
                   source: 'openai'
                 }),
                 {
@@ -162,7 +212,7 @@ Respond in JSON format:
       }
     }
 
-    // Enhanced fallback questions
+    // Enhanced fallback questions - 완전히 다른 질문들
     const fallbackQuestions = language === 'ko' ?
       [
         {
