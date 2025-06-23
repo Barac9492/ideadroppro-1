@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
 import UserRemixDashboard from '@/components/UserRemixDashboard';
 import TopInfluencersBoard from '@/components/TopInfluencersBoard';
 import UserProfile from '@/components/UserProfile';
@@ -16,9 +16,9 @@ import UnifiedNavigation from '@/components/UnifiedNavigation';
 const MyWorkspace = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const { user } = useAuth();
-  const { influenceScore, loading: influenceLoading } = useInfluenceScore();
-  const { currentStreak, loading: streakLoading } = useStreaks(currentLanguage);
-  const { hasParticipated, loading: challengeLoading } = useDailyChallenge(currentLanguage);
+  const { score, loading: influenceLoading } = useInfluenceScore();
+  const { streak, loading: streakLoading } = useStreaks(currentLanguage);
+  const { hasParticipated, todayChallenge } = useDailyChallenge(currentLanguage);
   const { isAdmin, loading: roleLoading } = useUserRole();
 
   const handleLanguageToggle = () => {
@@ -86,7 +86,7 @@ const MyWorkspace = () => {
                   {influenceLoading ? (
                     <p>Loading...</p>
                   ) : (
-                    <p className="text-2xl font-bold text-gray-800">{influenceScore?.toFixed(2) || '0.00'}</p>
+                    <p className="text-2xl font-bold text-gray-800">{score?.total_score?.toFixed(2) || '0.00'}</p>
                   )}
                 </div>
 
@@ -98,7 +98,7 @@ const MyWorkspace = () => {
                   {streakLoading ? (
                     <p>Loading...</p>
                   ) : (
-                    <p className="text-2xl font-bold text-gray-800">{currentStreak}</p>
+                    <p className="text-2xl font-bold text-gray-800">{streak?.current_streak || 0}</p>
                   )}
                 </div>
 
@@ -107,11 +107,7 @@ const MyWorkspace = () => {
                     <Users className="w-6 h-6 text-blue-500" />
                     <h3 className="text-lg font-semibold">{text[currentLanguage].dailyChallenge}</h3>
                   </div>
-                  {challengeLoading ? (
-                    <p>Loading...</p>
-                  ) : (
-                    <p className="text-gray-800">{hasParticipated ? '참여 완료!' : '미션 참여하고 보상받기!'}</p>
-                  )}
+                  <p className="text-gray-800">{hasParticipated ? '참여 완료!' : '미션 참여하고 보상받기!'}</p>
                 </div>
 
                 {/* Conditionally render Admin Panel card */}

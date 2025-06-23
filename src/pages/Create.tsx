@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import Header from '@/components/Header';
 import IdeaBuilder from '@/components/IdeaBuilder';
 import ModuleMixMatch from '@/components/ModuleMixMatch';
 import SimpleIdeaInput from '@/components/SimpleIdeaInput';
@@ -11,6 +10,7 @@ import { useIdeas } from '@/hooks/useIdeas';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useDailyXP } from '@/hooks/useDailyXP';
+import UnifiedNavigation from '@/components/UnifiedNavigation';
 
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -77,10 +77,7 @@ const Create = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header 
-        currentLanguage={currentLanguage}
-        onLanguageToggle={handleLanguageToggle}
-      />
+      <UnifiedNavigation currentLanguage={currentLanguage} />
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
@@ -102,7 +99,7 @@ const Create = () => {
           <TabsContent value="simple">
             <SimpleIdeaInput 
               currentLanguage={currentLanguage}
-              onIdeaDrop={handleIdeaSubmit}
+              onSubmit={handleIdeaSubmit}
             />
           </TabsContent>
 

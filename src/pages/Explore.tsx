@@ -1,17 +1,52 @@
 
 import React, { useState } from 'react';
-import Header from '@/components/Header';
 import IdeaCard from '@/components/IdeaCard';
 import RemixableIdeasSection from '@/components/RemixableIdeasSection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIdeas } from '@/hooks/useIdeas';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useInfluenceScore } from '@/hooks/useInfluenceScore';
+import { useDailyXP } from '@/hooks/useDailyXP';
+import UnifiedNavigation from '@/components/UnifiedNavigation';
 
 const Explore = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
-  const { ideas, loading } = useIdeas(currentLanguage);
+  const { ideas, isLoading, toggleLike, generateAnalysis, generateGlobalAnalysis, saveFinalVerdict, deleteIdea } = useIdeas(currentLanguage);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { scoreActions } = useInfluenceScore();
+  const { updateMissionProgress, awardXP } = useDailyXP();
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
+  };
+
+  const handleLike = async (ideaId: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
+    try {
+      await toggleLike(ideaId);
+      await scoreActions.ideaLike();
+      updateMissionProgress('like_ideas');
+      await awardXP(10, '아이디어 좋아요');
+    } catch (error) {
+      console.error('Error liking idea:', error);
+    }
+  };
+
+  const handleGenerateAnalysis = async (ideaId: string) => {
+    try {
+      await generateAnalysis(ideaId);
+      await scoreActions.keywordParticipation();
+      updateMissionProgress('vote_participate');
+      await awardXP(20, 'AI 분석 생성');
+    } catch (error) {
+      console.error('Error generating analysis:', error);
+    }
   };
 
   const text = {
@@ -35,10 +70,7 @@ const Explore = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header 
-        currentLanguage={currentLanguage}
-        onLanguageToggle={handleLanguageToggle}
-      />
+      <UnifiedNavigation currentLanguage={currentLanguage} />
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
@@ -58,7 +90,7 @@ const Explore = () => {
 
           <TabsContent value="all">
             <div className="space-y-6">
-              {loading ? (
+              {isLoading ? (
                 <div className="text-center py-8">
                   <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
                   <p className="text-gray-600">아이디어를 불러오는 중...</p>
@@ -70,6 +102,13 @@ const Explore = () => {
                       key={idea.id}
                       idea={idea}
                       currentLanguage={currentLanguage}
+                      currentUserId={user?.id}
+                      onLike={handleLike}
+                      onGenerateAnalysis={handleGenerateAnalysis}
+                      onGenerateGlobalAnalysis={generateGlobalAnalysis}
+                      onSaveFinalVerdict={saveFinalVerdict}
+                      onDelete={deleteIdea}
+                      isAuthenticated={!!user}
                     />
                   ))}
                 </div>
