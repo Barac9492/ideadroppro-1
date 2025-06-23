@@ -45,7 +45,7 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({ currentLanguage }
     }
   };
 
-  // Core navigation items
+  // Core navigation items - 경로 수정
   const coreNavItems = [
     {
       id: 'home',
@@ -58,14 +58,14 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({ currentLanguage }
       id: 'create',
       label: text[currentLanguage].create,
       icon: Plus,
-      path: '/submit',
+      path: '/create',
       badge: !hasParticipated ? text[currentLanguage].missionAlert : null,
     },
     {
       id: 'explore',
       label: text[currentLanguage].explore,
       icon: Search,
-      path: '/ideas',
+      path: '/explore',
       badge: ideas.length > 10 ? '10+' : (ideas.length > 5 ? '5+' : null),
     },
     {

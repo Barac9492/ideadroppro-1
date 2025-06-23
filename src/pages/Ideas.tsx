@@ -1,6 +1,5 @@
+
 import React, { useState } from 'react';
-import SimplifiedHeader from '@/components/SimplifiedHeader';
-import AdaptiveNavigation from '@/components/AdaptiveNavigation';
 import IdeaCard from '@/components/IdeaCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
@@ -9,7 +8,6 @@ import { useDailyXP } from '@/hooks/useDailyXP';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, Clock, Heart, Zap } from 'lucide-react';
 import UnifiedNavigation from '@/components/UnifiedNavigation';

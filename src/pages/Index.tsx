@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
@@ -47,7 +48,7 @@ const Index = () => {
       await awardXP(analysisData?.modules ? 100 : 50, '아이디어 제출');
       
       // 제출 완료 후 아이디어 목록 페이지로 이동
-      navigate('/ideas');
+      navigate('/explore');
     } catch (error) {
       console.error('Error submitting idea:', error);
     }
@@ -74,16 +75,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <SimplifiedHeader 
-        currentLanguage={currentLanguage}
-        onLanguageToggle={handleLanguageToggle}
-      />
+      {/* Beta Announcement Banner */}
+      <BetaAnnouncementBanner currentLanguage={currentLanguage} />
       
       {/* Unified Navigation */}
       <UnifiedNavigation currentLanguage={currentLanguage} />
-      
-      {/* Beta Announcement Banner */}
-      <BetaAnnouncementBanner currentLanguage={currentLanguage} />
       
       {/* 단순화된 메인 히어로 */}
       <SimplifiedLandingHero 
