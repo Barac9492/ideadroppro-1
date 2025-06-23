@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -177,9 +176,9 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     await createRemix(idea.id, remixText, idea.score);
   };
 
-  const handleDelete = async (): Promise<void> => {
+  const handleDelete = async (ideaId: string): Promise<void> => {
     if (onDelete) {
-      await onDelete(idea.id);
+      await onDelete(ideaId);
     }
   };
 
