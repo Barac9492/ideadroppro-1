@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,11 +64,20 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
   useEffect(() => {
     // 분석 시뮬레이션
     setTimeout(() => {
+      const individualScores = {
+        innovation: Math.floor(Math.random() * 3) + 7, // 7-9
+        feasibility: Math.floor(Math.random() * 3) + 6, // 6-8
+        market: Math.floor(Math.random() * 3) + 7, // 7-9
+      };
+
+      const overallScore = Math.round(
+        (individualScores.innovation + individualScores.feasibility + individualScores.market) / 3 * 10
+      ) / 10;
+
       const mockAnalysis = {
         scores: {
-          innovation: Math.floor(Math.random() * 3) + 7, // 7-9
-          feasibility: Math.floor(Math.random() * 3) + 6, // 6-8
-          market: Math.floor(Math.random() * 3) + 7, // 7-9
+          ...individualScores,
+          overall: overallScore
         },
         strengths: currentLanguage === 'ko' ? [
           '명확한 문제 정의와 타겟 고객 식별',
@@ -92,13 +100,6 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
         vcPotential: Math.floor(Math.random() * 30) + 70, // 70-99%
         remixCredits: Math.floor(Math.random() * 3) + 3 // 3-5 credits
       };
-
-      // Calculate overall score from individual scores
-      const overallScore = Math.round(
-        (mockAnalysis.scores.innovation + mockAnalysis.scores.feasibility + mockAnalysis.scores.market) / 3 * 10
-      ) / 10;
-      
-      mockAnalysis.scores.overall = overallScore;
 
       setAnalysis(mockAnalysis);
       setIsAnalyzing(false);
