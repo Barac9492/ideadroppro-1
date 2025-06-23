@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -98,7 +97,6 @@ const RemixGallery: React.FC<RemixGalleryProps> = ({ currentLanguage }) => {
   if (loading) {
     return (
       <Card>
-        <Car
         <CardContent className="p-6 text-center">
           <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">{text[currentLanguage].loading}</p>
