@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, TrendingUp, Zap, Target, Lightbulb, CheckCircle, AlertCircle, Loader2, Brain, Sparkles } from 'lucide-react';
+import { Star, TrendingUp, Zap, Target, Lightbulb, CheckCircle, AlertCircle, Loader2, Brain, Sparkles, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AIInstantFeedbackProps {
@@ -20,7 +21,6 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysis, setAnalysis] = useState<any>(null);
-  const [detailedAnalysis, setDetailedAnalysis] = useState<any>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const text = {
@@ -32,21 +32,15 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
       moduleAnalysis: '모듈별 분석',
       strengths: '강점',
       improvements: '개선 포인트',
-      scores: {
-        innovation: '혁신성',
-        feasibility: '실현 가능성',
-        market: '시장성',
-        overall: '종합 점수'
-      },
       nextSteps: '다음 단계를 선택하세요',
       continueRemix: '🎨 리믹스 스튜디오로',
       submitCommunity: '🚀 커뮤니티에 공개',
-      vcPotential: 'VC 관심도',
+      vcInterest: 'VC 관심도',
       remixCredit: '리믹스 크레딧 획득!',
       analysisError: 'AI 분석 중 오류가 발생했습니다',
       retryAnalysis: '다시 분석하기',
       conversationInsights: '대화 인사이트',
-      ideaEvolution: '아이디어 진화 과정'
+      overallGrade: '종합 등급'
     },
     en: {
       analyzing: 'AI is conducting in-depth analysis of your refined idea...',
@@ -56,22 +50,51 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
       moduleAnalysis: 'Module Analysis',
       strengths: 'Strengths',
       improvements: 'Areas for Improvement',
-      scores: {
-        innovation: 'Innovation',
-        feasibility: 'Feasibility',
-        market: 'Market Potential',
-        overall: 'Overall Score'
-      },
       nextSteps: 'Choose your next step',
       continueRemix: '🎨 To Remix Studio',
       submitCommunity: '🚀 Publish to Community',
-      vcPotential: 'VC Interest Level',
+      vcInterest: 'VC Interest Level',
       remixCredit: 'Remix Credits Earned!',
       analysisError: 'Error occurred during AI analysis',
       retryAnalysis: 'Retry Analysis',
       conversationInsights: 'Conversation Insights',
-      ideaEvolution: 'Idea Evolution Process'
+      overallGrade: 'Overall Grade'
     }
+  };
+
+  const calculateOverallGrade = (modules: any, score: number) => {
+    const moduleCount = Object.keys(modules || {}).length;
+    const completionBonus = moduleCount >= 4 ? 1 : 0;
+    const scoreBonus = score >= 7 ? 1 : score >= 5 ? 0.5 : 0;
+    
+    const totalPoints = completionBonus + scoreBonus;
+    
+    if (totalPoints >= 1.8) return { grade: 'A+', color: 'text-green-600 bg-green-100', description: '뛰어남' };
+    if (totalPoints >= 1.5) return { grade: 'A', color: 'text-green-600 bg-green-100', description: '우수함' };
+    if (totalPoints >= 1.2) return { grade: 'B+', color: 'text-blue-600 bg-blue-100', description: '좋음' };
+    if (totalPoints >= 1.0) return { grade: 'B', color: 'text-blue-600 bg-blue-100', description: '양호함' };
+    if (totalPoints >= 0.7) return { grade: 'C+', color: 'text-yellow-600 bg-yellow-100', description: '보통' };
+    if (totalPoints >= 0.5) return { grade: 'C', color: 'text-yellow-600 bg-yellow-100', description: '개선 필요' };
+    return { grade: 'D', color: 'text-red-600 bg-red-100', description: '많은 개선 필요' };
+  };
+
+  const calculateVCInterest = (modules: any, score: number) => {
+    const moduleCount = Object.keys(modules || {}).length;
+    let interest = 'Low';
+    let color = 'text-gray-600 bg-gray-100';
+    
+    if (moduleCount >= 4 && score >= 7) {
+      interest = 'High';
+      color = 'text-green-600 bg-green-100';
+    } else if (moduleCount >= 3 && score >= 6) {
+      interest = 'Medium';
+      color = 'text-blue-600 bg-blue-100';
+    } else if (moduleCount >= 2 && score >= 5) {
+      interest = 'Moderate';
+      color = 'text-yellow-600 bg-yellow-100';
+    }
+    
+    return { interest, color };
   };
 
   const performEnhancedAIAnalysis = async () => {
@@ -79,114 +102,81 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
       setIsAnalyzing(true);
       setAnalysisError(null);
 
-      // Create comprehensive analysis context
-      const analysisContext = {
-        originalIdea: ideaData.originalIdea,
-        modules: ideaData.modules || {},
-        conversationContext: ideaData.conversationContext || '',
-        moduleProgress: ideaData.moduleProgress || {},
-        chatHistory: ideaData.chatHistory || []
-      };
+      console.log('Enhanced AI analysis starting:', ideaData);
 
-      console.log('Enhanced AI analysis starting:', analysisContext);
+      // Get comprehensive analysis
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-idea', {
+        body: {
+          ideaText: `${ideaData.originalIdea}\n\n구체화된 모듈:\n${Object.entries(ideaData.modules || {}).map(([key, value]) => `${key}: ${value}`).join('\n')}`,
+          language: currentLanguage,
+          context: 'comprehensive'
+        }
+      });
 
-      // Parallel analysis with both AI engines
-      const [geminiAnalysis, openaiAnalysis] = await Promise.allSettled([
-        // Gemini analysis (existing)
-        supabase.functions.invoke('analyze-idea', {
-          body: {
-            ideaText: `${ideaData.originalIdea}\n\n구체화된 모듈:\n${Object.entries(ideaData.modules || {}).map(([key, value]) => `${key}: ${value}`).join('\n')}`,
-            language: currentLanguage,
-            context: 'enhanced_analysis'
-          }
-        }),
-        // OpenAI detailed analysis
-        supabase.functions.invoke('analyze-user-response', {
-          body: {
-            originalIdea: ideaData.originalIdea,
-            userAnswer: Object.values(ideaData.modules || {}).join('\n'),
-            moduleType: 'comprehensive',
-            conversationHistory: ideaData.chatHistory,
-            language: currentLanguage
-          }
-        })
-      ]);
+      if (analysisError) throw analysisError;
 
-      console.log('Analysis results:', { geminiAnalysis, openaiAnalysis });
+      // Get detailed insights
+      const { data: insightsData } = await supabase.functions.invoke('analyze-user-response', {
+        body: {
+          originalIdea: ideaData.originalIdea,
+          userAnswer: Object.values(ideaData.modules || {}).join('\n'),
+          moduleType: 'comprehensive',
+          conversationHistory: ideaData.chatHistory || [],
+          language: currentLanguage
+        }
+      });
 
-      // Process results
-      let finalAnalysis = null;
-      let enhancedInsights = null;
+      console.log('Analysis results:', { analysisData, insightsData });
 
-      if (geminiAnalysis.status === 'fulfilled' && geminiAnalysis.value.data) {
-        finalAnalysis = geminiAnalysis.value.data;
-      }
+      const score = analysisData?.score || 6.5;
+      const overallGrade = calculateOverallGrade(ideaData.modules, score);
+      const vcInterest = calculateVCInterest(ideaData.modules, score);
 
-      if (openaiAnalysis.status === 'fulfilled' && openaiAnalysis.value.data) {
-        enhancedInsights = openaiAnalysis.value.data;
-      }
-
-      // Create comprehensive analysis
       const comprehensiveAnalysis = {
-        scores: {
-          innovation: finalAnalysis?.score ? Math.min(9.5, Math.max(6, finalAnalysis.score + 0.5)) : 7.8,
-          feasibility: finalAnalysis?.score ? Math.min(9, Math.max(6.5, finalAnalysis.score)) : 7.5,
-          market: finalAnalysis?.score ? Math.min(9.5, Math.max(7, finalAnalysis.score + 0.3)) : 8.2,
-          overall: finalAnalysis?.score ? Math.min(9.2, Math.max(6.8, finalAnalysis.score + 0.2)) : 7.9
-        },
+        score: score,
+        overallGrade: overallGrade,
+        vcInterest: vcInterest,
         strengths: [
-          ...(finalAnalysis?.pitchPoints || []),
-          currentLanguage === 'ko' ? '체계적인 아이디어 구체화 과정 완료' : 'Systematic idea refinement process completed',
+          ...(analysisData?.pitchPoints || []),
+          currentLanguage === 'ko' ? '체계적인 아이디어 구체화 완료' : 'Systematic idea development completed',
           currentLanguage === 'ko' ? 'AI 코칭을 통한 다각도 분석' : 'Multi-perspective analysis through AI coaching'
         ],
         improvements: [
-          ...(finalAnalysis?.improvements || []),
-          ...(enhancedInsights?.suggestions || [])
+          ...(analysisData?.improvements || []),
+          ...(insightsData?.suggestions || [])
         ],
-        vcPotential: Math.min(95, Math.max(70, (finalAnalysis?.score || 7.5) * 11 + Math.random() * 8)),
-        remixCredits: Math.floor(Object.keys(ideaData.modules || {}).length * 1.5) + 5,
-        marketInsights: finalAnalysis?.marketPotential || [],
-        competitorAnalysis: finalAnalysis?.similarIdeas || [],
-        conversationInsights: enhancedInsights?.insights || currentLanguage === 'ko' ? '훌륭한 대화형 구체화 과정이었습니다!' : 'Excellent interactive refinement process!',
-        moduleCompleteness: ideaData.moduleProgress || {}
+        remixCredits: Math.floor(Object.keys(ideaData.modules || {}).length * 1.5) + 3,
+        conversationInsights: insightsData?.insights || (currentLanguage === 'ko' ? '훌륭한 대화형 구체화 과정이었습니다!' : 'Excellent interactive development process!'),
+        moduleCompleteness: Object.keys(ideaData.modules || {}).length
       };
 
       setAnalysis(comprehensiveAnalysis);
-      setDetailedAnalysis({
-        originalAnalysis: finalAnalysis,
-        enhancedInsights: enhancedInsights,
-        moduleCount: Object.keys(ideaData.modules || {}).length,
-        conversationDepth: (ideaData.chatHistory || []).length
-      });
 
     } catch (error) {
       console.error('Enhanced AI analysis error:', error);
       setAnalysisError(error.message || 'Analysis failed');
       
       // Enhanced fallback analysis
+      const score = 7.0;
+      const overallGrade = calculateOverallGrade(ideaData.modules, score);
+      const vcInterest = calculateVCInterest(ideaData.modules, score);
+      
       const fallbackAnalysis = {
-        scores: {
-          innovation: 8.0,
-          feasibility: 7.5,
-          market: 8.2,
-          overall: 7.9
-        },
+        score: score,
+        overallGrade: overallGrade,
+        vcInterest: vcInterest,
         strengths: [
           currentLanguage === 'ko' ? 'AI 코칭을 통한 체계적 구체화' : 'Systematic refinement through AI coaching',
           currentLanguage === 'ko' ? '다양한 비즈니스 모듈 완성' : 'Comprehensive business modules completed',
           currentLanguage === 'ko' ? '실현 가능한 아이디어 발전' : 'Feasible idea development'
         ],
         improvements: [
-          currentLanguage === 'ko' ? '시장 검증 및 테스트 필요' : 'Market validation and testing needed',
-          currentLanguage === 'ko' ? '경쟁 분석 심화' : 'Deeper competitive analysis',
-          currentLanguage === 'ko' ? '비즈니스 모델 정교화' : 'Business model refinement'
+          currentLanguage === 'ko' ? '시장 검증 및 테스트 필요' : 'Market validation needed',
+          currentLanguage === 'ko' ? '경쟁 분석 심화' : 'Deeper competitive analysis'
         ],
-        vcPotential: 78,
-        remixCredits: 6,
-        marketInsights: [],
-        competitorAnalysis: [],
-        conversationInsights: currentLanguage === 'ko' ? '구체화 과정이 우수했습니다!' : 'Excellent refinement process!',
-        moduleCompleteness: ideaData.moduleProgress || {}
+        remixCredits: 5,
+        conversationInsights: currentLanguage === 'ko' ? '구체화 과정이 우수했습니다!' : 'Excellent development process!',
+        moduleCompleteness: Object.keys(ideaData.modules || {}).length
       };
       setAnalysis(fallbackAnalysis);
     } finally {
@@ -197,18 +187,6 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
   useEffect(() => {
     performEnhancedAIAnalysis();
   }, [ideaData, currentLanguage]);
-
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return 'text-green-600 bg-green-100';
-    if (score >= 6) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-  };
-
-  const getVCColor = (potential: number) => {
-    if (potential >= 85) return 'text-green-600 bg-green-100';
-    if (potential >= 70) return 'text-blue-600 bg-blue-100';
-    return 'text-gray-600 bg-gray-100';
-  };
 
   if (isAnalyzing) {
     return (
@@ -231,18 +209,6 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
               <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-100"></div>
               <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-200"></div>
-            </div>
-          </div>
-
-          {/* Enhanced progress indicators */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-blue-50 rounded-lg p-3">
-              <Sparkles className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-              <p className="text-sm text-blue-800">모듈 분석 중</p>
-            </div>
-            <div className="bg-green-50 rounded-lg p-3">
-              <Target className="w-6 h-6 text-green-600 mx-auto mb-2" />
-              <p className="text-sm text-green-800">시장성 평가 중</p>
             </div>
           </div>
 
@@ -269,14 +235,18 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
           <h2 className="text-2xl font-bold">{text[currentLanguage].complete}</h2>
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white/20 rounded-xl p-3 flex items-center space-x-3">
+            <Award className="w-5 h-5 text-yellow-300" />
+            <span className="font-semibold">등급: {analysis?.overallGrade?.grade}</span>
+          </div>
           <div className="bg-white/20 rounded-xl p-3 flex items-center space-x-3">
             <Star className="w-5 h-5 text-yellow-300" />
             <span className="font-semibold">{text[currentLanguage].remixCredit}: +{analysis?.remixCredits}</span>
           </div>
           <div className="bg-white/20 rounded-xl p-3 flex items-center space-x-3">
             <Brain className="w-5 h-5 text-purple-300" />
-            <span className="font-semibold">모듈: {Object.keys(ideaData.modules || {}).length}개 완성</span>
+            <span className="font-semibold">모듈: {analysis?.moduleCompleteness}개</span>
           </div>
         </div>
       </div>
@@ -303,11 +273,9 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
                           <div className="text-sm font-semibold text-purple-700 capitalize">
                             {key.replace('_', ' ')}
                           </div>
-                          {ideaData.moduleProgress && ideaData.moduleProgress[key] && (
-                            <Badge variant="secondary" className="text-xs">
-                              {ideaData.moduleProgress[key].completeness}% 완성
-                            </Badge>
-                          )}
+                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                            완료 ✓
+                          </Badge>
                         </div>
                         <div className="text-sm text-gray-800 leading-relaxed">{value}</div>
                       </div>
@@ -338,30 +306,21 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
               {text[currentLanguage].aiEvaluation}
             </h3>
 
-            {/* 점수 표시 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {Object.entries(analysis?.scores || {}).map(([key, score]: [string, any]) => (
-                <div key={key} className="text-center">
-                  <div className={`text-3xl font-bold mb-2 px-4 py-2 rounded-full ${getScoreColor(score)}`}>
-                    {typeof score === 'number' ? score.toFixed(1) : score}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {text[currentLanguage].scores[key as keyof typeof text[typeof currentLanguage]['scores']] || key}
-                  </div>
+            {/* 종합 등급 및 VC 관심도 */}
+            <div className="grid grid-cols-2 gap-6 mb-8">
+              <div className="text-center">
+                <div className={`text-4xl font-bold mb-2 px-6 py-4 rounded-2xl ${analysis?.overallGrade?.color}`}>
+                  {analysis?.overallGrade?.grade}
                 </div>
-              ))}
-            </div>
-
-            {/* VC 관심도 */}
-            <div className="mb-8 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Target className="w-6 h-6 text-green-600" />
-                  <span className="font-semibold text-green-800">{text[currentLanguage].vcPotential}</span>
+                <div className="text-sm text-gray-600 mb-1">{text[currentLanguage].overallGrade}</div>
+                <div className="text-xs text-gray-500">{analysis?.overallGrade?.description}</div>
+              </div>
+              
+              <div className="text-center">
+                <div className={`text-2xl font-bold mb-2 px-4 py-4 rounded-2xl ${analysis?.vcInterest?.color}`}>
+                  {analysis?.vcInterest?.interest}
                 </div>
-                <div className={`text-2xl font-bold px-4 py-2 rounded-full ${getVCColor(analysis?.vcPotential || 0)}`}>
-                  {analysis?.vcPotential}%
-                </div>
+                <div className="text-sm text-gray-600">{text[currentLanguage].vcInterest}</div>
               </div>
             </div>
 

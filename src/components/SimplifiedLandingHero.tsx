@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Lightbulb, ArrowRight, Zap, Users, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import InteractiveIdeaChat from './InteractiveIdeaChat';
 import AIInstantFeedback from './AIInstantFeedback';
 
@@ -20,6 +21,7 @@ const SimplifiedLandingHero: React.FC<SimplifiedLandingHeroProps> = ({
   const [showChat, setShowChat] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [completedIdeaData, setCompletedIdeaData] = useState<any>(null);
+  const navigate = useNavigate();
 
   const text = {
     ko: {
@@ -77,13 +79,18 @@ const SimplifiedLandingHero: React.FC<SimplifiedLandingHeroProps> = ({
 
   const handleFeedbackContinueToRemix = () => {
     setShowFeedback(false);
-    // 리믹스 스튜디오로 이동
-    onIdeaDrop(completedIdeaData.originalIdea, completedIdeaData);
+    // Navigate to Remix page with the completed idea data
+    navigate('/remix', { 
+      state: { 
+        ideaData: completedIdeaData,
+        fromAnalysis: true 
+      } 
+    });
   };
 
   const handleFeedbackSubmitToCommunity = () => {
     setShowFeedback(false);
-    // 커뮤니티에 직접 제출
+    // Submit to community
     onIdeaDrop(completedIdeaData.originalIdea, completedIdeaData);
   };
 
@@ -217,7 +224,6 @@ const SimplifiedLandingHero: React.FC<SimplifiedLandingHeroProps> = ({
         {/* 프로세스 미리보기 */}
         <div className="mt-16 bg-white/60 backdrop-blur-sm rounded-3xl p-8">
           <div className="flex items-center justify-center gap-8">
-            {/* 1단계 */}
             <div className="text-center">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
                 <Lightbulb className="w-6 h-6" />
@@ -229,7 +235,6 @@ const SimplifiedLandingHero: React.FC<SimplifiedLandingHeroProps> = ({
 
             <ArrowRight className="text-gray-400" />
 
-            {/* 2단계 */}
             <div className="text-center">
               <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
                 <Zap className="w-6 h-6" />
@@ -241,7 +246,6 @@ const SimplifiedLandingHero: React.FC<SimplifiedLandingHeroProps> = ({
 
             <ArrowRight className="text-gray-400" />
 
-            {/* 3단계 */}
             <div className="text-center">
               <div className="w-12 h-12 bg-gradient-to-r from-green-600 to-yellow-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
                 <Users className="w-6 h-6" />
@@ -253,7 +257,6 @@ const SimplifiedLandingHero: React.FC<SimplifiedLandingHeroProps> = ({
 
             <ArrowRight className="text-gray-400" />
 
-            {/* 4단계 */}
             <div className="text-center">
               <div className="w-12 h-12 bg-gradient-to-r from-yellow-600 to-red-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
                 <DollarSign className="w-6 h-6" />

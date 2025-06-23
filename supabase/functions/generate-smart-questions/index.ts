@@ -64,7 +64,8 @@ serve(async (req) => {
 - competitive_advantage (경쟁 우위)
 
 질문은 개방형이고 사용자의 창의적 사고를 자극해야 합니다.
-추천 답변은 제공하지 마세요. 사용자가 자유롭게 답변할 수 있도록 해주세요.
+각 질문은 서로 다르고 중복되지 않아야 합니다.
+구체적이고 실용적인 질문을 만들어주세요.
 
 JSON 형식으로 응답:
 {
@@ -89,7 +90,8 @@ Each question should relate to these business modules:
 - competitive_advantage
 
 Questions should be open-ended and stimulate creative thinking.
-Do not provide suggested answers. Let users answer freely.
+Each question must be unique and non-repetitive.
+Create specific and practical questions.
 
 Respond in JSON format:
 {
@@ -113,7 +115,7 @@ Respond in JSON format:
             messages: [
               {
                 role: 'system',
-                content: 'You are an expert business consultant. Always respond with valid JSON only, no additional text.',
+                content: 'You are an expert business consultant. Generate unique, non-repetitive questions. Always respond with valid JSON only, no additional text.',
               },
               {
                 role: 'user',
@@ -132,12 +134,18 @@ Respond in JSON format:
           if (content) {
             try {
               const questions = JSON.parse(content);
+              
+              // Ensure no duplicate questions
+              const uniqueQuestions = questions.questions.filter((question: any, index: number, arr: any[]) => 
+                arr.findIndex((q: any) => q.question === question.question) === index
+              );
+              
               console.log('OpenAI questions generated successfully');
               
               return new Response(
                 JSON.stringify({
                   success: true,
-                  questions: questions.questions || [],
+                  questions: uniqueQuestions.slice(0, 5), // Limit to 5 questions
                   source: 'openai'
                 }),
                 {
@@ -154,7 +162,7 @@ Respond in JSON format:
       }
     }
 
-    // Fallback to enhanced default questions
+    // Enhanced fallback questions
     const fallbackQuestions = language === 'ko' ?
       [
         {
