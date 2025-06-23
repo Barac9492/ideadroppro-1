@@ -1,77 +1,68 @@
 
 import React, { useState } from 'react';
-import SimplifiedHeader from '@/components/SimplifiedHeader';
-import AdaptiveNavigation from '@/components/AdaptiveNavigation';
+import Header from '@/components/Header';
 import IdeaBuilder from '@/components/IdeaBuilder';
-import BuilderOnboarding from '@/components/BuilderOnboarding';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
+import ModuleMixMatch from '@/components/ModuleMixMatch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Builder = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  // Check if user needs onboarding (first time using builder)
-  React.useEffect(() => {
-    const hasSeenBuilderGuide = localStorage.getItem('hasSeenBuilderGuide');
-    if (!hasSeenBuilderGuide) {
-      setShowOnboarding(true);
+  const text = {
+    ko: {
+      title: '🧬 아이디어 빌더',
+      subtitle: 'AI와 함께 아이디어를 만들고 발전시켜보세요',
+      tabs: {
+        builder: '아이디어 빌더',
+        mixmatch: '모듈 믹스앤매치'
+      }
+    },
+    en: {
+      title: '🧬 Idea Builder',
+      subtitle: 'Create and evolve ideas with AI',
+      tabs: {
+        builder: 'Idea Builder',
+        mixmatch: 'Module Mix & Match'
+      }
     }
-  }, []);
-
-  const handleOnboardingComplete = () => {
-    localStorage.setItem('hasSeenBuilderGuide', 'true');
-    setShowOnboarding(false);
   };
 
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-      <SimplifiedHeader 
+    <div className="min-h-screen bg-white">
+      <Header 
         currentLanguage={currentLanguage}
         onLanguageToggle={handleLanguageToggle}
       />
       
-      {/* Desktop navigation at top */}
-      {!isMobile && (
-        <AdaptiveNavigation 
-          currentLanguage={currentLanguage}
-          position="top"
-        />
-      )}
-
-      {/* Onboarding Modal */}
-      {showOnboarding && (
-        <BuilderOnboarding
-          currentLanguage={currentLanguage}
-          onComplete={handleOnboardingComplete}
-        />
-      )}
-
-      {/* Main Builder Interface */}
       <div className="container mx-auto px-4 py-8">
-        <IdeaBuilder currentLanguage={currentLanguage} />
-      </div>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            {text[currentLanguage].title}
+          </h1>
+          <p className="text-xl text-gray-600">
+            {text[currentLanguage].subtitle}
+          </p>
+        </div>
 
-      {/* Mobile navigation at bottom */}
-      {isMobile && (
-        <AdaptiveNavigation 
-          currentLanguage={currentLanguage}
-          position="bottom"
-        />
-      )}
+        <Tabs defaultValue="builder" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="builder">{text[currentLanguage].tabs.builder}</TabsTrigger>
+            <TabsTrigger value="mixmatch">{text[currentLanguage].tabs.mixmatch}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="builder">
+            <IdeaBuilder currentLanguage={currentLanguage} />
+          </TabsContent>
+
+          <TabsContent value="mixmatch">
+            <ModuleMixMatch currentLanguage={currentLanguage} />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
