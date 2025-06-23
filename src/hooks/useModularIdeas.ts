@@ -59,16 +59,13 @@ export const useModularIdeas = ({ currentLanguage }: UseModularIdeasProps) => {
     }
   };
 
-  // Fetch all modules
+  // Fetch all modules without profiles join to avoid relationship error
   const fetchModules = async (moduleType?: ModuleType) => {
     setLoading(true);
     try {
       let query = supabase
         .from('idea_modules')
-        .select(`
-          *,
-          profiles!idea_modules_created_by_fkey(username)
-        `)
+        .select('*')
         .order('quality_score', { ascending: false });
 
       if (moduleType) {

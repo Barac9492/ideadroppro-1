@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -67,7 +68,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     fetchIdeas: async () => {} // This will be handled by parent component
   });
 
-  // 강화된 텍스트 처리 - 모든 숫자 접두사 패턴 제거
+  // 개선된 텍스트 처리 - 첫 줄을 보존하면서 불필요한 숫자 접두사만 제거
   const getSafeIdeaText = (text: string | null | undefined): string => {
     if (!text) {
       console.warn('❌ Empty or null idea text detected:', text);
@@ -85,36 +86,27 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     
     console.log('🔍 Original text:', processedText);
     
-    // 다양한 숫자 접두사 패턴 제거
-    const patterns = [
-      /^0+\s*/, // "0", "00", "000" 등
-      /^\d+\.\s*/, // "1.", "2.", "123." 등  
-      /^\d+\)\s*/, // "1)", "2)", "123)" 등
-      /^\d+\s+/, // "1 ", "2 ", "123 " 등 (숫자 뒤 공백)
-      /^\d+$/, // 숫자만 있는 경우
-      /^\d+[^\w\s가-힣]*\s*/ // 숫자 뒤 특수문자가 있는 경우 (예: "1-", "2:", "3#")
-    ];
+    // 더 보수적인 접근: 오직 명확한 숫자 리스트 형태만 제거
+    // 예: "1. 아이디어" → "아이디어"
+    // 하지만 "1번째 아이디어" 등은 보존
+    const numberedListPattern = /^(\d+)\.\s+/;
+    const match = processedText.match(numberedListPattern);
     
-    // 각 패턴을 순차적으로 적용
-    for (const pattern of patterns) {
-      const beforePattern = processedText;
-      processedText = processedText.replace(pattern, '');
+    if (match) {
+      const numberPart = match[1];
+      const restOfText = processedText.substring(match[0].length);
       
-      if (beforePattern !== processedText) {
-        console.log(`🧹 Pattern ${pattern} applied:`, {
-          before: beforePattern,
-          after: processedText
-        });
+      // 숫자가 1-20 사이이고 나머지 텍스트가 충분히 긴 경우에만 제거
+      if (parseInt(numberPart) <= 20 && restOfText.length > 10) {
+        processedText = restOfText.trim();
+        console.log(`🧹 Removed numbered list prefix: "${match[0]}" → "${processedText}"`);
       }
     }
     
-    // 앞뒤 공백 제거
-    processedText = processedText.trim();
-    
-    // 처리 후 빈 문자열이 되면 원본 사용 (단, 맨 앞 숫자만 제거)
+    // 처리 후 빈 문자열이 되면 원본 사용
     if (!processedText) {
-      processedText = String(text).replace(/^[0-9]+[^\w\s가-힣]*\s*/, '').trim();
-      console.log('⚠️ Text became empty after cleaning, using fallback:', processedText);
+      processedText = String(text).trim();
+      console.log('⚠️ Text became empty after cleaning, using original:', processedText);
     }
     
     // 여전히 빈 문자열이면 에러 메시지
@@ -226,7 +218,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         </div>
       )}
 
-      {/* Idea Text - 강화된 안전한 렌더링 */}
+      {/* Idea Text - 개선된 안전한 렌더링 */}
       <div className={`text-slate-800 leading-relaxed mb-4 ${
         isMobile ? 'text-base' : 'text-lg'
       }`}>
