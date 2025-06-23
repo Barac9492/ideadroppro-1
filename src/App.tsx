@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -10,6 +9,8 @@ import Auth from '@/pages/Auth';
 import MyWorkspace from '@/pages/MyWorkspace';
 import Community from '@/pages/Community';
 import Remix from '@/pages/Remix';
+import Create from '@/pages/Create';
+import Explore from '@/pages/Explore';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -25,7 +26,9 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/submit" element={<Submit />} />
+              <Route path="/create" element={<Create />} />
               <Route path="/ideas" element={<Ideas />} />
+              <Route path="/explore" element={<Explore />} />
               <Route path="/builder" element={<Builder />} />
               <Route path="/submission-complete" element={<SubmissionComplete />} />
               <Route path="/auth" element={<Auth />} />

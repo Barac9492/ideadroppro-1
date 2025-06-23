@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SimplifiedHeader from '@/components/SimplifiedHeader';
-import AdaptiveNavigation from '@/components/AdaptiveNavigation';
+import UnifiedNavigation from '@/components/UnifiedNavigation';
 import BetaAnnouncementBanner from '@/components/BetaAnnouncementBanner';
 import SimplifiedLandingHero from '@/components/SimplifiedLandingHero';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,13 +79,8 @@ const Index = () => {
         onLanguageToggle={handleLanguageToggle}
       />
       
-      {/* Desktop navigation at top */}
-      {!isMobile && (
-        <AdaptiveNavigation 
-          currentLanguage={currentLanguage}
-          position="top"
-        />
-      )}
+      {/* Unified Navigation */}
+      <UnifiedNavigation currentLanguage={currentLanguage} />
       
       {/* Beta Announcement Banner */}
       <BetaAnnouncementBanner currentLanguage={currentLanguage} />
@@ -96,14 +90,6 @@ const Index = () => {
         currentLanguage={currentLanguage}
         onIdeaDrop={handleIdeaDrop}
       />
-      
-      {/* Mobile navigation at bottom */}
-      {isMobile && (
-        <AdaptiveNavigation 
-          currentLanguage={currentLanguage}
-          position="bottom"
-        />
-      )}
     </div>
   );
 };

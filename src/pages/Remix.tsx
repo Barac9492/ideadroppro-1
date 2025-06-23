@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import RemixBattleSystem from '@/components/RemixBattleSystem';
@@ -12,6 +11,7 @@ import RemixOnboardingGuide from '@/components/RemixOnboardingGuide';
 import RemixGallery from '@/components/RemixGallery';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import UnifiedNavigation from '@/components/UnifiedNavigation';
 
 const Remix = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -62,10 +62,7 @@ const Remix = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header 
-        currentLanguage={currentLanguage}
-        onLanguageToggle={handleLanguageToggle}
-      />
+      <UnifiedNavigation currentLanguage={currentLanguage} />
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">

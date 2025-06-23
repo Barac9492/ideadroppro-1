@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, Clock, Heart, Zap } from 'lucide-react';
+import UnifiedNavigation from '@/components/UnifiedNavigation';
 
 const Ideas = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -127,19 +128,8 @@ const Ideas = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/30">
-      <SimplifiedHeader 
-        currentLanguage={currentLanguage}
-        onLanguageToggle={handleLanguageToggle}
-      />
-      
-      {/* Desktop navigation at top */}
-      {!isMobile && (
-        <AdaptiveNavigation 
-          currentLanguage={currentLanguage}
-          position="top"
-        />
-      )}
+    <div className="min-h-screen bg-white">
+      <UnifiedNavigation currentLanguage={currentLanguage} />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -228,14 +218,6 @@ const Ideas = () => {
           ))}
         </Tabs>
       </div>
-
-      {/* Mobile navigation at bottom */}
-      {isMobile && (
-        <AdaptiveNavigation 
-          currentLanguage={currentLanguage}
-          position="bottom"
-        />
-      )}
     </div>
   );
 };
