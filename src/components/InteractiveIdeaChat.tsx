@@ -43,6 +43,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [smartQuestions, setSmartQuestions] = useState<SmartQuestion[]>([]);
   const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
   const [conversationContext, setConversationContext] = useState('');
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const text = {
     ko: {
@@ -163,25 +164,37 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     generateSmartQuestions();
   }, []);
 
-  // Auto-ask questions when available and conditions are met
+  // Modified auto-ask questions effect
   useEffect(() => {
-    console.log('🔍 Effect triggered - Questions length:', smartQuestions.length, 'Current index:', currentQuestionIndex, 'Messages length:', messages.length);
+    console.log('🔍 Effect triggered - Questions:', smartQuestions.length, 'Index:', currentQuestionIndex, 'Messages:', messages.length, 'Completed:', isCompleted);
     
-    if (smartQuestions.length > 0 && currentQuestionIndex < smartQuestions.length) {
-      // Check if we need to ask the next question
-      const lastMessage = messages[messages.length - 1];
-      const shouldAskQuestion = messages.length === 1 || // First question after welcome
-        (lastMessage?.role === 'ai' && !lastMessage.content.includes('?')); // After AI response that's not a question
-
-      if (shouldAskQuestion) {
-        console.log('🎯 Asking question', currentQuestionIndex + 1, 'of', smartQuestions.length);
-        askCurrentQuestion();
-      }
+    if (isCompleted || smartQuestions.length === 0) {
+      console.log('❌ Skipping: completed or no questions');
+      return;
     }
-  }, [smartQuestions, currentQuestionIndex, messages]);
+    
+    if (currentQuestionIndex >= smartQuestions.length) {
+      console.log('✅ All questions completed, setting completion state');
+      setIsCompleted(true);
+      return;
+    }
+
+    // Check if we need to ask the next question
+    const lastMessage = messages[messages.length - 1];
+    const shouldAskQuestion = messages.length === 1 || // First question after welcome
+      (lastMessage?.role === 'ai' && 
+       !lastMessage.content.includes('?') && 
+       !lastMessage.content.includes('완벽합니다') && 
+       !lastMessage.content.includes('Perfect'));
+
+    if (shouldAskQuestion) {
+      console.log('🎯 Asking question', currentQuestionIndex + 1, 'of', smartQuestions.length);
+      askCurrentQuestion();
+    }
+  }, [smartQuestions, currentQuestionIndex, messages, isCompleted]);
 
   const askCurrentQuestion = () => {
-    if (currentQuestionIndex < smartQuestions.length) {
+    if (currentQuestionIndex < smartQuestions.length && !isCompleted) {
       const question = smartQuestions[currentQuestionIndex];
       console.log(`❓ Asking question ${currentQuestionIndex + 1}:`, question);
       
@@ -239,7 +252,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   };
 
   const handleUserResponse = async () => {
-    if (!currentInput.trim()) return;
+    if (!currentInput.trim() || isCompleted) return;
 
     console.log(`🗣️ Processing user response for question ${currentQuestionIndex + 1}`);
 
@@ -287,28 +300,32 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     setMessages(prev => [...prev, aiResponse]);
     setIsLoading(false);
 
-    // Move to next question
+    // Move to next question or completion
     const nextIndex = currentQuestionIndex + 1;
     console.log(`➡️ Moving to question index ${nextIndex} of ${smartQuestions.length}`);
     
-    if (nextIndex < smartQuestions.length) {
-      setCurrentQuestionIndex(nextIndex);
-      // The useEffect will handle asking the next question
+    if (nextIndex >= smartQuestions.length) {
+      // All questions completed - show final message
+      console.log('🎉 All questions completed, showing final message');
+      setTimeout(() => {
+        const finalMessage: ChatMessage = {
+          id: 'final',
+          role: 'ai',
+          content: currentLanguage === 'ko' 
+            ? '완벽합니다! 이제 AI가 종합적인 평가를 진행하겠습니다.' 
+            : 'Perfect! Now AI will conduct a comprehensive evaluation.',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, finalMessage]);
+        setIsCompleted(true);
+      }, 1000);
     } else {
-      // All questions completed
-      const finalMessage: ChatMessage = {
-        id: 'final',
-        role: 'ai',
-        content: currentLanguage === 'ko' 
-          ? '완벽합니다! 이제 AI가 종합적인 평가를 진행하겠습니다.' 
-          : 'Perfect! Now AI will conduct a comprehensive evaluation.',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, finalMessage]);
+      setCurrentQuestionIndex(nextIndex);
     }
   };
 
   const handleComplete = () => {
+    console.log('🏁 Completing chat with data:', ideaData);
     onComplete({
       ...ideaData,
       chatHistory: messages,
@@ -349,7 +366,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-gray-900">
-            💡 아이디어 구체화 ({currentQuestionIndex}/{smartQuestions.length})
+            💡 아이디어 구체화 ({Math.min(currentQuestionIndex + (isCompleted ? 1 : 0), smartQuestions.length)}/{smartQuestions.length})
           </h3>
           <Button variant="ghost" onClick={onCancel} size="sm">
             ✕
@@ -358,7 +375,9 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div 
             className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all duration-700"
-            style={{ width: `${(currentQuestionIndex / smartQuestions.length) * 100}%` }}
+            style={{ 
+              width: `${(Math.min(currentQuestionIndex + (isCompleted ? 1 : 0), smartQuestions.length) / smartQuestions.length) * 100}%` 
+            }}
           />
         </div>
         
@@ -418,8 +437,8 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         )}
       </div>
 
-      {/* Input area */}
-      {currentQuestionIndex < smartQuestions.length && (
+      {/* Input area - only show if not completed */}
+      {!isCompleted && currentQuestionIndex < smartQuestions.length && (
         <div className="p-6 border-t border-gray-100">
           <div className="flex items-center space-x-2 mb-4">
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white flex items-center justify-center text-sm font-bold">
@@ -453,8 +472,8 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         </div>
       )}
 
-      {/* Complete button */}
-      {currentQuestionIndex >= smartQuestions.length && (
+      {/* Complete button - only show when completed */}
+      {isCompleted && (
         <div className="p-6 border-t border-gray-100 text-center">
           <Button
             onClick={handleComplete}
