@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,7 +44,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [smartQuestions, setSmartQuestions] = useState<SmartQuestion[]>([]);
   const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
   const [conversationContext, setConversationContext] = useState('');
-  const [hasAskedCurrentQuestion, setHasAskedCurrentQuestion] = useState(false);
+  const [questionAsked, setQuestionAsked] = useState(false);
 
   const text = {
     ko: {
@@ -73,7 +74,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const generateSmartQuestions = async () => {
     try {
       setIsLoading(true);
-      console.log('Generating smart questions for idea:', initialIdea);
+      console.log('Generating business validation questions for idea:', initialIdea);
 
       const { data, error } = await supabase.functions.invoke('generate-smart-questions', {
         body: {
@@ -85,27 +86,29 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
       if (error) throw error;
 
-      console.log('Generated smart questions:', data);
+      console.log('Generated questions response:', data);
 
-      if (data?.questions && data.questions.length > 0) {
-        // 더 엄격한 중복 제거 로직
-        const uniqueQuestions = data.questions.filter((question: SmartQuestion, index: number, arr: SmartQuestion[]) => {
-          const normalizedQuestion = question.question.toLowerCase().trim();
-          return arr.findIndex(q => q.question.toLowerCase().trim() === normalizedQuestion) === index;
-        });
+      if (data?.questions && Array.isArray(data.questions) && data.questions.length === 5) {
+        // Ensure proper ordering
+        const orderedQuestions = [
+          'problem_definition',
+          'target_customer', 
+          'value_proposition',
+          'revenue_model',
+          'competitive_advantage'
+        ].map(moduleType => 
+          data.questions.find((q: SmartQuestion) => q.moduleType === moduleType)
+        ).filter(Boolean);
         
-        // 각 모듈별로 하나씩만 선택
-        const moduleMap = new Map<string, SmartQuestion>();
-        uniqueQuestions.forEach((question: SmartQuestion) => {
-          if (!moduleMap.has(question.moduleType)) {
-            moduleMap.set(question.moduleType, question);
-          }
-        });
-        
-        const finalQuestions = Array.from(moduleMap.values()).slice(0, 5);
-        setSmartQuestions(finalQuestions);
+        if (orderedQuestions.length === 5) {
+          setSmartQuestions(orderedQuestions);
+          console.log('Questions set with proper order:', orderedQuestions.map(q => q.moduleType));
+        } else {
+          console.log('Ordering failed, using original questions');
+          setSmartQuestions(data.questions.slice(0, 5));
+        }
       } else {
-        console.log('No questions returned, using fallback');
+        console.log('Invalid questions format, using fallback');
         setSmartQuestions(getFallbackQuestions());
       }
     } catch (error) {
@@ -120,8 +123,8 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     {
       moduleType: 'problem_definition',
       question: currentLanguage === 'ko' 
-        ? '이 아이디어가 해결하려는 핵심 문제는 무엇인가요? 현재 사람들이 이 문제를 어떻게 해결하고 있나요?'
-        : 'What core problem does this idea solve? How are people currently addressing this problem?'
+        ? `"${initialIdea}"가 해결하려는 핵심 문제는 무엇인가요? 현재 사람들이 이 문제를 어떻게 해결하고 있나요?`
+        : `What core problem does "${initialIdea}" solve? How are people currently addressing this problem?`
     },
     {
       moduleType: 'target_customer',
@@ -162,17 +165,21 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     generateSmartQuestions();
   }, []);
 
+  // Ask first question when questions are loaded
   useEffect(() => {
-    if (smartQuestions.length > 0 && currentQuestionIndex === 0 && !hasAskedCurrentQuestion) {
+    if (smartQuestions.length > 0 && currentQuestionIndex === 0 && !questionAsked) {
+      console.log('Asking first question:', smartQuestions[0]);
       setTimeout(() => {
         askCurrentQuestion();
       }, 1000);
     }
-  }, [smartQuestions, currentQuestionIndex, hasAskedCurrentQuestion]);
+  }, [smartQuestions]);
 
   const askCurrentQuestion = () => {
-    if (currentQuestionIndex < smartQuestions.length && !hasAskedCurrentQuestion) {
+    if (currentQuestionIndex < smartQuestions.length && !questionAsked) {
       const question = smartQuestions[currentQuestionIndex];
+      console.log(`Asking question ${currentQuestionIndex + 1}:`, question);
+      
       const questionMessage: ChatMessage = {
         id: `question-${currentQuestionIndex}-${Date.now()}`,
         role: 'ai',
@@ -182,7 +189,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       };
       
       setMessages(prev => [...prev, questionMessage]);
-      setHasAskedCurrentQuestion(true);
+      setQuestionAsked(true);
     }
   };
 
@@ -230,6 +237,8 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const handleUserResponse = async () => {
     if (!currentInput.trim()) return;
 
+    console.log(`Processing user response for question ${currentQuestionIndex + 1}`);
+
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -242,6 +251,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     // Save answer to current module
     const currentQuestion = smartQuestions[currentQuestionIndex];
     if (currentQuestion) {
+      console.log('Saving answer for module:', currentQuestion.moduleType);
       setIdeaData(prev => ({
         ...prev,
         modules: {
@@ -276,7 +286,9 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     // Move to next question
     const nextIndex = currentQuestionIndex + 1;
     setCurrentQuestionIndex(nextIndex);
-    setHasAskedCurrentQuestion(false);
+    setQuestionAsked(false);
+
+    console.log(`Moving to question index ${nextIndex} of ${smartQuestions.length}`);
 
     // Ask next question or complete
     setTimeout(() => {
