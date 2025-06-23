@@ -185,7 +185,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     await createRemix(idea.id, remixText, idea.score);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     if (onDelete) {
       await onDelete(idea.id);
     }
