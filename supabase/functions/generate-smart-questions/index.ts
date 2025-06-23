@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,7 +32,7 @@ serve(async (req) => {
       });
     }
 
-    const { ideaText, language = 'ko' } = await req.json();
+    const { ideaText, language = 'ko', context = 'initial' } = await req.json();
 
     if (!ideaText || ideaText.trim().length < 5) {
       return new Response(
@@ -43,136 +44,168 @@ serve(async (req) => {
       );
     }
 
-    const prompt = language === 'ko' ? `
-다음 아이디어를 분석하고, 부족한 부분을 보완하기 위한 5개의 스마트한 질문을 생성해주세요:
+    console.log('Enhanced question generation:', { ideaLength: ideaText.length, context });
+
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    
+    if (OPENAI_API_KEY) {
+      try {
+        const prompt = language === 'ko' ? `
+당신은 경험이 풍부한 비즈니스 멘토입니다. 사용자의 아이디어를 구체화하기 위한 5개의 핵심 질문을 생성해주세요.
 
 아이디어: ${ideaText}
+컨텍스트: ${context}
 
-각 질문은 다음 비즈니스 모듈 중 하나와 연관되어야 합니다:
-- problem (문제점)
+각 질문은 다음 비즈니스 모듈과 연관되어야 합니다:
+- problem_definition (문제 정의)
 - target_customer (타겟 고객)
 - value_proposition (가치 제안)
 - revenue_model (수익 모델)
 - competitive_advantage (경쟁 우위)
 
-각 질문에는 3-4개의 선택 가능한 답변 옵션도 제공해주세요.
+질문은 개방형이고 사용자의 창의적 사고를 자극해야 합니다.
+추천 답변은 제공하지 마세요. 사용자가 자유롭게 답변할 수 있도록 해주세요.
 
-다음 JSON 형식으로 응답해주세요:
+JSON 형식으로 응답:
 {
   "questions": [
     {
-      "moduleType": "problem",
-      "question": "구체적인 질문 텍스트",
-      "suggestedAnswers": ["옵션1", "옵션2", "옵션3", "옵션4"]
+      "moduleType": "problem_definition",
+      "question": "구체적이고 생각을 자극하는 질문"
     }
   ]
 }
 ` : `
-Analyze the following idea and generate 5 smart questions to help complete missing aspects:
+You are an experienced business mentor. Generate 5 key questions to help refine the user's idea.
 
 Idea: ${ideaText}
+Context: ${context}
 
-Each question should relate to one of these business modules:
-- problem
-- target_customer  
+Each question should relate to these business modules:
+- problem_definition
+- target_customer
 - value_proposition
 - revenue_model
 - competitive_advantage
 
-Provide 3-4 selectable answer options for each question.
+Questions should be open-ended and stimulate creative thinking.
+Do not provide suggested answers. Let users answer freely.
 
-Respond in the following JSON format:
+Respond in JSON format:
 {
   "questions": [
     {
-      "moduleType": "problem",
-      "question": "Specific question text",
-      "suggestedAnswers": ["Option1", "Option2", "Option3", "Option4"]
+      "moduleType": "problem_definition",
+      "question": "Specific and thought-provoking question"
     }
   ]
 }
 `;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert business consultant. Always respond with valid JSON only, no additional text.',
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
           },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      }),
-    });
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an expert business consultant. Always respond with valid JSON only, no additional text.',
+              },
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            temperature: 0.8,
+            max_tokens: 1000,
+          }),
+        });
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
+        if (response.ok) {
+          const data = await response.json();
+          const content = data.choices[0]?.message?.content;
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
-
-    if (!content) {
-      throw new Error('No content received from OpenAI');
-    }
-
-    let questions;
-    try {
-      questions = JSON.parse(content);
-    } catch (parseError) {
-      // Fallback questions if JSON parsing fails
-      questions = {
-        questions: language === 'ko' ? [
-          {
-            moduleType: 'problem',
-            question: '이 아이디어가 해결하려는 핵심 문제는 무엇인가요?',
-            suggestedAnswers: ['효율성 부족', '높은 비용', '접근성 문제', '품질 문제']
-          },
-          {
-            moduleType: 'target_customer',
-            question: '주요 타겟 고객은 누구인가요?',
-            suggestedAnswers: ['개인 사용자', '중소기업', '대기업', '정부기관']
-          },
-          {
-            moduleType: 'value_proposition',
-            question: '고객에게 제공하는 핵심 가치는 무엇인가요?',
-            suggestedAnswers: ['시간 절약', '비용 절감', '편의성 증대', '품질 향상']
+          if (content) {
+            try {
+              const questions = JSON.parse(content);
+              console.log('OpenAI questions generated successfully');
+              
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  questions: questions.questions || [],
+                  source: 'openai'
+                }),
+                {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                }
+              );
+            } catch (parseError) {
+              console.warn('OpenAI JSON parsing failed, using fallback');
+            }
           }
-        ] : [
-          {
-            moduleType: 'problem',
-            question: 'What core problem does this idea solve?',
-            suggestedAnswers: ['Efficiency issues', 'High costs', 'Accessibility problems', 'Quality issues']
-          },
-          {
-            moduleType: 'target_customer',
-            question: 'Who is your main target customer?',
-            suggestedAnswers: ['Individual users', 'Small businesses', 'Enterprises', 'Government']
-          },
-          {
-            moduleType: 'value_proposition',
-            question: 'What core value do you provide?',
-            suggestedAnswers: ['Time saving', 'Cost reduction', 'Convenience', 'Quality improvement']
-          }
-        ]
-      };
+        }
+      } catch (openaiError) {
+        console.warn('OpenAI request failed:', openaiError);
+      }
     }
+
+    // Fallback to enhanced default questions
+    const fallbackQuestions = language === 'ko' ?
+      [
+        {
+          moduleType: 'problem_definition',
+          question: '이 아이디어가 해결하려는 가장 중요한 문제는 무엇인가요? 현재 사람들이 이 문제를 어떻게 해결하고 있나요?'
+        },
+        {
+          moduleType: 'target_customer',
+          question: '누가 이 솔루션을 가장 절실히 필요로 할까요? 그들의 하루 일과나 상황을 구체적으로 설명해보세요.'
+        },
+        {
+          moduleType: 'value_proposition',
+          question: '고객이 기존 방식을 버리고 당신의 아이디어를 선택해야 하는 결정적인 이유는 무엇인가요?'
+        },
+        {
+          moduleType: 'revenue_model',
+          question: '이 아이디어로 어떻게 지속 가능한 수익을 만들어낼 수 있을까요? 구체적인 방법을 설명해주세요.'
+        },
+        {
+          moduleType: 'competitive_advantage',
+          question: '비슷한 아이디어나 서비스가 이미 존재한다면, 당신만의 차별화된 접근법은 무엇인가요?'
+        }
+      ] :
+      [
+        {
+          moduleType: 'problem_definition',
+          question: 'What is the most critical problem this idea solves? How are people currently addressing this problem?'
+        },
+        {
+          moduleType: 'target_customer',
+          question: 'Who would most desperately need this solution? Can you describe their daily routine or situation in detail?'
+        },
+        {
+          moduleType: 'value_proposition',
+          question: 'What is the decisive reason customers should abandon their current approach and choose your idea?'
+        },
+        {
+          moduleType: 'revenue_model',
+          question: 'How can you generate sustainable revenue with this idea? Please explain specific methods.'
+        },
+        {
+          moduleType: 'competitive_advantage',
+          question: 'If similar ideas or services already exist, what is your unique differentiated approach?'
+        }
+      ];
 
     return new Response(
       JSON.stringify({
         success: true,
-        questions: questions.questions || []
+        questions: fallbackQuestions,
+        source: 'fallback'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
