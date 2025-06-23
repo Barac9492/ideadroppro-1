@@ -22,10 +22,11 @@ interface IdeaCardActionsProps {
   onLike: () => void;
   onGenerateAnalysis: () => void;
   onGenerateGlobalAnalysis?: () => void;
-  onDelete?: () => void;
+  onDelete?: (ideaId: string) => Promise<void>;
   onRemix?: (remixText: string) => void;
   isRemixing?: boolean;
   currentLanguage: 'ko' | 'en';
+  ideaId: string;
 }
 
 const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
@@ -49,7 +50,8 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
   onDelete,
   onRemix,
   isRemixing = false,
-  currentLanguage
+  currentLanguage,
+  ideaId
 }) => {
   const text = {
     ko: {
@@ -73,6 +75,12 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
       loginRequired: 'Login required',
       delete: 'Delete',
       confirmDelete: 'Are you sure you want to delete?'
+    }
+  };
+
+  const handleDelete = async () => {
+    if (onDelete) {
+      await onDelete(ideaId);
     }
   };
 
@@ -172,7 +180,7 @@ const IdeaCardActions: React.FC<IdeaCardActionsProps> = ({
 
           {showDeleteButton && !isSeed && (
             <Button
-              onClick={onDelete}
+              onClick={handleDelete}
               variant="destructive"
               size="sm"
               className="bg-red-500 hover:bg-red-600"

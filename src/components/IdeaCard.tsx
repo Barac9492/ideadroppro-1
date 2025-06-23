@@ -299,6 +299,7 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
         onRemix={handleRemix}
         isRemixing={isRemixing}
         currentLanguage={currentLanguage}
+        ideaId={idea.id}
       />
     </div>
   );
