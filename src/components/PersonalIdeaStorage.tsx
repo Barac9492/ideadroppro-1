@@ -8,6 +8,7 @@ import { Heart, Star, Clock, Zap, Search, Plus, ArrowRight } from 'lucide-react'
 import { useIdeas } from '@/hooks/useIdeas';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useIdeaDeletion } from '@/hooks/useIdeaOperations/useIdeaDeletion';
 import IdeaCard from './IdeaCard';
 
 interface PersonalIdeaStorageProps {
@@ -17,9 +18,10 @@ interface PersonalIdeaStorageProps {
 const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLanguage }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
-  const { ideas, isLoading, fetchIdeas, toggleLike, generateAnalysis, deleteIdea } = useIdeas(currentLanguage);
+  const { ideas, isLoading, fetchIdeas, toggleLike, generateAnalysis } = useIdeas(currentLanguage);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { deleteIdea } = useIdeaDeletion({ currentLanguage, user, fetchIdeas });
 
   const text = {
     ko: {

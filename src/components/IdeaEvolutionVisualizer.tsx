@@ -93,6 +93,17 @@ const IdeaEvolutionVisualizer: React.FC<IdeaEvolutionVisualizerProps> = ({ curre
     return 'initial';
   }
 
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'initial': return 'bg-gray-100 text-gray-800';
+      case 'analysis': return 'bg-blue-100 text-blue-800';
+      case 'improvement': return 'bg-yellow-100 text-yellow-800';
+      case 'optimization': return 'bg-orange-100 text-orange-800';
+      case 'completion': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   // Calculate metrics
   const metrics = {
     totalIdeas: userIdeas.length,
