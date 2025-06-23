@@ -35,7 +35,6 @@ const Index = () => {
         await submitIdea(ideaText, {
           modules: analysisData.modules,
           isModular: true,
-          chatHistory: analysisData.chatHistory,
           completionScore: 8.5 // AI 대화로 완성된 아이디어는 높은 점수
         });
       } else {

@@ -93,9 +93,12 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
         remixCredits: Math.floor(Math.random() * 3) + 3 // 3-5 credits
       };
 
-      mockAnalysis.scores.overall = Math.round(
+      // Calculate overall score from individual scores
+      const overallScore = Math.round(
         (mockAnalysis.scores.innovation + mockAnalysis.scores.feasibility + mockAnalysis.scores.market) / 3 * 10
       ) / 10;
+      
+      mockAnalysis.scores.overall = overallScore;
 
       setAnalysis(mockAnalysis);
       setIsAnalyzing(false);
@@ -272,7 +275,7 @@ const AIInstantFeedback: React.FC<AIInstantFeedbackProps> = ({
               </Button>
               
               <Button
-                onClick={onSubmitTocommunity}
+                onClick={onSubmitToCommunity}
                 className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white py-6 text-lg font-semibold"
                 size="lg"
               >
