@@ -107,8 +107,9 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
     navigate(`/builder?decompose=${ideaId}`);
   };
 
+  // Create a wrapper function that matches the expected signature
   const handleDelete = async (ideaId: string): Promise<void> => {
-    return await deleteIdea(ideaId);
+    await deleteIdea(ideaId);
   };
 
   if (isLoading) {
@@ -224,7 +225,7 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
                     onGenerateAnalysis={generateAnalysis}
                     onGenerateGlobalAnalysis={() => {}}
                     onSaveFinalVerdict={() => {}}
-                    onDelete={deleteIdea}
+                    onDelete={handleDelete}
                     isAuthenticated={true}
                   />
                   
