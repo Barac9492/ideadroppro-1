@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Globe } from 'lucide-react';
 import HeaderLogo from './HeaderLogo';
+import { useNavigate } from 'react-router-dom';
 
 interface SimpleTopBarProps {
   currentLanguage: 'ko' | 'en';
@@ -16,6 +17,8 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
   onLanguageToggle,
   showBeta = false
 }) => {
+  const navigate = useNavigate();
+
   const text = {
     ko: {
       betaTitle: 'IdeaDrop Pro 오픈 베타',
@@ -25,6 +28,10 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
       betaTitle: 'IdeaDrop Pro Open Beta',
       betaSubtitle: 'One Idea → GPT Score → Direct VC Exposure'
     }
+  };
+
+  const handleHomeClick = () => {
+    navigate('/');
   };
 
   return (
@@ -49,7 +56,10 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
       <div className="border-b border-gray-100">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <HeaderLogo currentLanguage={currentLanguage} />
+            <HeaderLogo 
+              currentLanguage={currentLanguage} 
+              onHomeClick={handleHomeClick}
+            />
             
             <Button
               onClick={onLanguageToggle}

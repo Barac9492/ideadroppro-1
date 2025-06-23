@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -7,14 +7,21 @@ interface SimpleIdeaInputProps {
   currentLanguage: 'ko' | 'en';
   onSubmit: (idea: string) => Promise<void>;
   isSubmitting: boolean;
+  initialIdea?: string;
 }
 
 const SimpleIdeaInput: React.FC<SimpleIdeaInputProps> = ({
   currentLanguage,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  initialIdea = ''
 }) => {
-  const [ideaText, setIdeaText] = useState('');
+  const [ideaText, setIdeaText] = useState(initialIdea);
+
+  // Update ideaText when initialIdea changes
+  useEffect(() => {
+    setIdeaText(initialIdea);
+  }, [initialIdea]);
 
   const text = {
     ko: {

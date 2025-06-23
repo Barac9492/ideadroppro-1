@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,15 +15,21 @@ type ModuleType = Database['public']['Enums']['module_type'];
 
 interface IdeaBuilderProps {
   currentLanguage: 'ko' | 'en';
+  initialIdea?: string;
 }
 
-const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage }) => {
+const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea = '' }) => {
   const { decomposeIdea, decomposing } = useModularIdeas({ currentLanguage });
-  const [freeTextIdea, setFreeTextIdea] = useState('');
+  const [freeTextIdea, setFreeTextIdea] = useState(initialIdea);
   const [selectedModules, setSelectedModules] = useState<IdeaModule[]>([]);
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [isGeneratingUnified, setIsGeneratingUnified] = useState(false);
   const navigate = useNavigate();
+
+  // Update freeTextIdea when initialIdea changes
+  useEffect(() => {
+    setFreeTextIdea(initialIdea);
+  }, [initialIdea]);
 
   const text = {
     ko: {
