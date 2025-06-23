@@ -107,9 +107,12 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
     navigate(`/builder?decompose=${ideaId}`);
   };
 
-  // Create a wrapper function that matches the expected signature
+  // Create a wrapper function that matches the expected signature and returns a Promise
   const handleDelete = async (ideaId: string): Promise<void> => {
-    await deleteIdea(ideaId);
+    await new Promise<void>((resolve) => {
+      deleteIdea(ideaId);
+      resolve();
+    });
   };
 
   if (isLoading) {
