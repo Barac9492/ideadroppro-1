@@ -107,8 +107,8 @@ const PersonalIdeaStorage: React.FC<PersonalIdeaStorageProps> = ({ currentLangua
     navigate(`/builder?decompose=${ideaId}`);
   };
 
-  const handleDelete = (ideaId: string): Promise<void> => {
-    return deleteIdea(ideaId);
+  const handleDelete = async (ideaId: string): Promise<void> => {
+    await deleteIdea(ideaId);
   };
 
   if (isLoading) {
