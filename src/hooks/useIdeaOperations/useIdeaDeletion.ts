@@ -24,18 +24,18 @@ export const useIdeaDeletion = ({ currentLanguage, user, fetchIdeas }: IdeaDelet
     }
   };
 
-  const deleteIdea = async (ideaId: string) => {
+  const deleteIdea = async (ideaId: string): Promise<void> => {
     if (!user) {
       toast({
         title: text[currentLanguage].unauthorized,
         variant: 'destructive',
         duration: 3000,
       });
-      return;
+      return Promise.resolve();
     }
 
     if (!confirm(text[currentLanguage].confirmDelete)) {
-      return;
+      return Promise.resolve();
     }
 
     try {
@@ -52,7 +52,7 @@ export const useIdeaDeletion = ({ currentLanguage, user, fetchIdeas }: IdeaDelet
           variant: 'destructive',
           duration: 3000,
         });
-        return;
+        return Promise.resolve();
       }
 
       toast({

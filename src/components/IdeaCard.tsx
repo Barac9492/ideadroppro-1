@@ -41,7 +41,7 @@ interface IdeaCardProps {
   onGenerateAnalysis: (ideaId: string) => Promise<void>;
   onGenerateGlobalAnalysis?: (ideaId: string) => Promise<void>;
   onSaveFinalVerdict?: (ideaId: string, verdict: string) => void;
-  onDelete?: (ideaId: string) => void;
+  onDelete?: (ideaId: string) => Promise<void>;
   isAdmin?: boolean;
   isAuthenticated: boolean;
 }
@@ -185,9 +185,9 @@ const IdeaCard: React.FC<IdeaCardProps> = ({
     await createRemix(idea.id, remixText, idea.score);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (onDelete) {
-      onDelete(idea.id);
+      await onDelete(idea.id);
     }
   };
 
