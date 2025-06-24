@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lightbulb, ArrowRight, Search, Shuffle, User, Sparkles } from 'lucide-react';
+import { ArrowRight, Search, Shuffle, User, Zap, Target, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface UltraSimpleHeroProps {
@@ -20,40 +20,49 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
 
   const text = {
     ko: {
-      title: '아이디어 하나면 AI가 완전한 비즈니스 모델로 만들어드려요',
-      subtitle: '30초 입력 → AI 맞춤 질문 → 1차 완성 → 모듈 분해 → 리믹스 개선',
-      placeholder: '예: "비 오는 날 신발 안 젖는 앱"',
-      enhanceButton: 'AI와 함께 완성하기',
+      title: '아이디어를 현실로 만드는',
+      subtitle: '가장 똑똑한 방법',
+      description: '30초 안에 아이디어를 입력하면, AI가 완전한 비즈니스 모델로 발전시켜드립니다.',
+      placeholder: '예: "비 오는 날 신발이 젖지 않는 스마트 우산"',
+      enhanceButton: 'AI와 함께 시작하기',
+      stats: {
+        ideas: '12,847개 아이디어',
+        users: '3,294명 창업가',
+        success: '89% 성공률'
+      },
       quickActions: {
-        title: '또는 이런 것들도 해보세요',
-        explore: '다른 아이디어 둘러보기',
-        exploreDesc: '커뮤니티의 창의적인 아이디어들을 구경해보세요',
-        remix: '아이디어 리믹스하기',
-        remixDesc: '기존 아이디어를 조합해서 새로운 것을 만들어보세요',
-        myInfo: '내 활동 보기',
-        myInfoDesc: '지금까지의 아이디어와 성과를 확인해보세요'
+        explore: '아이디어 둘러보기',
+        exploreDesc: '커뮤니티의 검증된 아이디어들',
+        remix: '아이디어 조합하기',
+        remixDesc: '기존 아이디어를 새롭게 발전',
+        myInfo: '내 활동 확인',
+        myInfoDesc: '지금까지의 성과와 통계'
       }
     },
     en: {
-      title: 'AI transforms your single idea into a complete business model',
-      subtitle: '30sec input → AI custom questions → 1st completion → Module breakdown → Remix improvement',
-      placeholder: 'e.g., "App that keeps shoes dry in rain"',
-      enhanceButton: 'Complete with AI',
+      title: 'The smartest way to turn',
+      subtitle: 'ideas into reality',
+      description: 'Input your idea in 30 seconds and AI will develop it into a complete business model.',
+      placeholder: 'e.g., "Smart umbrella that keeps shoes dry in rain"',
+      enhanceButton: 'Start with AI',
+      stats: {
+        ideas: '12,847 Ideas',
+        users: '3,294 Entrepreneurs',
+        success: '89% Success Rate'
+      },
       quickActions: {
-        title: 'Or try these actions',
-        explore: 'Explore other ideas',
-        exploreDesc: 'Browse creative ideas from the community',
-        remix: 'Remix ideas',
-        remixDesc: 'Combine existing ideas to create something new',
-        myInfo: 'View my activity',
-        myInfoDesc: 'Check your ideas and achievements so far'
+        explore: 'Explore Ideas',
+        exploreDesc: 'Verified ideas from community',
+        remix: 'Combine Ideas',
+        remixDesc: 'Evolve existing ideas creatively',
+        myInfo: 'Check Activity',
+        myInfoDesc: 'Your achievements and stats'
       }
     }
   };
 
   const handleStartAI = () => {
     if (ideaText.trim()) {
-      // Navigate directly to create page with auto-start AI questioning
       navigate('/create', { 
         state: { 
           initialIdea: ideaText.trim(),
@@ -79,7 +88,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       title: text[currentLanguage].quickActions.explore,
       description: text[currentLanguage].quickActions.exploreDesc,
       path: '/explore',
-      color: 'from-blue-500 to-cyan-500'
+      gradient: 'from-gray-900 to-gray-700'
     },
     {
       id: 'remix',
@@ -87,7 +96,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       title: text[currentLanguage].quickActions.remix,
       description: text[currentLanguage].quickActions.remixDesc,
       path: '/remix',
-      color: 'from-purple-500 to-pink-500'
+      gradient: 'from-orange-500 to-red-500'
     },
     {
       id: 'myinfo',
@@ -95,88 +104,132 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       title: text[currentLanguage].quickActions.myInfo,
       description: text[currentLanguage].quickActions.myInfoDesc,
       path: '/my-workspace',
-      color: 'from-green-500 to-emerald-500'
+      gradient: 'from-gray-800 to-black'
     }
   ];
 
+  const stats = [
+    { icon: Target, label: text[currentLanguage].stats.ideas },
+    { icon: User, label: text[currentLanguage].stats.users },
+    { icon: TrendingUp, label: text[currentLanguage].stats.success }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-4xl">
-        {/* 단일화된 타이틀 */}
-        <div className="text-center mb-12">
-          <div className="mb-6">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-4 leading-tight">
-              {text[currentLanguage].title}
-            </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto rounded-full mb-4"></div>
-          </div>
-          <p className="text-lg md:text-xl text-gray-700 font-medium max-w-3xl mx-auto leading-relaxed">
-            {text[currentLanguage].subtitle}
-          </p>
-        </div>
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-[0.02]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 25% 25%, #1a1a1a 2px, transparent 2px)`,
+          backgroundSize: '60px 60px'
+        }}></div>
+      </div>
 
-        {/* Enhanced input card */}
-        <Card className="shadow-2xl border-0 rounded-3xl bg-white/95 backdrop-blur-md mb-16 hover:shadow-3xl transition-all duration-300">
-          <CardContent className="p-8 md:p-10">
-            <div className="space-y-8">
-              <Textarea
-                value={ideaText}
-                onChange={(e) => setIdeaText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={text[currentLanguage].placeholder}
-                className="w-full min-h-[120px] text-lg md:text-xl border-0 focus:ring-0 resize-none placeholder-gray-400 bg-transparent leading-relaxed"
-                maxLength={200}
-              />
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-20">
+        <div className="w-full max-w-6xl mx-auto">
+          {/* Hero Content */}
+          <div className="text-center mb-16">
+            {/* Main Title */}
+            <div className="mb-8">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-gray-900 leading-tight mb-4">
+                {text[currentLanguage].title}
+                <br />
+                <span className="text-orange-500">
+                  {text[currentLanguage].subtitle}
+                </span>
+              </h1>
               
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500 font-medium">
-                  {ideaText.length}/200
-                </div>
-                <Button
-                  onClick={handleStartAI}
-                  disabled={!ideaText.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-10 py-4 rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Sparkles className="w-5 h-5 mr-3" />
-                  {text[currentLanguage].enhanceButton}
-                  <ArrowRight className="w-5 h-5 ml-3" />
-                </Button>
-              </div>
+              {/* Accent line */}
+              <div className="w-32 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto mb-8"></div>
+              
+              <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-light">
+                {text[currentLanguage].description}
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Enhanced quick actions section */}
-        <div className="text-center space-y-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-            {text[currentLanguage].quickActions.title}
-          </h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Card 
-                  key={action.id} 
-                  className="cursor-pointer hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm hover:bg-white/95 hover:scale-105 group"
-                  onClick={() => navigate(action.path)}
-                >
-                  <CardContent className="p-8 text-center space-y-6">
-                    <div className={`w-16 h-16 mx-auto rounded-full bg-gradient-to-r ${action.color} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
-                      <Icon className="w-8 h-8 text-white" />
+            {/* Stats */}
+            <div className="flex flex-wrap justify-center gap-8 mb-16">
+              {stats.map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                  <div key={index} className="flex items-center space-x-3 text-gray-700">
+                    <div className="p-2 bg-gray-100 rounded-full">
+                      <Icon className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-900 mb-3">
-                        {action.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        {action.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    <span className="text-lg font-medium">{stat.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Input Section */}
+          <Card className="max-w-4xl mx-auto shadow-xl border-0 rounded-2xl bg-white mb-20">
+            <CardContent className="p-12">
+              <div className="space-y-8">
+                <Textarea
+                  value={ideaText}
+                  onChange={(e) => setIdeaText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={text[currentLanguage].placeholder}
+                  className="w-full min-h-[140px] text-xl border-0 focus:ring-0 resize-none placeholder-gray-400 bg-transparent leading-relaxed"
+                  maxLength={200}
+                />
+                
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-400 font-medium">
+                    {ideaText.length}/200
+                  </div>
+                  <Button
+                    onClick={handleStartAI}
+                    disabled={!ideaText.trim()}
+                    className="bg-black hover:bg-gray-800 text-white px-12 py-4 rounded-xl font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                  >
+                    <Zap className="w-5 h-5 mr-3" />
+                    {text[currentLanguage].enhanceButton}
+                    <ArrowRight className="w-5 h-5 ml-3" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <div className="text-center space-y-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+              또는 다른 방법으로 시작해보세요
+            </h2>
+            
+            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Card 
+                    key={action.id} 
+                    className="cursor-pointer hover:shadow-2xl transition-all duration-300 border-0 bg-white hover:scale-105 group overflow-hidden"
+                    onClick={() => navigate(action.path)}
+                  >
+                    <CardContent className="p-8 text-center space-y-6 relative">
+                      {/* Background gradient on hover */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+                      
+                      <div className="relative z-10">
+                        <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                          <Icon className="w-8 h-8 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-xl text-gray-900 mb-3">
+                            {action.title}
+                          </h3>
+                          <p className="text-gray-600 leading-relaxed">
+                            {action.description}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
