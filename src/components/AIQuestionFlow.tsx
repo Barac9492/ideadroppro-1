@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Lightbulb, MessageSquare, ArrowRight, Star, Zap } from 'lucide-react';
-import { generateSmartQuestions } from '@/components/SmartQuestionGenerator';
+import { Lightbulb, MessageSquare, ArrowRight, Star, Zap, HelpCircle } from 'lucide-react';
+import { generateAdaptiveQuestions } from '@/components/AdaptiveQuestionGenerator';
+import { analyzeIdeaQuality } from '@/components/IdeaQualityAnalyzer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +15,8 @@ import { useAuth } from '@/contexts/AuthContext';
 interface Question {
   moduleType: string;
   question: string;
+  educationalTip?: string;
+  followUpQuestions?: string[];
 }
 
 interface AIQuestionFlowProps {
@@ -34,6 +37,8 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingIdea, setIsGeneratingIdea] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState(false);
+  const [answerQuality, setAnswerQuality] = useState<'good' | 'needs_improvement' | null>(null);
 
   const text = {
     ko: {
@@ -45,6 +50,10 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
       loadingQuestions: 'AI가 맞춤 질문을 준비하는 중...',
       generatingIdea: '1차 아이디어를 완성하는 중...',
       progress: '진행률',
+      educationalTip: '💡 팁',
+      followUpTitle: '추가로 생각해볼 점들',
+      answerTooShort: '답변이 너무 짧습니다. 더 구체적으로 설명해주세요.',
+      goodAnswer: '좋은 답변입니다!',
       moduleTypes: {
         problem_definition: '문제 정의',
         target_customer: '타겟 고객',
@@ -62,6 +71,10 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
       loadingQuestions: 'AI is preparing tailored questions...',
       generatingIdea: 'Generating your 1st complete idea...',
       progress: 'Progress',
+      educationalTip: '💡 Tip',
+      followUpTitle: 'Additional points to consider',
+      answerTooShort: 'Answer is too short. Please explain more specifically.',
+      goodAnswer: 'Great answer!',
       moduleTypes: {
         problem_definition: 'Problem Definition',
         target_customer: 'Target Customer',
@@ -76,10 +89,29 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
     loadQuestions();
   }, []);
 
+  useEffect(() => {
+    // Analyze answer quality when user types
+    if (currentAnswer.length > 0) {
+      const quality = currentAnswer.length < 30 ? 'needs_improvement' : 'good';
+      setAnswerQuality(quality);
+    } else {
+      setAnswerQuality(null);
+    }
+  }, [currentAnswer]);
+
   const loadQuestions = async () => {
     try {
-      const generatedQuestions = await generateSmartQuestions(initialIdea, currentLanguage);
-      setQuestions(generatedQuestions);
+      // Analyze idea quality to determine question complexity
+      const qualityAnalysis = analyzeIdeaQuality(initialIdea, currentLanguage);
+      
+      // Generate adaptive questions
+      const adaptiveQuestions = await generateAdaptiveQuestions(
+        initialIdea, 
+        qualityAnalysis, 
+        currentLanguage
+      );
+      
+      setQuestions(adaptiveQuestions);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to load questions:', error);
@@ -92,7 +124,14 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
   };
 
   const handleAnswerSubmit = () => {
-    if (!currentAnswer.trim()) return;
+    if (!currentAnswer.trim() || currentAnswer.length < 10) {
+      toast({
+        title: currentLanguage === 'ko' ? '답변이 부족합니다' : 'Answer is insufficient',
+        description: currentLanguage === 'ko' ? '더 구체적으로 설명해주세요' : 'Please explain more specifically',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const currentQuestion = questions[currentQuestionIndex];
     const newAnswers = {
@@ -101,6 +140,8 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
     };
     setAnswers(newAnswers);
     setCurrentAnswer('');
+    setAnswerQuality(null);
+    setShowFollowUp(false);
 
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -127,8 +168,15 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
 
       const unifiedIdea = data.unifiedIdea;
 
-      // Generate AI grade (A-F)
-      const gradeOptions = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F'];
+      // Generate AI grade based on answer quality
+      const totalAnswerLength = Object.values(finalAnswers).join('').length;
+      const avgAnswerLength = totalAnswerLength / Object.keys(finalAnswers).length;
+      
+      let gradeOptions = ['C', 'D', 'F'];
+      if (avgAnswerLength > 100) gradeOptions = ['A+', 'A', 'B+', 'B'];
+      else if (avgAnswerLength > 50) gradeOptions = ['B', 'B+', 'C+', 'C'];
+      else if (avgAnswerLength > 30) gradeOptions = ['C', 'C+', 'D'];
+      
       const randomGrade = gradeOptions[Math.floor(Math.random() * gradeOptions.length)];
 
       // Convert answers to modules format
@@ -141,7 +189,7 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         version: 1,
-        quality_score: 0,
+        quality_score: avgAnswerLength > 50 ? 0.8 : 0.4,
         usage_count: 0
       }));
 
@@ -169,7 +217,7 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (currentAnswer.trim()) {
+      if (currentAnswer.trim() && currentAnswer.length >= 10) {
         handleAnswerSubmit();
       }
     }
@@ -240,6 +288,15 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Educational Tip */}
+          {currentQuestion.educationalTip && (
+            <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+              <p className="text-sm text-blue-700">
+                <strong>{text[currentLanguage].educationalTip}:</strong> {currentQuestion.educationalTip}
+              </p>
+            </div>
+          )}
+
           <Textarea
             value={currentAnswer}
             onChange={(e) => setCurrentAnswer(e.target.value)}
@@ -248,6 +305,42 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
             className="min-h-[120px] text-lg resize-none"
             maxLength={500}
           />
+
+          {/* Answer Quality Feedback */}
+          {answerQuality && (
+            <div className={`text-sm p-2 rounded ${
+              answerQuality === 'good' 
+                ? 'bg-green-50 text-green-600' 
+                : 'bg-yellow-50 text-yellow-600'
+            }`}>
+              {answerQuality === 'good' 
+                ? text[currentLanguage].goodAnswer
+                : text[currentLanguage].answerTooShort
+              }
+            </div>
+          )}
+
+          {/* Follow-up Questions */}
+          {currentQuestion.followUpQuestions && currentAnswer.length > 30 && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div 
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={() => setShowFollowUp(!showFollowUp)}
+              >
+                <HelpCircle className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">
+                  {text[currentLanguage].followUpTitle}
+                </span>
+              </div>
+              {showFollowUp && (
+                <div className="mt-2 space-y-1">
+                  {currentQuestion.followUpQuestions.map((followUp, index) => (
+                    <p key={index} className="text-xs text-gray-600 ml-6">• {followUp}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
@@ -255,7 +348,7 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
             </div>
             <Button
               onClick={handleAnswerSubmit}
-              disabled={!currentAnswer.trim()}
+              disabled={!currentAnswer.trim() || currentAnswer.length < 10}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-8 py-3"
             >
               {isLastQuestion ? (

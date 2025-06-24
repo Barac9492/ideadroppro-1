@@ -2,19 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import AIQuestionFlow from '@/components/AIQuestionFlow';
-import AIGradeDisplay from '@/components/AIGradeDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import UnifiedNavigation from '@/components/UnifiedNavigation';
 import SimpleTopBar from '@/components/SimpleTopBar';
+import IdeaExpansionHelper from '@/components/IdeaExpansionHelper';
+import EducationalGradeDisplay from '@/components/EducationalGradeDisplay';
+import { analyzeIdeaQuality, IdeaQuality } from '@/components/IdeaQualityAnalyzer';
 
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [initialIdea, setInitialIdea] = useState('');
-  const [currentStep, setCurrentStep] = useState<'questions' | 'grade' | 'modules'>('questions');
+  const [processedIdea, setProcessedIdea] = useState('');
+  const [currentStep, setCurrentStep] = useState<'expansion' | 'questions' | 'grade' | 'modules'>('expansion');
   const [completedModules, setCompletedModules] = useState<any[]>([]);
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [aiGrade, setAiGrade] = useState('');
+  const [ideaQuality, setIdeaQuality] = useState<IdeaQuality | null>(null);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -23,19 +27,44 @@ const Create = () => {
   // Get initial idea from navigation state
   useEffect(() => {
     if (location.state?.initialIdea) {
-      setInitialIdea(location.state.initialIdea);
+      const idea = location.state.initialIdea;
+      setInitialIdea(idea);
+      
+      // Analyze idea quality
+      const quality = analyzeIdeaQuality(idea, currentLanguage);
+      setIdeaQuality(quality);
+      
+      // Determine starting step based on quality
+      if (quality.needsExpansion && quality.score < 40) {
+        setCurrentStep('expansion');
+      } else {
+        setProcessedIdea(idea);
+        setCurrentStep('questions');
+      }
     }
-  }, [location.state]);
+  }, [location.state, currentLanguage]);
 
   // Redirect to auth if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/auth', { state: { initialIdea } });
     }
-  }, [user, navigate, initialIdea]);
+  }, [user, navigate, initialI
+
+]);
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
+  };
+
+  const handleExpansionComplete = (expandedIdea: string) => {
+    setProcessedIdea(expandedIdea);
+    setCurrentStep('questions');
+  };
+
+  const handleExpansionSkip = () => {
+    setProcessedIdea(initialIdea);
+    setCurrentStep('questions');
   };
 
   const handleQuestionsComplete = (modules: any[], unifiedIdeaText: string, grade: string) => {
@@ -47,7 +76,11 @@ const Create = () => {
 
   const handleProceedToModules = () => {
     setCurrentStep('modules');
-    // TODO: 모듈 분해 및 리믹스 안내 구현
+  };
+
+  const handleRetryWithEducation = () => {
+    // Reset to expansion step with educational focus
+    setCurrentStep('expansion');
   };
 
   const text = {
@@ -93,20 +126,32 @@ const Create = () => {
           </div>
 
           {/* Step-based rendering */}
-          {currentStep === 'questions' && initialIdea && (
+          {currentStep === 'expansion' && ideaQuality && (
+            <IdeaExpansionHelper
+              currentLanguage={currentLanguage}
+              originalIdea={initialIdea}
+              qualityAnalysis={ideaQuality}
+              onExpansionComplete={handleExpansionComplete}
+              onSkip={handleExpansionSkip}
+            />
+          )}
+
+          {currentStep === 'questions' && processedIdea && (
             <AIQuestionFlow 
               currentLanguage={currentLanguage}
-              initialIdea={initialIdea}
+              initialIdea={processedIdea}
               onComplete={handleQuestionsComplete}
             />
           )}
 
           {currentStep === 'grade' && (
-            <AIGradeDisplay
+            <EducationalGradeDisplay
               currentLanguage={currentLanguage}
               grade={aiGrade}
               unifiedIdea={unifiedIdea}
+              originalQuality={ideaQuality!}
               onProceedToModules={handleProceedToModules}
+              onRetryWithEducation={handleRetryWithEducation}
             />
           )}
 
