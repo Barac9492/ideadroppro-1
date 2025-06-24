@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import ChatHeader from './chat/ChatHeader';
 import ChatMessages from './chat/ChatMessages';
 import ChatInput from './chat/ChatInput';
 import CompletionButton from './chat/CompletionButton';
+import UnifiedIdeaDisplay from './chat/UnifiedIdeaDisplay';
 import { useChatLogic } from '@/hooks/useChatLogic';
 import { useQuestionGeneration } from '@/hooks/useQuestionGeneration';
 
@@ -36,9 +36,8 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState('');
+  const [showUnifiedView, setShowUnifiedView] = useState(false);
   const initializationRef = useRef(false);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const moduleTypes = ['problem_definition', 'target_customer', 'value_proposition', 'revenue_model', 'competitive_advantage'];
   
@@ -49,7 +48,9 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       retry: '다시 시도',
       processing: '처리 중...',
       networkError: '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-      continueAnyway: '계속 진행하기'
+      continueAnyway: '계속 진행하기',
+      viewUnified: '통합 스토리 보기',
+      backToChat: '대화로 돌아가기'
     },
     en: {
       welcome: 'Hello! Interesting idea! 🎉 Let\'s develop it step by step together.',
@@ -57,7 +58,9 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       retry: 'Retry',
       processing: 'Processing...',
       networkError: 'A network error occurred. Please try again later.',
-      continueAnyway: 'Continue Anyway'
+      continueAnyway: 'Continue Anyway',
+      viewUnified: 'View Unified Story',
+      backToChat: 'Back to Chat'
     }
   };
 
@@ -77,38 +80,13 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const {
     askQuestionForModule,
     resetLastAskedModule,
-    isAsking
+    isAsking,
+    currentProcess
   } = useQuestionGeneration(initialIdea, currentLanguage, conversationContext, moduleData, addMessage);
 
-  // Auto-clear loading state after timeout
-  useEffect(() => {
-    if (isLoading || isAsking) {
-      loadingTimeoutRef.current = setTimeout(() => {
-        console.log('⚠️ Loading timeout - auto-clearing loading states');
-        setIsLoading(false);
-        setError(currentLanguage === 'ko' ? '응답 시간이 초과되었습니다. 계속 진행하시겠습니까?' : 'Response timeout. Would you like to continue?');
-        setDebugInfo(prev => prev + '\n[TIMEOUT] Loading cleared after 30s');
-      }, 30000);
-    } else {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
-      }
-    }
-
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-    };
-  }, [isLoading, isAsking, currentLanguage]);
-
-  // Enhanced initialization
   useEffect(() => {
     if (!initializationRef.current && initialIdea) {
-      console.log('🚀 Initializing chat - ONE TIME ONLY');
       initializationRef.current = true;
-      setDebugInfo('[INIT] Chat initialized');
       
       const welcomeMessage: ChatMessage = {
         id: `welcome-${Date.now()}`,
@@ -120,20 +98,16 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       addMessage(welcomeMessage);
       
       setTimeout(() => {
-        console.log('🎯 Asking FIRST question for module:', moduleTypes[0]);
-        setDebugInfo(prev => prev + '\n[INIT] Asking first question');
-        askQuestionForModule(moduleTypes[0]).catch(handleApiError);
+        askQuestionForModule(moduleTypes[0]).catch(console.error);
       }, 1500);
     }
   }, []);
 
   const handleApiError = (error: Error) => {
-    console.error('❌ API Error:', error);
+    console.error('API Error:', error);
     setIsLoading(false);
     setError(error.message || text[currentLanguage].networkError);
-    setDebugInfo(prev => prev + `\n[ERROR] ${error.message}`);
     
-    // Provide fallback to continue conversation
     const fallbackMessage: ChatMessage = {
       id: `error-recovery-${Date.now()}`,
       role: 'ai',
@@ -150,9 +124,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   };
 
   const proceedToNextModule = () => {
-    console.log('➡️ Proceeding to next module from index:', currentModuleIndex, 'to:', currentModuleIndex + 1);
-    setDebugInfo(prev => prev + `\n[PROGRESS] Moving to module ${currentModuleIndex + 1}`);
-    
     const nextIndex = currentModuleIndex + 1;
     setCurrentModuleIndex(nextIndex);
     resetLastAskedModule();
@@ -162,10 +133,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       return;
     }
     
-    // Ask next question with error handling
     setTimeout(() => {
-      console.log('🎯 Asking NEXT question for module:', moduleTypes[nextIndex]);
-      setDebugInfo(prev => prev + `\n[PROGRESS] Asking question for ${moduleTypes[nextIndex]}`);
       askQuestionForModule(moduleTypes[nextIndex]).catch(handleApiError);
     }, 1000);
   };
@@ -173,7 +141,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const handleUserResponse = async () => {
     if (!currentInput.trim() || isCompleted) return;
 
-    // Clear any existing errors
     setError(null);
     setIsLoading(true);
     
@@ -184,14 +151,10 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       timestamp: new Date()
     };
 
-    console.log('💬 Adding user message:', userMessage.id);
-    setDebugInfo(prev => prev + `\n[USER] Message added: ${currentInput.substring(0, 30)}...`);
     addMessage(userMessage);
     
     const currentModule = moduleTypes[currentModuleIndex];
     const userResponse = currentInput.trim();
-    
-    console.log('🔄 Processing user response for module:', currentModule, 'at index:', currentModuleIndex);
     
     setModuleData(prev => ({
       ...prev,
@@ -203,7 +166,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
     try {
       const analysis = await analyzeResponse(userResponse, currentModule);
-      setDebugInfo(prev => prev + `\n[ANALYSIS] Completeness: ${analysis.completeness}%`);
       
       setModuleProgress(prev => ({
         ...prev,
@@ -221,8 +183,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
           timestamp: new Date()
         };
         
-        console.log('❓ Adding follow-up question:', followUpMessage.id);
-        setDebugInfo(prev => prev + '\n[FOLLOWUP] Follow-up question added');
         addMessage(followUpMessage);
       } else {
         const completionMessage: ChatMessage = {
@@ -232,8 +192,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
           timestamp: new Date()
         };
         
-        console.log('✅ Adding completion message:', completionMessage.id);
-        setDebugInfo(prev => prev + '\n[COMPLETE] Module completed, proceeding to next');
         addMessage(completionMessage);
         
         setTimeout(() => {
@@ -241,10 +199,9 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         }, 2000);
       }
     } catch (error) {
-      console.error('❌ Error in handleUserResponse:', error);
+      console.error('Error in handleUserResponse:', error);
       handleApiError(error as Error);
       
-      // Fallback: continue with basic response
       const basicResponse: ChatMessage = {
         id: `basic-${currentModule}-${Date.now()}`,
         role: 'ai',
@@ -268,15 +225,14 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       id: `final-${Date.now()}-${Math.random()}`,
       role: 'ai',
       content: currentLanguage === 'ko' 
-        ? '🎉 모든 단계가 완성되었습니다! 정말 훌륭한 아이디어로 발전시키셨네요. 이제 AI가 종합적인 평가를 진행하겠습니다.'
-        : '🎉 All stages completed! You\'ve developed it into a truly excellent idea. Now AI will conduct a comprehensive evaluation.',
+        ? '🎉 모든 단계가 완성되었습니다! 정말 훌륭한 아이디어로 발전시키셨네요. 이제 통합된 스토리를 확인해보세요.'
+        : '🎉 All stages completed! You\'ve developed it into a truly excellent idea. Now check out your unified story.',
       timestamp: new Date()
     };
     
-    console.log('🏁 Adding final completion message:', finalMessage.id);
-    setDebugInfo(prev => prev + '\n[FINAL] All modules completed');
     addMessage(finalMessage);
     setIsCompleted(true);
+    setShowUnifiedView(true);
   };
 
   const handleComplete = () => {
@@ -296,7 +252,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     setError(null);
     setIsLoading(false);
     
-    // Try to continue from current state
     if (currentModuleIndex < moduleTypes.length) {
       const retryMessage: ChatMessage = {
         id: `retry-${Date.now()}`,
@@ -314,7 +269,6 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     setError(null);
     setIsLoading(false);
     
-    // Force continue to next module or completion
     if (currentModuleIndex < moduleTypes.length - 1) {
       proceedToNextModule();
     } else {
@@ -324,6 +278,36 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
   const totalProgress = (currentModuleIndex / moduleTypes.length) * 100;
   const canSubmit = currentInput.trim() && !isLoading && !isAsking && currentModuleIndex < moduleTypes.length;
+  const completionScore = Object.values(moduleProgress).reduce((acc, progress) => acc + progress.completeness, 0) / Math.max(Object.keys(moduleProgress).length, 1);
+
+  // Show unified view when completed
+  if (showUnifiedView && isCompleted) {
+    return (
+      <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">완성된 아이디어</h1>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowUnifiedView(false)}
+            >
+              {text[currentLanguage].backToChat}
+            </Button>
+            <Button onClick={handleComplete}>
+              평가받기
+            </Button>
+          </div>
+        </div>
+        <div className="p-6">
+          <UnifiedIdeaDisplay
+            moduleData={moduleData}
+            currentLanguage={currentLanguage}
+            completionScore={completionScore}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100">
@@ -336,13 +320,15 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         currentModuleIndex={currentModuleIndex}
       />
 
-      {/* Debug Info Display (only in development) */}
-      {process.env.NODE_ENV === 'development' && debugInfo && (
-        <div className="p-2 bg-gray-100 text-xs font-mono text-gray-600 border-b">
-          <details>
-            <summary>Debug Info</summary>
-            <pre className="mt-2 whitespace-pre-wrap">{debugInfo}</pre>
-          </details>
+      {/* Current Process Indicator */}
+      {(isAsking || currentProcess) && (
+        <div className="px-6 py-2 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center space-x-2 text-blue-700">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="text-sm font-medium">
+              {currentProcess || (currentLanguage === 'ko' ? 'AI가 질문을 준비 중...' : 'AI is preparing question...')}
+            </span>
+          </div>
         </div>
       )}
 
@@ -382,6 +368,19 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         moduleTypesLength={moduleTypes.length}
         canSubmit={canSubmit}
       />
+
+      {/* Unified View Toggle */}
+      {isCompleted && Object.keys(moduleData).length >= 3 && (
+        <div className="p-6 border-t border-gray-100 text-center space-y-4">
+          <Button
+            onClick={() => setShowUnifiedView(true)}
+            variant="outline"
+            className="mr-4"
+          >
+            {text[currentLanguage].viewUnified}
+          </Button>
+        </div>
+      )}
 
       <CompletionButton
         isCompleted={isCompleted}

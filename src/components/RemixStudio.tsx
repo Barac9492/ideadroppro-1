@@ -7,20 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Shuffle, 
   Plus, 
-  Lightbulb, 
-  Users, 
-  Target,
-  DollarSign,
-  Cog,
-  Zap,
-  TrendingUp,
-  Shield,
-  Trash2,
-  ArrowRight,
+  ArrowLeft,
   Sparkles
 } from 'lucide-react';
 import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
+import ModuleMenuGrid from './remix/ModuleMenuGrid';
 
 interface RemixStudioProps {
   currentLanguage: 'ko' | 'en';
@@ -34,7 +26,8 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
   sourceIdea = ''
 }) => {
   const [selectedModules, setSelectedModules] = useState<any[]>(initialModules);
-  const [activeTab, setActiveTab] = useState('my-modules');
+  const [activeTab, setActiveTab] = useState('menu');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { modules, loading } = useModuleLibrary({ currentLanguage });
   const { modules: allModules } = useModularIdeas({ currentLanguage });
 
@@ -42,6 +35,7 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
     ko: {
       title: '🎛️ 리믹스 스튜디오',
       subtitle: '모듈을 조합해서 새로운 아이디어를 만들어보세요',
+      menuView: '메뉴 보기',
       myModules: '내 모듈',
       publicModules: '공개 모듈',
       selectedModules: '선택된 모듈',
@@ -51,11 +45,13 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
       clearAll: '모두 지우기',
       noModules: '저장된 모듈이 없습니다',
       noSelection: '모듈을 선택해주세요',
-      createFirst: '먼저 Create 페이지에서 아이디어를 만들어보세요'
+      createFirst: '먼저 Create 페이지에서 아이디어를 만들어보세요',
+      backToMenu: '메뉴로 돌아가기'
     },
     en: {
       title: '🎛️ Remix Studio',
       subtitle: 'Combine modules to create new ideas',
+      menuView: 'Menu View',
       myModules: 'My Modules',
       publicModules: 'Public Modules',
       selectedModules: 'Selected Modules',
@@ -65,30 +61,9 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
       clearAll: 'Clear All',
       noModules: 'No saved modules',
       noSelection: 'Please select modules',
-      createFirst: 'Create your first idea on the Create page'
+      createFirst: 'Create your first idea on the Create page',
+      backToMenu: 'Back to Menu'
     }
-  };
-
-  const moduleIcons = {
-    problem: <Target className="w-4 h-4" />,
-    solution: <Lightbulb className="w-4 h-4" />,
-    target_customer: <Users className="w-4 h-4" />,
-    value_proposition: <Zap className="w-4 h-4" />,
-    revenue_model: <DollarSign className="w-4 h-4" />,
-    key_activities: <Cog className="w-4 h-4" />,
-    channels: <TrendingUp className="w-4 h-4" />,
-    competitive_advantage: <Shield className="w-4 h-4" />
-  };
-
-  const moduleColors = {
-    problem: 'bg-red-100 text-red-800',
-    solution: 'bg-yellow-100 text-yellow-800',
-    target_customer: 'bg-blue-100 text-blue-800',
-    value_proposition: 'bg-purple-100 text-purple-800',
-    revenue_model: 'bg-green-100 text-green-800',
-    key_activities: 'bg-orange-100 text-orange-800',
-    channels: 'bg-cyan-100 text-cyan-800',
-    competitive_advantage: 'bg-indigo-100 text-indigo-800'
   };
 
   const isModuleSelected = (moduleId: string) => {
@@ -103,14 +78,25 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
     }
   };
 
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    setActiveTab('category-modules');
+  };
+
   const handleClearAll = () => {
     setSelectedModules([]);
   };
 
   const handleGenerateIdea = () => {
-    // TODO: Implement idea generation from selected modules
     console.log('Generating idea from modules:', selectedModules);
   };
+
+  // Get modules for selected category
+  const categoryModules = selectedCategory 
+    ? [...modules, ...allModules].filter(module => 
+        (module.module_type || module.module_data?.type) === selectedCategory
+      )
+    : [];
 
   const renderModuleCard = (module: any, isFromLibrary = true) => {
     const moduleData = isFromLibrary ? module.module_data : module;
@@ -126,19 +112,16 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
       >
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <div className={`p-1.5 rounded ${moduleColors[moduleData.type] || 'bg-gray-100 text-gray-800'}`}>
-              {moduleIcons[moduleData.type] || <Lightbulb className="w-4 h-4" />}
-            </div>
             <Badge variant={isSelected ? "default" : "secondary"} className="text-xs">
-              {moduleData.score || 85}%
+              {moduleData?.score || 85}%
             </Badge>
           </div>
-          <CardTitle className="text-sm font-medium">{moduleData.title}</CardTitle>
+          <CardTitle className="text-sm font-medium">{moduleData?.title || 'Untitled'}</CardTitle>
         </CardHeader>
         
         <CardContent className="space-y-2">
           <p className="text-xs text-gray-600 line-clamp-2">
-            {moduleData.content}
+            {moduleData?.content || module.content}
           </p>
           
           <Button
@@ -150,17 +133,7 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
               handleModuleToggle(module);
             }}
           >
-            {isSelected ? (
-              <>
-                <Trash2 className="w-3 h-3 mr-1" />
-                {text[currentLanguage].removeFromMix}
-              </>
-            ) : (
-              <>
-                <Plus className="w-3 h-3 mr-1" />
-                {text[currentLanguage].addToMix}
-              </>
-            )}
+            {isSelected ? text[currentLanguage].removeFromMix : text[currentLanguage].addToMix}
           </Button>
         </CardContent>
       </Card>
@@ -181,13 +154,24 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Module Selection Area */}
+          {/* Main Content Area */}
           <div className="lg:col-span-3">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="menu">{text[currentLanguage].menuView}</TabsTrigger>
                 <TabsTrigger value="my-modules">{text[currentLanguage].myModules}</TabsTrigger>
                 <TabsTrigger value="public-modules">{text[currentLanguage].publicModules}</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="menu" className="mt-6">
+                <ModuleMenuGrid
+                  modules={[...modules, ...allModules]}
+                  currentLanguage={currentLanguage}
+                  onCategorySelect={handleCategorySelect}
+                  onModuleSelect={handleModuleToggle}
+                  selectedModules={selectedModules}
+                />
+              </TabsContent>
               
               <TabsContent value="my-modules" className="mt-6">
                 {loading ? (
@@ -197,7 +181,6 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
                   </div>
                 ) : modules.length === 0 ? (
                   <div className="text-center py-12">
-                    <Lightbulb className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                       {text[currentLanguage].noModules}
                     </h3>
@@ -216,6 +199,32 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allModules.slice(0, 12).map(module => renderModuleCard(module, false))}
                 </div>
+              </TabsContent>
+
+              <TabsContent value="category-modules" className="mt-6">
+                {selectedCategory && (
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-4">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setActiveTab('menu')}
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        {text[currentLanguage].backToMenu}
+                      </Button>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {selectedCategory} 모듈들
+                      </h2>
+                      <Badge variant="secondary">
+                        {categoryModules.length}개
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {categoryModules.map(module => renderModuleCard(module, false))}
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -240,22 +249,13 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
                     {selectedModules.map(module => {
                       const moduleData = module.module_data || module;
                       return (
-                        <div key={module.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <div className="flex items-center space-x-2">
-                            <div className={`p-1 rounded ${moduleColors[moduleData.type] || 'bg-gray-100'}`}>
-                              {moduleIcons[moduleData.type] || <Lightbulb className="w-3 h-3" />}
-                            </div>
-                            <span className="text-xs font-medium truncate">
-                              {moduleData.title}
-                            </span>
+                        <div key={module.id} className="bg-gray-50 rounded p-2">
+                          <div className="text-xs font-medium truncate mb-1">
+                            {moduleData.title || 'Untitled'}
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleModuleToggle(module)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                          <div className="text-xs text-gray-600 line-clamp-2">
+                            {moduleData.content || module.content}
+                          </div>
                         </div>
                       );
                     })}
@@ -278,7 +278,6 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
                     variant="outline"
                     className="w-full"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
                     {text[currentLanguage].clearAll}
                   </Button>
                 </div>
