@@ -25,16 +25,20 @@ export const useChatLogic = (
   const [moduleProgress, setModuleProgress] = useState<Record<string, ModuleProgress>>({});
   const [conversationContext, setConversationContext] = useState('');
 
-  const messageExists = useCallback((content: string, role: 'user' | 'ai') => {
-    return messages.some(msg => msg.content === content && msg.role === role);
+  // Enhanced message existence check with ID and content
+  const messageExists = useCallback((messageId: string, content: string, role: 'user' | 'ai') => {
+    return messages.some(msg => 
+      msg.id === messageId || 
+      (msg.content === content && msg.role === role)
+    );
   }, [messages]);
 
   const addMessage = useCallback((message: ChatMessage) => {
-    if (!messageExists(message.content, message.role)) {
-      console.log('Adding new message:', message.id, message.content.substring(0, 50) + '...');
+    if (!messageExists(message.id, message.content, message.role)) {
+      console.log('✅ Adding NEW message:', message.id, '- Content:', message.content.substring(0, 50) + '...');
       setMessages(prev => [...prev, message]);
     } else {
-      console.log('Duplicate message prevented:', message.content.substring(0, 50) + '...');
+      console.log('🚫 BLOCKED duplicate message:', message.id, '- Content:', message.content.substring(0, 50) + '...');
     }
   }, [messageExists]);
 

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import ChatHeader from './chat/ChatHeader';
 import ChatMessages from './chat/ChatMessages';
@@ -33,7 +33,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const initializationRef = useRef(false);
 
   const moduleTypes = ['problem_definition', 'target_customer', 'value_proposition', 'revenue_model', 'competitive_advantage'];
   
@@ -65,28 +65,31 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     isAsking
   } = useQuestionGeneration(initialIdea, currentLanguage, conversationContext, moduleData, addMessage);
 
+  // Simplified initialization with strict control
   useEffect(() => {
-    if (!isInitialized) {
-      console.log('Initializing chat with welcome message');
+    if (!initializationRef.current && initialIdea) {
+      console.log('🚀 Initializing chat - ONE TIME ONLY');
+      initializationRef.current = true;
       
       const welcomeMessage: ChatMessage = {
-        id: 'welcome',
+        id: `welcome-${Date.now()}`,
         role: 'ai',
         content: `${text[currentLanguage].welcome}\n\n"${initialIdea}"\n\n이제 하나씩 구체적으로 발전시켜보겠습니다!`,
         timestamp: new Date()
       };
       
       addMessage(welcomeMessage);
-      setIsInitialized(true);
       
+      // Ask first question with delay to prevent race conditions
       setTimeout(() => {
+        console.log('🎯 Asking FIRST question for module:', moduleTypes[0]);
         askQuestionForModule(moduleTypes[0]);
-      }, 1000);
+      }, 1500);
     }
-  }, [isInitialized, initialIdea, currentLanguage, addMessage, askQuestionForModule, moduleTypes, text]);
+  }, []);
 
   const proceedToNextModule = () => {
-    console.log('Proceeding to next module from index:', currentModuleIndex, 'to:', currentModuleIndex + 1);
+    console.log('➡️ Proceeding to next module from index:', currentModuleIndex, 'to:', currentModuleIndex + 1);
     
     const nextIndex = currentModuleIndex + 1;
     setCurrentModuleIndex(nextIndex);
@@ -97,27 +100,30 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       return;
     }
     
+    // Increased delay to ensure proper state synchronization
     setTimeout(() => {
+      console.log('🎯 Asking NEXT question for module:', moduleTypes[nextIndex]);
       askQuestionForModule(moduleTypes[nextIndex]);
-    }, 500);
+    }, 1000);
   };
 
   const handleUserResponse = async () => {
     if (!currentInput.trim() || isCompleted || isLoading) return;
 
     const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
+      id: `user-${Date.now()}-${Math.random()}`,
       role: 'user',
       content: currentInput.trim(),
       timestamp: new Date()
     };
 
+    console.log('💬 Adding user message:', userMessage.id);
     addMessage(userMessage);
     
     const currentModule = moduleTypes[currentModuleIndex];
     const userResponse = currentInput.trim();
     
-    console.log('Processing user response for module:', currentModule, 'at index:', currentModuleIndex);
+    console.log('🔄 Processing user response for module:', currentModule, 'at index:', currentModuleIndex);
     
     setModuleData(prev => ({
       ...prev,
@@ -140,27 +146,29 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       const followUpQuestion = await generateFollowUpQuestion(userResponse, currentModule, analysis.completeness);
       
       const followUpMessage: ChatMessage = {
-        id: `followup-${Date.now()}`,
+        id: `followup-${currentModule}-${Date.now()}-${Math.random()}`,
         role: 'ai',
         content: followUpQuestion,
         moduleType: currentModule,
         timestamp: new Date()
       };
       
+      console.log('❓ Adding follow-up question:', followUpMessage.id);
       addMessage(followUpMessage);
     } else {
       const completionMessage: ChatMessage = {
-        id: `completion-${Date.now()}`,
+        id: `completion-${currentModule}-${Date.now()}-${Math.random()}`,
         role: 'ai',
         content: `${analysis.insights} 이 부분은 완성되었습니다! 👏 다음 단계로 넘어가겠습니다.`,
         timestamp: new Date()
       };
       
+      console.log('✅ Adding completion message:', completionMessage.id);
       addMessage(completionMessage);
       
       setTimeout(() => {
         proceedToNextModule();
-      }, 1500);
+      }, 2000);
     }
     
     setIsLoading(false);
@@ -168,7 +176,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
   const handleCompletion = () => {
     const finalMessage: ChatMessage = {
-      id: 'final',
+      id: `final-${Date.now()}-${Math.random()}`,
       role: 'ai',
       content: currentLanguage === 'ko' 
         ? '🎉 모든 단계가 완성되었습니다! 정말 훌륭한 아이디어로 발전시키셨네요. 이제 AI가 종합적인 평가를 진행하겠습니다.'
@@ -176,6 +184,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       timestamp: new Date()
     };
     
+    console.log('🏁 Adding final completion message:', finalMessage.id);
     addMessage(finalMessage);
     setIsCompleted(true);
   };

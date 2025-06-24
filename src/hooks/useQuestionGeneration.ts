@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ChatMessage {
@@ -18,7 +18,8 @@ export const useQuestionGeneration = (
   addMessage: (message: ChatMessage) => void
 ) => {
   const [isAsking, setIsAsking] = useState(false);
-  const [lastAskedModule, setLastAskedModule] = useState<string | null>(null);
+  const lastAskedModuleRef = useRef<string | null>(null);
+  const processingRef = useRef<Set<string>>(new Set());
 
   const getDefaultQuestion = useCallback((moduleType: string): string => {
     const questions = {
@@ -42,15 +43,23 @@ export const useQuestionGeneration = (
   }, [initialIdea, currentLanguage]);
 
   const askQuestionForModule = useCallback(async (moduleType: string) => {
-    if (isAsking || lastAskedModule === moduleType) {
-      console.log('Skipping duplicate or concurrent question for module:', moduleType);
+    // Enhanced concurrency control
+    if (isAsking || 
+        lastAskedModuleRef.current === moduleType || 
+        processingRef.current.has(moduleType)) {
+      console.log('🚫 BLOCKED duplicate/concurrent question for module:', moduleType, {
+        isAsking,
+        lastAsked: lastAskedModuleRef.current,
+        processing: Array.from(processingRef.current)
+      });
       return;
     }
 
     setIsAsking(true);
-    setLastAskedModule(moduleType);
+    lastAskedModuleRef.current = moduleType;
+    processingRef.current.add(moduleType);
     
-    console.log('Asking question for module:', moduleType);
+    console.log('🎯 STARTING to ask question for module:', moduleType);
     
     try {
       const { data, error } = await supabase.functions.invoke('generate-smart-questions', {
@@ -69,39 +78,43 @@ export const useQuestionGeneration = (
       
       if (question) {
         const questionMessage: ChatMessage = {
-          id: `question-${moduleType}-${Date.now()}`,
+          id: `api-question-${moduleType}-${Date.now()}-${Math.random()}`,
           role: 'ai',
           content: question,
           moduleType: moduleType,
           timestamp: new Date()
         };
         
+        console.log('✅ Adding API generated question:', questionMessage.id);
         addMessage(questionMessage);
-        console.log('Added API generated question for:', moduleType);
       } else {
         throw new Error('No question received from API');
       }
     } catch (error) {
-      console.error('Error generating question for module:', moduleType, error);
+      console.error('❌ Error generating question for module:', moduleType, error);
       
       const fallbackQuestion = getDefaultQuestion(moduleType);
       const questionMessage: ChatMessage = {
-        id: `fallback-${moduleType}-${Date.now()}`,
+        id: `fallback-question-${moduleType}-${Date.now()}-${Math.random()}`,
         role: 'ai',
         content: fallbackQuestion,
         moduleType: moduleType,
         timestamp: new Date()
       };
       
+      console.log('🔄 Adding fallback question:', questionMessage.id);
       addMessage(questionMessage);
-      console.log('Added fallback question for:', moduleType);
     } finally {
+      processingRef.current.delete(moduleType);
       setIsAsking(false);
+      console.log('✅ COMPLETED question generation for module:', moduleType);
     }
-  }, [isAsking, lastAskedModule, initialIdea, currentLanguage, conversationContext, moduleData, addMessage, getDefaultQuestion]);
+  }, [isAsking, initialIdea, currentLanguage, conversationContext, moduleData, addMessage, getDefaultQuestion]);
 
   const resetLastAskedModule = useCallback(() => {
-    setLastAskedModule(null);
+    console.log('🔄 Resetting last asked module from:', lastAskedModuleRef.current);
+    lastAskedModuleRef.current = null;
+    processingRef.current.clear();
   }, []);
 
   return {
