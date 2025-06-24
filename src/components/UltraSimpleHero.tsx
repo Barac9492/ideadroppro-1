@@ -21,13 +21,13 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
   const text = {
     ko: {
       title: '아이디어 하나, AI와 함께 완성하세요',
-      subtitle: '30초 입력하면 AI가 완전한 비즈니스 모델로 만들어드려요',
+      subtitle: '30초 입력하면 AI가 질문하며 완전한 비즈니스 모델로 만들어드려요',
       placeholder: '예: "비 오는 날 신발 안 젖는 앱"',
       enhanceButton: 'AI와 함께 완성하기',
       processingSteps: {
-        step1: 'AI가 아이디어 분석',
-        step2: '모듈 카드로 변환',
-        step3: '리믹스 스튜디오 준비'
+        step1: 'AI가 맞춤 질문',
+        step2: '모듈 카드 생성',
+        step3: '리믹스로 개선'
       },
       quickActions: {
         title: '또는 이런 것들도 해보세요',
@@ -41,13 +41,13 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
     },
     en: {
       title: 'Complete your idea with AI',
-      subtitle: '30 seconds input, AI creates a complete business model',
+      subtitle: '30 seconds input, AI asks questions to create a complete business model',
       placeholder: 'e.g., "App that keeps shoes dry in rain"',
       enhanceButton: 'Complete with AI',
       processingSteps: {
-        step1: 'AI analyzes idea',
-        step2: 'Convert to module cards',
-        step3: 'Remix studio ready'
+        step1: 'AI custom questions',
+        step2: 'Generate module cards',
+        step3: 'Improve via remix'
       },
       quickActions: {
         title: 'Or try these actions',
@@ -61,9 +61,15 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
     }
   };
 
-  const handleEnhance = () => {
+  const handleStartAI = () => {
     if (ideaText.trim()) {
-      navigate('/create', { state: { initialIdea: ideaText.trim() } });
+      // Navigate directly to create page with auto-start AI questioning
+      navigate('/create', { 
+        state: { 
+          initialIdea: ideaText.trim(),
+          autoStartQuestions: true 
+        } 
+      });
     }
   };
 
@@ -71,7 +77,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (ideaText.trim()) {
-        handleEnhance();
+        handleStartAI();
       }
     }
   };
@@ -116,7 +122,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
           </p>
         </div>
 
-        {/* Single input card with enhanced AI focus */}
+        {/* Single input card with direct AI flow */}
         <Card className="shadow-xl border-0 rounded-3xl bg-white/90 backdrop-blur-sm mb-12">
           <CardContent className="p-8">
             <div className="space-y-6">
@@ -134,7 +140,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
                   {ideaText.length}/200
                 </div>
                 <Button
-                  onClick={handleEnhance}
+                  onClick={handleStartAI}
                   disabled={!ideaText.trim()}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200"
                 >
@@ -207,30 +213,6 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
                 </Card>
               );
             })}
-          </div>
-        </div>
-
-        {/* Enhanced success indicators with AI focus */}
-        <div className="text-center mt-12 space-y-4">
-          <div className="flex justify-center items-center space-x-6 text-gray-500">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-              <span className="text-sm">
-                {currentLanguage === 'ko' ? 'AI 분석' : 'AI Analysis'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-sm">
-                {currentLanguage === 'ko' ? '모듈 생성' : 'Module Creation'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
-              <span className="text-sm">
-                {currentLanguage === 'ko' ? '리믹스 준비' : 'Remix Ready'}
-              </span>
-            </div>
           </div>
         </div>
       </div>
