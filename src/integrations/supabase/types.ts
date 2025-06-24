@@ -496,6 +496,36 @@ export type Database = {
           },
         ]
       }
+      user_module_library: {
+        Row: {
+          created_at: string
+          id: string
+          module_data: Json
+          module_type: string
+          original_idea_text: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_data: Json
+          module_type: string
+          original_idea_text?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_data?: Json
+          module_type?: string
+          original_idea_text?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

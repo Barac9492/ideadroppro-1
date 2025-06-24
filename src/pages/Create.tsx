@@ -40,12 +40,12 @@ const Create = () => {
       const idea = location.state.initialIdea;
       setInitialIdea(idea);
       
-      // Analyze idea quality
+      // Analyze idea quality with stricter validation
       const quality = analyzeIdeaQuality(idea, currentLanguage);
       setIdeaQuality(quality);
       
-      // Determine starting step based on quality
-      if (quality.needsExpansion && quality.score < 40) {
+      // Force expansion for ideas that don't meet minimum content standards
+      if (!quality.hasMinimumContent || quality.needsExpansion) {
         setCurrentStep('expansion');
       } else {
         setProcessedIdea(idea);
@@ -66,13 +66,29 @@ const Create = () => {
   };
 
   const handleExpansionComplete = (expandedIdea: string) => {
-    setProcessedIdea(expandedIdea);
-    setCurrentStep('questions');
+    // Re-analyze the expanded idea to ensure it meets standards
+    const newQuality = analyzeIdeaQuality(expandedIdea, currentLanguage);
+    setIdeaQuality(newQuality);
+    
+    // Only proceed if the idea now meets minimum standards
+    if (newQuality.hasMinimumContent) {
+      setProcessedIdea(expandedIdea);
+      setCurrentStep('questions');
+    } else {
+      // Force them to try again if still insufficient
+      console.log('Expanded idea still does not meet minimum standards');
+    }
   };
 
   const handleExpansionSkip = () => {
-    setProcessedIdea(initialIdea);
-    setCurrentStep('questions');
+    // Only allow skipping if the idea meets minimum content standards
+    if (ideaQuality?.hasMinimumContent) {
+      setProcessedIdea(initialIdea);
+      setCurrentStep('questions');
+    } else {
+      // Show warning that expansion is required
+      console.log('Cannot skip expansion - idea does not meet minimum standards');
+    }
   };
 
   const handleQuestionsComplete = (modules: any[], unifiedIdeaText: string, grade: string) => {
@@ -92,8 +108,7 @@ const Create = () => {
   };
 
   const handleSaveToLibrary = () => {
-    // TODO: Implement save to user's module library
-    console.log('Saving modules to library...');
+    console.log('Modules saved to library successfully');
   };
 
   const handleGoToRemix = () => {
@@ -162,7 +177,7 @@ const Create = () => {
             </p>
           </div>
 
-          {/* Step-based rendering */}
+          {/* Step-based rendering with improved validation */}
           {currentStep === 'expansion' && ideaQuality && (
             <IdeaExpansionHelper
               currentLanguage={currentLanguage}

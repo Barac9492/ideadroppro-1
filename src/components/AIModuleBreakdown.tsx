@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,9 +15,11 @@ import {
   Edit3,
   Save,
   Shuffle,
-  ArrowRight
+  ArrowRight,
+  CheckCircle
 } from 'lucide-react';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
+import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 
 interface ModuleData {
   type: string;
@@ -49,6 +50,7 @@ const AIModuleBreakdown: React.FC<AIModuleBreakdownProps> = ({
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [moduleCards, setModuleCards] = useState<ModuleData[]>([]);
   const { decomposeIdea, decomposing } = useModularIdeas({ currentLanguage });
+  const { saveModulesToLibrary, saving } = useModuleLibrary({ currentLanguage });
 
   const text = {
     ko: {
@@ -59,9 +61,11 @@ const AIModuleBreakdown: React.FC<AIModuleBreakdownProps> = ({
       expandModule: '자세히 보기',
       improveModule: '이 모듈 개선하기',
       saveToLibrary: '내 모듈 라이브러리에 저장',
-      goToRemix: '다른 모듈과 조합하기',
+      goToRemix: '리믹스 스튜디오로 이동',
       nextSteps: '다음 단계',
       breakdown: '분해 중...',
+      saving: '저장 중...',
+      saved: '저장 완료!',
       moduleTypes: {
         problem: '문제 정의',
         solution: '솔루션',
@@ -80,10 +84,12 @@ const AIModuleBreakdown: React.FC<AIModuleBreakdownProps> = ({
       moduleScore: 'Module Score',
       expandModule: 'View Details',
       improveModule: 'Improve This Module',
-      saveToLibrary: 'Save to My Module Library',
-      goToRemix: 'Combine with Other Modules',
+      saveToLibrary: 'Save to Module Library',
+      goToRemix: 'Go to Remix Studio',
       nextSteps: 'Next Steps',
       breakdown: 'Breaking down...',
+      saving: 'Saving...',
+      saved: 'Saved!',
       moduleTypes: {
         problem: 'Problem Definition',
         solution: 'Solution',
@@ -142,6 +148,17 @@ const AIModuleBreakdown: React.FC<AIModuleBreakdownProps> = ({
     } catch (error) {
       console.error('Failed to decompose idea:', error);
     }
+  };
+
+  const handleSaveToLibrary = async () => {
+    const success = await saveModulesToLibrary(moduleCards, unifiedIdea);
+    if (success) {
+      onSaveToLibrary();
+    }
+  };
+
+  const handleGoToRemix = () => {
+    onGoToRemix();
   };
 
   const overallScore = moduleCards.length > 0 
@@ -251,15 +268,20 @@ const AIModuleBreakdown: React.FC<AIModuleBreakdownProps> = ({
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={onSaveToLibrary}
+              onClick={handleSaveToLibrary}
+              disabled={saving}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-3"
             >
-              <Save className="w-4 h-4 mr-2" />
-              {text[currentLanguage].saveToLibrary}
+              {saving ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              {saving ? text[currentLanguage].saving : text[currentLanguage].saveToLibrary}
             </Button>
             
             <Button
-              onClick={onGoToRemix}
+              onClick={handleGoToRemix}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3"
             >
               <Shuffle className="w-4 h-4 mr-2" />
