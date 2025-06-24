@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +42,8 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [conversationContext, setConversationContext] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isAsking, setIsAsking] = useState(false);
 
   const moduleTypes = ['problem_definition', 'target_customer', 'value_proposition', 'revenue_model', 'competitive_advantage'];
   
@@ -78,30 +80,54 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     }
   };
 
+  // Check if message already exists to prevent duplication
+  const messageExists = (content: string, role: 'user' | 'ai') => {
+    return messages.some(msg => msg.content === content && msg.role === role);
+  };
+
+  // Add message only if it doesn't already exist
+  const addMessage = (message: ChatMessage) => {
+    if (!messageExists(message.content, message.role)) {
+      console.log('Adding new message:', message.id, message.content.substring(0, 50) + '...');
+      setMessages(prev => [...prev, message]);
+    } else {
+      console.log('Duplicate message prevented:', message.content.substring(0, 50) + '...');
+    }
+  };
+
   useEffect(() => {
-    // Initialize conversation with welcome message
-    const welcomeMessage: ChatMessage = {
-      id: 'welcome',
-      role: 'ai',
-      content: `${text[currentLanguage].welcome}\n\n"${initialIdea}"\n\n이제 하나씩 구체적으로 발전시켜보겠습니다!`,
-      timestamp: new Date()
-    };
-    
-    setMessages([welcomeMessage]);
-    
-    // Start with first question
-    setTimeout(() => {
-      askNextQuestion();
-    }, 1000);
-  }, []);
+    if (!isInitialized) {
+      console.log('Initializing chat with welcome message');
+      
+      // Initialize conversation with welcome message
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome',
+        role: 'ai',
+        content: `${text[currentLanguage].welcome}\n\n"${initialIdea}"\n\n이제 하나씩 구체적으로 발전시켜보겠습니다!`,
+        timestamp: new Date()
+      };
+      
+      addMessage(welcomeMessage);
+      setIsInitialized(true);
+      
+      // Start with first question
+      setTimeout(() => {
+        askNextQuestion();
+      }, 1000);
+    }
+  }, [isInitialized, initialIdea, currentLanguage]);
 
   const askNextQuestion = async () => {
-    if (currentModuleIndex >= moduleTypes.length) {
-      handleCompletion();
+    if (isAsking || currentModuleIndex >= moduleTypes.length) {
+      if (currentModuleIndex >= moduleTypes.length) {
+        handleCompletion();
+      }
       return;
     }
 
+    setIsAsking(true);
     const currentModule = moduleTypes[currentModuleIndex];
+    console.log('Asking question for module:', currentModule, 'index:', currentModuleIndex);
     
     try {
       setIsLoading(true);
@@ -118,33 +144,40 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 
       if (error) throw error;
 
-      const question = data?.question || getDefaultQuestion(currentModule);
+      const question = data?.question;
       
-      const questionMessage: ChatMessage = {
-        id: `question-${currentModuleIndex}-${Date.now()}`,
-        role: 'ai',
-        content: question,
-        moduleType: currentModule,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, questionMessage]);
+      if (question) {
+        const questionMessage: ChatMessage = {
+          id: `question-${currentModule}-${Date.now()}`,
+          role: 'ai',
+          content: question,
+          moduleType: currentModule,
+          timestamp: new Date()
+        };
+        
+        addMessage(questionMessage);
+        console.log('Added API generated question for:', currentModule);
+      } else {
+        throw new Error('No question received from API');
+      }
     } catch (error) {
       console.error('Error generating question:', error);
       
-      // Fallback to default question
+      // Only add fallback if API failed
       const fallbackQuestion = getDefaultQuestion(moduleTypes[currentModuleIndex]);
       const questionMessage: ChatMessage = {
-        id: `question-${currentModuleIndex}-${Date.now()}`,
+        id: `fallback-${currentModuleIndex}-${Date.now()}`,
         role: 'ai',
         content: fallbackQuestion,
         moduleType: moduleTypes[currentModuleIndex],
         timestamp: new Date()
       };
       
-      setMessages(prev => [...prev, questionMessage]);
+      addMessage(questionMessage);
+      console.log('Added fallback question for:', moduleTypes[currentModuleIndex]);
     } finally {
       setIsLoading(false);
+      setIsAsking(false);
     }
   };
 
@@ -201,7 +234,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   };
 
   const handleUserResponse = async () => {
-    if (!currentInput.trim() || isCompleted) return;
+    if (!currentInput.trim() || isCompleted || isLoading) return;
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -211,7 +244,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    addMessage(userMessage);
     
     const currentModule = moduleTypes[currentModuleIndex];
     const userResponse = currentInput.trim();
@@ -249,7 +282,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         timestamp: new Date()
       };
       
-      setMessages(prev => [...prev, followUpMessage]);
+      addMessage(followUpMessage);
     } else {
       // Module completed, move to next
       const completionMessage: ChatMessage = {
@@ -259,12 +292,14 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         timestamp: new Date()
       };
       
-      setMessages(prev => [...prev, completionMessage]);
+      addMessage(completionMessage);
       
       // Move to next module after short delay
       setTimeout(() => {
         setCurrentModuleIndex(prev => prev + 1);
-        askNextQuestion();
+        setTimeout(() => {
+          askNextQuestion();
+        }, 500);
       }, 1500);
     }
     
@@ -350,7 +385,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       timestamp: new Date()
     };
     
-    setMessages(prev => [...prev, finalMessage]);
+    addMessage(finalMessage);
     setIsCompleted(true);
   };
 
