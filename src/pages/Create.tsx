@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import AIQuestionFlow from '@/components/AIQuestionFlow';
@@ -49,9 +48,7 @@ const Create = () => {
     if (!user) {
       navigate('/auth', { state: { initialIdea } });
     }
-  }, [user, navigate, initialI
-
-]);
+  }, [user, navigate, initialIdea]);
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
