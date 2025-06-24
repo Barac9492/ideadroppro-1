@@ -23,7 +23,7 @@ export const generateModuleTitleFromContent = (content: string, maxLength: numbe
 };
 
 export const getModuleTitle = (module: any): string => {
-  // Try different sources for title
+  // Handle different module structures
   const possibleTitles = [
     module.title,
     module.module_data?.title,
@@ -46,4 +46,8 @@ export const getModuleContent = (module: any): string => {
 
 export const getModuleScore = (module: any): number => {
   return module.module_data?.score || module.quality_score || 85;
+};
+
+export const getModuleType = (module: any): string => {
+  return module.module_type || module.module_data?.type || 'unknown';
 };

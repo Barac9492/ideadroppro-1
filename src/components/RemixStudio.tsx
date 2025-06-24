@@ -12,7 +12,7 @@ import {
 import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
 import ModuleMenuGrid from './remix/ModuleMenuGrid';
-import { getModuleTitle, getModuleContent, getModuleScore } from '@/utils/moduleUtils';
+import { getModuleTitle, getModuleContent, getModuleScore, getModuleType } from '@/utils/moduleUtils';
 
 interface RemixStudioProps {
   currentLanguage: 'ko' | 'en';
@@ -94,7 +94,7 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
   // Get modules for selected category - Fixed type checking
   const categoryModules = selectedCategory 
     ? [...modules, ...allModules].filter(module => {
-        const moduleType = module.module_data?.type || module.module_type;
+        const moduleType = getModuleType(module);
         return moduleType === selectedCategory;
       })
     : [];
