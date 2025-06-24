@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Zap, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Zap, TrendingUp, TrendingDown, Edit3, Plus } from 'lucide-react';
 import { getModuleTitle, getModuleContent, getModuleScore, getModuleType } from '@/utils/moduleUtils';
+import ModuleEditModal from './ModuleEditModal';
 
 interface ModuleImprovementProps {
   moduleType: string;
@@ -27,6 +28,8 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
 }) => {
   const [selectedAlternative, setSelectedAlternative] = useState<any>(null);
   const [scorePreview, setScorePreview] = useState<number | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState<any>(null);
 
   const text = {
     ko: {
@@ -40,6 +43,9 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
       noAlternatives: '사용 가능한 대안이 없습니다',
       scoreIncrease: '점수 향상 예상',
       scoreDecrease: '점수 하락 예상',
+      editDirect: '직접 편집',
+      createNew: '새로 작성',
+      chooseFromOptions: '기존 옵션에서 선택',
       moduleTypes: {
         problem: '문제 정의',
         solution: '솔루션',
@@ -66,6 +72,9 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
       noAlternatives: 'No alternatives available',
       scoreIncrease: 'Score increase expected',
       scoreDecrease: 'Score decrease expected',
+      editDirect: 'Edit Directly',
+      createNew: 'Create New',
+      chooseFromOptions: 'Choose from Options',
       moduleTypes: {
         problem: 'Problem',
         solution: 'Solution',
@@ -94,10 +103,33 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
     }
   }, [selectedAlternative, currentModule]);
 
+  const normalizeScore = (score: number): number => {
+    // Convert decimal scores (0.85) to percentage (85)
+    if (score <= 1) {
+      return Math.round(score * 100);
+    }
+    return Math.round(score);
+  };
+
+  const handleEditCurrent = () => {
+    setEditingModule(currentModule);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCreateNew = () => {
+    setEditingModule(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveModule = (newModule: any) => {
+    onSelectModule(newModule);
+    setIsEditModalOpen(false);
+  };
+
   const renderModuleCard = (module: any, isSelected: boolean, isCurrent: boolean = false) => {
     const title = getModuleTitle(module);
     const content = getModuleContent(module);
-    const score = getModuleScore(module);
+    const score = normalizeScore(getModuleScore(module));
 
     return (
       <Card 
@@ -120,17 +152,17 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
             </Badge>
             {!isCurrent && currentModule && (
               <div className="flex items-center space-x-1">
-                {score > getModuleScore(currentModule) ? (
+                {score > normalizeScore(getModuleScore(currentModule)) ? (
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                ) : score < getModuleScore(currentModule) ? (
+                ) : score < normalizeScore(getModuleScore(currentModule)) ? (
                   <TrendingDown className="w-4 h-4 text-red-500" />
                 ) : null}
                 <span className={`text-xs font-medium ${
-                  score > getModuleScore(currentModule) ? 'text-green-600' : 
-                  score < getModuleScore(currentModule) ? 'text-red-600' : 'text-gray-600'
+                  score > normalizeScore(getModuleScore(currentModule)) ? 'text-green-600' : 
+                  score < normalizeScore(getModuleScore(currentModule)) ? 'text-red-600' : 'text-gray-600'
                 }`}>
-                  {score > getModuleScore(currentModule) ? '+' : ''}
-                  {score - getModuleScore(currentModule)}
+                  {score > normalizeScore(getModuleScore(currentModule)) ? '+' : ''}
+                  {score - normalizeScore(getModuleScore(currentModule))}
                 </span>
               </div>
             )}
@@ -165,6 +197,34 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
           </h2>
         </div>
         <div />
+      </div>
+
+      {/* Direct Edit Options */}
+      <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">직접 편집 옵션</h3>
+        <div className="flex flex-wrap gap-3">
+          {currentModule && (
+            <Button 
+              onClick={handleEditCurrent}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Edit3 className="w-4 h-4 mr-2" />
+              {text[currentLanguage].editDirect}
+            </Button>
+          )}
+          <Button 
+            onClick={handleCreateNew}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {text[currentLanguage].createNew}
+          </Button>
+          <div className="flex-1 flex items-center">
+            <span className="text-sm text-gray-600 ml-4">
+              또는 아래에서 {text[currentLanguage].chooseFromOptions}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Current vs Alternative Comparison */}
@@ -248,6 +308,16 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
           </div>
         </div>
       )}
+
+      {/* Module Edit Modal */}
+      <ModuleEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        moduleType={moduleType}
+        currentModule={editingModule}
+        currentLanguage={currentLanguage}
+        onSave={handleSaveModule}
+      />
     </div>
   );
 };

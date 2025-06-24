@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, Plus } from 'lucide-react';
+import { Sparkles, ArrowRight, Plus, Edit3 } from 'lucide-react';
 import { getModuleTitle, getModuleContent, getModuleScore, getModuleType } from '@/utils/moduleUtils';
 
 interface CurrentIdeaStateProps {
@@ -24,6 +24,7 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
       title: '현재 아이디어 상태',
       subtitle: '개선하고 싶은 부분을 선택해보세요',
       improve: '개선하기',
+      edit: '편집',
       empty: '아직 모듈이 없음',
       addModule: '모듈 추가',
       moduleTypes: {
@@ -45,6 +46,7 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
       title: 'Current Idea State',
       subtitle: 'Select the part you want to improve',
       improve: 'Improve',
+      edit: 'Edit',
       empty: 'No module yet',
       addModule: 'Add Module',
       moduleTypes: {
@@ -77,6 +79,14 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
     return acc;
   }, {} as Record<string, any>);
 
+  const normalizeScore = (score: number): number => {
+    // Convert decimal scores (0.85) to percentage (85)
+    if (score <= 1) {
+      return Math.round(score * 100);
+    }
+    return Math.round(score);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -102,12 +112,12 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
           return (
             <Card 
               key={moduleType}
-              className={`transition-all duration-300 hover:shadow-lg cursor-pointer ${
+              className={`transition-all duration-300 hover:shadow-lg ${
                 hasModule 
                   ? 'border-green-200 bg-green-50 hover:bg-green-100' 
-                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100 border-dashed'
+                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100 border-dashed cursor-pointer'
               }`}
-              onClick={() => onImproveModule(moduleType)}
+              onClick={() => !hasModule && onImproveModule(moduleType)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -119,7 +129,7 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
                   </Badge>
                   {hasModule && (
                     <Badge variant="outline" className="text-xs">
-                      {getModuleScore(module)}점
+                      {normalizeScore(getModuleScore(module))}점
                     </Badge>
                   )}
                 </div>
@@ -136,13 +146,19 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
                         {getModuleContent(module)}
                       </p>
                     </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full bg-green-600 hover:bg-green-700"
-                    >
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      {text[currentLanguage].improve}
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onImproveModule(moduleType);
+                        }}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        {text[currentLanguage].improve}
+                      </Button>
+                    </div>
                   </>
                 ) : (
                   <>
@@ -155,6 +171,10 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
                       size="sm" 
                       variant="outline" 
                       className="w-full border-dashed"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onImproveModule(moduleType);
+                      }}
                     >
                       <Plus className="w-3 h-3 mr-1" />
                       {text[currentLanguage].addModule}
@@ -182,7 +202,7 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
             <div className="w-24 h-2 bg-gray-200 rounded-full">
               <div 
                 className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
-                style={{ width: `${(currentModules.length / 8) * 100}%` }}
+                style={{ width: `${Math.round((currentModules.length / 8) * 100)}%` }}
               />
             </div>
             <span className="text-sm font-medium text-gray-700">

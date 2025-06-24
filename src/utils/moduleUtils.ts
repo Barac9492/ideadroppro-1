@@ -45,9 +45,19 @@ export const getModuleContent = (module: any): string => {
 };
 
 export const getModuleScore = (module: any): number => {
-  return module.module_data?.score || module.quality_score || 85;
+  const score = module.module_data?.score || module.quality_score || 85;
+  return normalizeScore(score);
 };
 
 export const getModuleType = (module: any): string => {
   return module.module_type || module.module_data?.type || 'unknown';
+};
+
+// Normalize score to consistent format (0-100 scale)
+export const normalizeScore = (score: number): number => {
+  // Convert decimal scores (0.85) to percentage (85)
+  if (score <= 1) {
+    return Math.round(score * 100);
+  }
+  return Math.round(score);
 };
