@@ -44,6 +44,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
   const [conversationContext, setConversationContext] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   const [isAsking, setIsAsking] = useState(false);
+  const [lastAskedModule, setLastAskedModule] = useState<string | null>(null);
 
   const moduleTypes = ['problem_definition', 'target_customer', 'value_proposition', 'revenue_model', 'competitive_advantage'];
   
@@ -112,22 +113,31 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       
       // Start with first question
       setTimeout(() => {
-        askNextQuestion();
+        askNextQuestionForModule(0);
       }, 1000);
     }
   }, [isInitialized, initialIdea, currentLanguage]);
 
-  const askNextQuestion = async () => {
-    if (isAsking || currentModuleIndex >= moduleTypes.length) {
-      if (currentModuleIndex >= moduleTypes.length) {
+  const askNextQuestionForModule = async (moduleIndex: number) => {
+    if (isAsking || moduleIndex >= moduleTypes.length) {
+      if (moduleIndex >= moduleTypes.length) {
         handleCompletion();
       }
       return;
     }
 
+    const targetModule = moduleTypes[moduleIndex];
+    
+    // Prevent asking for the same module twice in a row
+    if (lastAskedModule === targetModule) {
+      console.log('Skipping duplicate question for module:', targetModule);
+      return;
+    }
+
     setIsAsking(true);
-    const currentModule = moduleTypes[currentModuleIndex];
-    console.log('Asking question for module:', currentModule, 'index:', currentModuleIndex);
+    setLastAskedModule(targetModule);
+    
+    console.log('Asking question for module:', targetModule, 'at index:', moduleIndex);
     
     try {
       setIsLoading(true);
@@ -135,7 +145,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       const { data, error } = await supabase.functions.invoke('generate-smart-questions', {
         body: {
           ideaText: initialIdea,
-          moduleType: currentModule,
+          moduleType: targetModule,
           language: currentLanguage,
           context: conversationContext,
           previousAnswers: moduleData
@@ -148,37 +158,42 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       
       if (question) {
         const questionMessage: ChatMessage = {
-          id: `question-${currentModule}-${Date.now()}`,
+          id: `question-${targetModule}-${Date.now()}`,
           role: 'ai',
           content: question,
-          moduleType: currentModule,
+          moduleType: targetModule,
           timestamp: new Date()
         };
         
         addMessage(questionMessage);
-        console.log('Added API generated question for:', currentModule);
+        console.log('Added API generated question for:', targetModule);
       } else {
         throw new Error('No question received from API');
       }
     } catch (error) {
-      console.error('Error generating question:', error);
+      console.error('Error generating question for module:', targetModule, error);
       
-      // Only add fallback if API failed
-      const fallbackQuestion = getDefaultQuestion(moduleTypes[currentModuleIndex]);
+      // Use fallback question for the specific module
+      const fallbackQuestion = getDefaultQuestion(targetModule);
       const questionMessage: ChatMessage = {
-        id: `fallback-${currentModuleIndex}-${Date.now()}`,
+        id: `fallback-${targetModule}-${Date.now()}`,
         role: 'ai',
         content: fallbackQuestion,
-        moduleType: moduleTypes[currentModuleIndex],
+        moduleType: targetModule,
         timestamp: new Date()
       };
       
       addMessage(questionMessage);
-      console.log('Added fallback question for:', moduleTypes[currentModuleIndex]);
+      console.log('Added fallback question for:', targetModule);
     } finally {
       setIsLoading(false);
       setIsAsking(false);
     }
+  };
+
+  // Legacy function for backward compatibility - now redirects to the new function
+  const askNextQuestion = () => {
+    askNextQuestionForModule(currentModuleIndex);
   };
 
   const getDefaultQuestion = (moduleType: string): string => {
@@ -233,6 +248,19 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     }
   };
 
+  const proceedToNextModule = () => {
+    console.log('Proceeding to next module from index:', currentModuleIndex, 'to:', currentModuleIndex + 1);
+    
+    const nextIndex = currentModuleIndex + 1;
+    setCurrentModuleIndex(nextIndex);
+    setLastAskedModule(null); // Reset to allow asking for the new module
+    
+    // Use setTimeout to ensure state has updated before asking next question
+    setTimeout(() => {
+      askNextQuestionForModule(nextIndex);
+    }, 500);
+  };
+
   const handleUserResponse = async () => {
     if (!currentInput.trim() || isCompleted || isLoading) return;
 
@@ -248,6 +276,8 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     
     const currentModule = moduleTypes[currentModuleIndex];
     const userResponse = currentInput.trim();
+    
+    console.log('Processing user response for module:', currentModule, 'at index:', currentModuleIndex);
     
     // Save response to module data
     setModuleData(prev => ({
@@ -296,10 +326,7 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
       
       // Move to next module after short delay
       setTimeout(() => {
-        setCurrentModuleIndex(prev => prev + 1);
-        setTimeout(() => {
-          askNextQuestion();
-        }, 500);
+        proceedToNextModule();
       }, 1500);
     }
     
