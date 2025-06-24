@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Globe, User, LogOut, Settings, BarChart3 } from 'lucide-react';
+import { Globe, User, LogOut, Settings, BarChart3, Loader2 } from 'lucide-react';
 import HeaderLogo from './HeaderLogo';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +20,7 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
   showBeta = false
 }) => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { isAdmin } = useUserRole();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -136,8 +135,12 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
                 {currentLanguage === 'ko' ? 'EN' : '한국어'}
               </Button>
 
-              {/* Auth Section */}
-              {user ? (
+              {/* Auth Section with Loading State */}
+              {authLoading ? (
+                <div className="flex items-center text-white">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              ) : user ? (
                 <div className="relative" ref={dropdownRef}>
                   <Button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -172,7 +175,7 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
                         <span>{text[currentLanguage].dashboard}</span>
                       </button>
 
-                      {/* Admin menu - only for admins */}
+                      {/* Admin menu - show for admins */}
                       {isAdmin && (
                         <button
                           onClick={handleAdmin}
