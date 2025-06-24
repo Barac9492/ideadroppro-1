@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import UnifiedNavigation from '@/components/UnifiedNavigation';
 import SimpleTopBar from '@/components/SimpleTopBar';
-import IdeaExpansionHelper from '@/components/IdeaExpansionHelper';
+import ConversationalIdeaCoach from '@/components/ConversationalIdeaCoach';
 import EducationalGradeDisplay from '@/components/EducationalGradeDisplay';
 import { analyzeIdeaQuality, IdeaQuality } from '@/components/IdeaQualityAnalyzer';
 import AIModuleBreakdown from '@/components/AIModuleBreakdown';
@@ -15,7 +15,7 @@ const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [initialIdea, setInitialIdea] = useState('');
   const [processedIdea, setProcessedIdea] = useState('');
-  const [currentStep, setCurrentStep] = useState<'expansion' | 'questions' | 'grade' | 'modules'>('expansion');
+  const [currentStep, setCurrentStep] = useState<'coach' | 'questions' | 'grade' | 'modules'>('coach');
   const [completedModules, setCompletedModules] = useState<any[]>([]);
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [aiGrade, setAiGrade] = useState('');
@@ -40,17 +40,12 @@ const Create = () => {
       const idea = location.state.initialIdea;
       setInitialIdea(idea);
       
-      // Analyze idea quality with stricter validation
+      // Analyze idea quality but with gentle approach
       const quality = analyzeIdeaQuality(idea, currentLanguage);
       setIdeaQuality(quality);
       
-      // Force expansion for ideas that don't meet minimum content standards
-      if (!quality.hasMinimumContent || quality.needsExpansion) {
-        setCurrentStep('expansion');
-      } else {
-        setProcessedIdea(idea);
-        setCurrentStep('questions');
-      }
+      // Start with conversational coach for all ideas
+      setCurrentStep('coach');
     }
   }, [location.state, currentLanguage]);
 
@@ -65,30 +60,18 @@ const Create = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  const handleExpansionComplete = (expandedIdea: string) => {
-    // Re-analyze the expanded idea to ensure it meets standards
+  const handleCoachComplete = (expandedIdea: string) => {
+    // Re-analyze the expanded idea
     const newQuality = analyzeIdeaQuality(expandedIdea, currentLanguage);
     setIdeaQuality(newQuality);
-    
-    // Only proceed if the idea now meets minimum standards
-    if (newQuality.hasMinimumContent) {
-      setProcessedIdea(expandedIdea);
-      setCurrentStep('questions');
-    } else {
-      // Force them to try again if still insufficient
-      console.log('Expanded idea still does not meet minimum standards');
-    }
+    setProcessedIdea(expandedIdea);
+    setCurrentStep('questions');
   };
 
-  const handleExpansionSkip = () => {
-    // Only allow skipping if the idea meets minimum content standards
-    if (ideaQuality?.hasMinimumContent) {
-      setProcessedIdea(initialIdea);
-      setCurrentStep('questions');
-    } else {
-      // Show warning that expansion is required
-      console.log('Cannot skip expansion - idea does not meet minimum standards');
-    }
+  const handleProceedAnyway = () => {
+    // Allow proceeding with original idea
+    setProcessedIdea(initialIdea);
+    setCurrentStep('questions');
   };
 
   const handleQuestionsComplete = (modules: any[], unifiedIdeaText: string, grade: string) => {
@@ -103,8 +86,7 @@ const Create = () => {
   };
 
   const handleRetryWithEducation = () => {
-    // Reset to expansion step with educational focus
-    setCurrentStep('expansion');
+    setCurrentStep('coach');
   };
 
   const handleSaveToLibrary = () => {
@@ -130,7 +112,6 @@ const Create = () => {
   };
 
   const handleModuleImprovement = (improvedContent: string) => {
-    // TODO: Update the specific module content
     console.log('Module improved:', improvedContent);
     setImprovementModal({ isOpen: false, moduleType: '', moduleContent: '' });
   };
@@ -177,14 +158,14 @@ const Create = () => {
             </p>
           </div>
 
-          {/* Step-based rendering with improved validation */}
-          {currentStep === 'expansion' && ideaQuality && (
-            <IdeaExpansionHelper
+          {/* Step-based rendering with conversational approach */}
+          {currentStep === 'coach' && ideaQuality && (
+            <ConversationalIdeaCoach
               currentLanguage={currentLanguage}
               originalIdea={initialIdea}
               qualityAnalysis={ideaQuality}
-              onExpansionComplete={handleExpansionComplete}
-              onSkip={handleExpansionSkip}
+              onExpansionComplete={handleCoachComplete}
+              onProceedAnyway={handleProceedAnyway}
             />
           )}
 
