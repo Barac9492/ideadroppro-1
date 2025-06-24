@@ -20,6 +20,7 @@ export const useQuestionGeneration = (
   const [isAsking, setIsAsking] = useState(false);
   const lastAskedModuleRef = useRef<string | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
+  const retryCountRef = useRef<Record<string, number>>({});
 
   const getDefaultQuestion = useCallback((moduleType: string): string => {
     const questions = {
@@ -42,7 +43,7 @@ export const useQuestionGeneration = (
     return questions[currentLanguage][moduleType as keyof typeof questions[typeof currentLanguage]] || 'Please tell me more about this aspect.';
   }, [initialIdea, currentLanguage]);
 
-  const askQuestionForModule = useCallback(async (moduleType: string) => {
+  const askQuestionForModule = useCallback(async (moduleType: string): Promise<void> => {
     // Enhanced concurrency control
     if (isAsking || 
         lastAskedModuleRef.current === moduleType || 
@@ -52,12 +53,17 @@ export const useQuestionGeneration = (
         lastAsked: lastAskedModuleRef.current,
         processing: Array.from(processingRef.current)
       });
-      return;
+      return Promise.resolve();
     }
 
     setIsAsking(true);
     lastAskedModuleRef.current = moduleType;
     processingRef.current.add(moduleType);
+    
+    // Initialize retry count
+    if (!retryCountRef.current[moduleType]) {
+      retryCountRef.current[moduleType] = 0;
+    }
     
     console.log('🎯 STARTING to ask question for module:', moduleType);
     
@@ -72,7 +78,10 @@ export const useQuestionGeneration = (
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase function error:', error);
+        throw new Error(`API Error: ${error.message || 'Unknown error'}`);
+      }
 
       const question = data?.question;
       
@@ -87,34 +96,63 @@ export const useQuestionGeneration = (
         
         console.log('✅ Adding API generated question:', questionMessage.id);
         addMessage(questionMessage);
+        
+        // Reset retry count on success
+        retryCountRef.current[moduleType] = 0;
       } else {
         throw new Error('No question received from API');
       }
     } catch (error) {
       console.error('❌ Error generating question for module:', moduleType, error);
       
-      const fallbackQuestion = getDefaultQuestion(moduleType);
-      const questionMessage: ChatMessage = {
-        id: `fallback-question-${moduleType}-${Date.now()}-${Math.random()}`,
-        role: 'ai',
-        content: fallbackQuestion,
-        moduleType: moduleType,
-        timestamp: new Date()
-      };
+      // Increment retry count
+      retryCountRef.current[moduleType]++;
       
-      console.log('🔄 Adding fallback question:', questionMessage.id);
-      addMessage(questionMessage);
+      // If we've retried too many times, use fallback
+      if (retryCountRef.current[moduleType] >= 3) {
+        console.log('🔄 Max retries reached, using fallback question');
+        
+        const fallbackQuestion = getDefaultQuestion(moduleType);
+        const questionMessage: ChatMessage = {
+          id: `fallback-question-${moduleType}-${Date.now()}-${Math.random()}`,
+          role: 'ai',
+          content: fallbackQuestion,
+          moduleType: moduleType,
+          timestamp: new Date()
+        };
+        
+        console.log('🔄 Adding fallback question:', questionMessage.id);
+        addMessage(questionMessage);
+        
+        // Reset retry count
+        retryCountRef.current[moduleType] = 0;
+      } else {
+        // Retry after a delay
+        console.log(`🔄 Retrying question generation (attempt ${retryCountRef.current[moduleType]}/3)`);
+        
+        setTimeout(() => {
+          processingRef.current.delete(moduleType);
+          lastAskedModuleRef.current = null;
+          setIsAsking(false);
+          askQuestionForModule(moduleType);
+        }, 2000 * retryCountRef.current[moduleType]); // Exponential backoff
+        
+        return Promise.resolve();
+      }
     } finally {
       processingRef.current.delete(moduleType);
       setIsAsking(false);
       console.log('✅ COMPLETED question generation for module:', moduleType);
     }
+    
+    return Promise.resolve();
   }, [isAsking, initialIdea, currentLanguage, conversationContext, moduleData, addMessage, getDefaultQuestion]);
 
   const resetLastAskedModule = useCallback(() => {
     console.log('🔄 Resetting last asked module from:', lastAskedModuleRef.current);
     lastAskedModuleRef.current = null;
     processingRef.current.clear();
+    setIsAsking(false);
   }, []);
 
   return {

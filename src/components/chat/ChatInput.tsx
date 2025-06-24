@@ -13,6 +13,7 @@ interface ChatInputProps {
   isCompleted: boolean;
   currentModuleIndex: number;
   moduleTypesLength: number;
+  canSubmit?: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -23,23 +24,26 @@ const ChatInput: React.FC<ChatInputProps> = ({
   currentLanguage,
   isCompleted,
   currentModuleIndex,
-  moduleTypesLength
+  moduleTypesLength,
+  canSubmit = true
 }) => {
   const text = {
     ko: {
       placeholder: '자세히 설명해주세요...',
-      continue: '계속하기'
+      continue: '계속하기',
+      processing: '처리 중...'
     },
     en: {
       placeholder: 'Please explain in detail...',
-      continue: 'Continue'
+      continue: 'Continue',
+      processing: 'Processing...'
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (currentInput.trim()) {
+      if (canSubmit && currentInput.trim()) {
         onSubmit();
       }
     }
@@ -63,10 +67,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-500">
           {currentInput.length}/500
+          {isLoading && (
+            <span className="ml-2 text-blue-600">
+              {text[currentLanguage].processing}
+            </span>
+          )}
         </div>
         <Button
           onClick={onSubmit}
-          disabled={!currentInput.trim() || isLoading}
+          disabled={!canSubmit}
           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-3"
         >
           {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
