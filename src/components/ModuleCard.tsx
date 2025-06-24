@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Star, Users, Check, Plus } from 'lucide-react';
 import { IdeaModule } from '@/hooks/useModularIdeas';
+import { getModuleTitle } from '@/utils/moduleUtils';
 
 interface ModuleCardProps {
   module: IdeaModule;
@@ -60,6 +60,8 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
     }
   };
 
+  const title = getModuleTitle(module);
+
   return (
     <Card 
       className={`cursor-pointer transition-all hover:shadow-md ${
@@ -94,9 +96,14 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
           </Button>
         </div>
         
-        <p className="text-sm text-gray-700 leading-relaxed mb-3 line-clamp-3">
-          {module.content}
-        </p>
+        <div className="mb-3">
+          <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2">
+            {title}
+          </h3>
+          <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+            {module.content}
+          </p>
+        </div>
         
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center space-x-3">

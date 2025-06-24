@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import {
 import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
 import ModuleMenuGrid from './remix/ModuleMenuGrid';
+import { getModuleTitle, getModuleContent, getModuleScore } from '@/utils/moduleUtils';
 
 interface RemixStudioProps {
   currentLanguage: 'ko' | 'en';
@@ -91,16 +91,19 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
     console.log('Generating idea from modules:', selectedModules);
   };
 
-  // Get modules for selected category
+  // Get modules for selected category - Fixed type checking
   const categoryModules = selectedCategory 
-    ? [...modules, ...allModules].filter(module => 
-        (module.module_type || module.module_data?.type) === selectedCategory
-      )
+    ? [...modules, ...allModules].filter(module => {
+        const moduleType = module.module_data?.type || module.module_type;
+        return moduleType === selectedCategory;
+      })
     : [];
 
   const renderModuleCard = (module: any, isFromLibrary = true) => {
-    const moduleData = isFromLibrary ? module.module_data : module;
     const isSelected = isModuleSelected(module.id);
+    const title = getModuleTitle(module);
+    const content = getModuleContent(module);
+    const score = getModuleScore(module);
 
     return (
       <Card 
@@ -113,15 +116,15 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <Badge variant={isSelected ? "default" : "secondary"} className="text-xs">
-              {moduleData?.score || 85}%
+              {score}%
             </Badge>
           </div>
-          <CardTitle className="text-sm font-medium">{moduleData?.title || 'Untitled'}</CardTitle>
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
         </CardHeader>
         
         <CardContent className="space-y-2">
           <p className="text-xs text-gray-600 line-clamp-2">
-            {moduleData?.content || module.content}
+            {content}
           </p>
           
           <Button
@@ -247,14 +250,15 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {selectedModules.map(module => {
-                      const moduleData = module.module_data || module;
+                      const title = getModuleTitle(module);
+                      const content = getModuleContent(module);
                       return (
                         <div key={module.id} className="bg-gray-50 rounded p-2">
                           <div className="text-xs font-medium truncate mb-1">
-                            {moduleData.title || 'Untitled'}
+                            {title}
                           </div>
                           <div className="text-xs text-gray-600 line-clamp-2">
-                            {moduleData.content || module.content}
+                            {content}
                           </div>
                         </div>
                       );

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import {
   Plus,
   ArrowRight
 } from 'lucide-react';
+import { getModuleTitle, getModuleContent } from '@/utils/moduleUtils';
 
 interface ModuleCategory {
   id: string;
@@ -146,9 +146,9 @@ const ModuleMenuGrid: React.FC<ModuleMenuGridProps> = ({
     competitive_advantage: 'from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700'
   };
 
-  // Group modules by type
+  // Group modules by type - Fixed type checking
   const categorizedModules = modules.reduce((acc, module) => {
-    const type = module.module_type || 'other';
+    const type = module.module_type || module.module_data?.type || 'other';
     if (!acc[type]) acc[type] = [];
     acc[type].push(module);
     return acc;
@@ -203,18 +203,23 @@ const ModuleMenuGrid: React.FC<ModuleMenuGridProps> = ({
               {/* Preview of modules in this category */}
               {category.modules.length > 0 && (
                 <div className="space-y-2">
-                  {category.modules.slice(0, 2).map((module) => (
-                    <div 
-                      key={module.id}
-                      className="bg-gray-50 rounded p-2 text-xs text-gray-700 line-clamp-2 hover:bg-gray-100 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onModuleSelect(module);
-                      }}
-                    >
-                      {module.content || (module.module_data && module.module_data.content)}
-                    </div>
-                  ))}
+                  {category.modules.slice(0, 2).map((module) => {
+                    const title = getModuleTitle(module);
+                    const content = getModuleContent(module);
+                    return (
+                      <div 
+                        key={module.id}
+                        className="bg-gray-50 rounded p-2 text-xs text-gray-700 line-clamp-2 hover:bg-gray-100 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onModuleSelect(module);
+                        }}
+                      >
+                        <div className="font-medium mb-1 truncate">{title}</div>
+                        <div className="text-gray-600 line-clamp-1">{content}</div>
+                      </div>
+                    );
+                  })}
                   {category.modules.length > 2 && (
                     <div className="text-xs text-gray-500 text-center">
                       +{category.modules.length - 2} more...
