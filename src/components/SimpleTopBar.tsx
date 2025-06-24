@@ -98,13 +98,13 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-blue-900/95 backdrop-blur-sm border-b border-blue-800/50">
       {/* Beta banner */}
       {showBeta && (
-        <div className="bg-gradient-to-r from-gray-900 to-black text-white py-2">
+        <div className="bg-gradient-to-r from-blue-800 to-blue-900 text-white py-2">
           <div className="container mx-auto px-4 text-center">
             <div className="flex items-center justify-center space-x-2">
-              <Badge className="bg-orange-500 text-white border-orange-400 text-xs">
+              <Badge className="bg-cyan-500 text-white border-cyan-400 text-xs">
                 🎉 {text[currentLanguage].betaTitle}
               </Badge>
               <span className="text-sm font-medium">
@@ -116,7 +116,7 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
       )}
       
       {/* Simple header */}
-      <div className="border-b border-gray-100">
+      <div>
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <HeaderLogo 
@@ -130,7 +130,7 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
                 onClick={onLanguageToggle}
                 variant="ghost"
                 size="sm"
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                className="text-blue-100 hover:text-white hover:bg-white/10 border-white/20"
               >
                 <Globe className="w-4 h-4 mr-1" />
                 {currentLanguage === 'ko' ? 'EN' : '한국어'}
@@ -143,11 +143,11 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     variant="ghost"
                     size="sm"
-                    className="flex items-center space-x-2 hover:bg-gray-50"
+                    className="flex items-center space-x-2 hover:bg-white/10 text-white"
                   >
                     <Avatar className="w-8 h-8">
                       <AvatarImage src="" />
-                      <AvatarFallback className="bg-orange-500 text-white text-sm">
+                      <AvatarFallback className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm">
                         {getUserInitials()}
                       </AvatarFallback>
                     </Avatar>
@@ -176,7 +176,7 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
                       {isAdmin && (
                         <button
                           onClick={handleAdmin}
-                          className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 flex items-center space-x-2"
+                          className="w-full text-left px-4 py-2 text-sm text-cyan-600 hover:bg-cyan-50 flex items-center space-x-2"
                         >
                           <Settings className="w-4 h-4" />
                           <span>{text[currentLanguage].admin}</span>
@@ -198,7 +198,7 @@ const SimpleTopBar: React.FC<SimpleTopBarProps> = ({
               ) : (
                 <Button
                   onClick={handleLogin}
-                  className="bg-orange-500 hover:bg-orange-600 text-white shadow-sm"
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-sm border-0"
                   size="sm"
                 >
                   {text[currentLanguage].login}

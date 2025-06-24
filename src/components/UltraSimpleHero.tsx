@@ -88,7 +88,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       title: text[currentLanguage].quickActions.explore,
       description: text[currentLanguage].quickActions.exploreDesc,
       path: '/explore',
-      gradient: 'from-gray-900 to-gray-700'
+      gradient: 'from-blue-400 to-blue-600'
     },
     {
       id: 'remix',
@@ -96,7 +96,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       title: text[currentLanguage].quickActions.remix,
       description: text[currentLanguage].quickActions.remixDesc,
       path: '/remix',
-      gradient: 'from-orange-500 to-red-500'
+      gradient: 'from-cyan-400 to-blue-500'
     },
     {
       id: 'myinfo',
@@ -104,7 +104,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       title: text[currentLanguage].quickActions.myInfo,
       description: text[currentLanguage].quickActions.myInfoDesc,
       path: '/my-workspace',
-      gradient: 'from-gray-800 to-black'
+      gradient: 'from-indigo-400 to-purple-500'
     }
   ];
 
@@ -115,87 +115,107 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-[0.02]">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 relative overflow-hidden">
+      {/* McKinsey-style curved grid pattern */}
+      <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, #1a1a1a 2px, transparent 2px)`,
+          backgroundImage: `
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+          `,
           backgroundSize: '60px 60px'
         }}></div>
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-600/20 to-transparent"></div>
+      </div>
+
+      {/* Abstract colorful element inspired by McKinsey */}
+      <div className="absolute top-1/4 right-10 w-96 h-96 opacity-20">
+        <div className="w-full h-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="w-full max-w-6xl mx-auto">
-          {/* Hero Content */}
-          <div className="text-center mb-16">
-            {/* Main Title */}
-            <div className="mb-8">
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-gray-900 leading-tight mb-4">
-                {text[currentLanguage].title}
-                <br />
-                <span className="text-orange-500">
-                  {text[currentLanguage].subtitle}
-                </span>
-              </h1>
-              
-              {/* Accent line */}
-              <div className="w-32 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto mb-8"></div>
-              
-              <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-light">
-                {text[currentLanguage].description}
-              </p>
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left side - Content */}
+            <div className="space-y-12">
+              {/* Main Title */}
+              <div>
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+                  {text[currentLanguage].title}
+                  <br />
+                  <span className="bg-gradient-to-r from-cyan-400 to-blue-300 bg-clip-text text-transparent">
+                    {text[currentLanguage].subtitle}
+                  </span>
+                </h1>
+                
+                <p className="text-xl md:text-2xl text-blue-100 max-w-2xl leading-relaxed font-light">
+                  {text[currentLanguage].description}
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="flex flex-wrap gap-8">
+                {stats.map((stat, index) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div key={index} className="flex items-center space-x-3 text-white">
+                      <div className="p-3 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className="text-lg font-medium">{stat.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Input Section */}
+              <Card className="bg-white/10 backdrop-blur-sm border border-white/20 shadow-2xl rounded-2xl">
+                <CardContent className="p-8">
+                  <div className="space-y-6">
+                    <Textarea
+                      value={ideaText}
+                      onChange={(e) => setIdeaText(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={text[currentLanguage].placeholder}
+                      className="w-full min-h-[120px] text-lg border-0 focus:ring-0 resize-none placeholder-blue-200 bg-transparent text-white leading-relaxed"
+                      maxLength={200}
+                    />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-blue-200 font-medium">
+                        {ideaText.length}/200
+                      </div>
+                      <Button
+                        onClick={handleStartAI}
+                        disabled={!ideaText.trim()}
+                        className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl border-0"
+                      >
+                        <Zap className="w-5 h-5 mr-3" />
+                        {text[currentLanguage].enhanceButton}
+                        <ArrowRight className="w-5 h-5 ml-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-8 mb-16">
-              {stats.map((stat, index) => {
-                const Icon = stat.icon;
-                return (
-                  <div key={index} className="flex items-center space-x-3 text-gray-700">
-                    <div className="p-2 bg-gray-100 rounded-full">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-lg font-medium">{stat.label}</span>
-                  </div>
-                );
-              })}
+            {/* Right side - Visual Element */}
+            <div className="hidden lg:block">
+              <div className="relative">
+                {/* Abstract 3D-like element */}
+                <div className="w-full h-96 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-3xl transform rotate-12 opacity-80"></div>
+                  <div className="absolute inset-4 bg-gradient-to-tl from-pink-400 via-purple-500 to-indigo-600 rounded-3xl transform -rotate-6 opacity-70"></div>
+                  <div className="absolute inset-8 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-3xl transform rotate-3 opacity-60"></div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Input Section */}
-          <Card className="max-w-4xl mx-auto shadow-xl border-0 rounded-2xl bg-white mb-20">
-            <CardContent className="p-12">
-              <div className="space-y-8">
-                <Textarea
-                  value={ideaText}
-                  onChange={(e) => setIdeaText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={text[currentLanguage].placeholder}
-                  className="w-full min-h-[140px] text-xl border-0 focus:ring-0 resize-none placeholder-gray-400 bg-transparent leading-relaxed"
-                  maxLength={200}
-                />
-                
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-400 font-medium">
-                    {ideaText.length}/200
-                  </div>
-                  <Button
-                    onClick={handleStartAI}
-                    disabled={!ideaText.trim()}
-                    className="bg-black hover:bg-gray-800 text-white px-12 py-4 rounded-xl font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-                  >
-                    <Zap className="w-5 h-5 mr-3" />
-                    {text[currentLanguage].enhanceButton}
-                    <ArrowRight className="w-5 h-5 ml-3" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Quick Actions */}
-          <div className="text-center space-y-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <div className="mt-20 text-center space-y-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">
               또는 다른 방법으로 시작해보세요
             </h2>
             
@@ -205,22 +225,19 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
                 return (
                   <Card 
                     key={action.id} 
-                    className="cursor-pointer hover:shadow-2xl transition-all duration-300 border-0 bg-white hover:scale-105 group overflow-hidden"
+                    className="cursor-pointer hover:shadow-2xl transition-all duration-300 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:scale-105 group"
                     onClick={() => navigate(action.path)}
                   >
                     <CardContent className="p-8 text-center space-y-6 relative">
-                      {/* Background gradient on hover */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-                      
                       <div className="relative z-10">
                         <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
                           <Icon className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl text-gray-900 mb-3">
+                          <h3 className="font-bold text-xl text-white mb-3">
                             {action.title}
                           </h3>
-                          <p className="text-gray-600 leading-relaxed">
+                          <p className="text-blue-100 leading-relaxed">
                             {action.description}
                           </p>
                         </div>
