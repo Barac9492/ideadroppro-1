@@ -8,6 +8,8 @@ import SimpleTopBar from '@/components/SimpleTopBar';
 import IdeaExpansionHelper from '@/components/IdeaExpansionHelper';
 import EducationalGradeDisplay from '@/components/EducationalGradeDisplay';
 import { analyzeIdeaQuality, IdeaQuality } from '@/components/IdeaQualityAnalyzer';
+import AIModuleBreakdown from '@/components/AIModuleBreakdown';
+import ModuleImprovementModal from '@/components/ModuleImprovementModal';
 
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -18,6 +20,15 @@ const Create = () => {
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [aiGrade, setAiGrade] = useState('');
   const [ideaQuality, setIdeaQuality] = useState<IdeaQuality | null>(null);
+  const [improvementModal, setImprovementModal] = useState<{
+    isOpen: boolean;
+    moduleType: string;
+    moduleContent: string;
+  }>({
+    isOpen: false,
+    moduleType: '',
+    moduleContent: ''
+  });
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +89,35 @@ const Create = () => {
   const handleRetryWithEducation = () => {
     // Reset to expansion step with educational focus
     setCurrentStep('expansion');
+  };
+
+  const handleSaveToLibrary = () => {
+    // TODO: Implement save to user's module library
+    console.log('Saving modules to library...');
+  };
+
+  const handleGoToRemix = () => {
+    navigate('/remix', { 
+      state: { 
+        userModules: completedModules,
+        sourceIdea: unifiedIdea 
+      } 
+    });
+  };
+
+  const handleImproveModule = (moduleType: string) => {
+    const moduleContent = `Sample content for ${moduleType}`;
+    setImprovementModal({
+      isOpen: true,
+      moduleType,
+      moduleContent
+    });
+  };
+
+  const handleModuleImprovement = (improvedContent: string) => {
+    // TODO: Update the specific module content
+    console.log('Module improved:', improvedContent);
+    setImprovementModal({ isOpen: false, moduleType: '', moduleContent: '' });
   };
 
   const text = {
@@ -153,17 +193,27 @@ const Create = () => {
           )}
 
           {currentStep === 'modules' && (
-            <div className="text-center py-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                {currentLanguage === 'ko' ? '모듈 분해 및 리믹스 준비 중...' : 'Preparing module breakdown and remix...'}
-              </h2>
-              <p className="text-gray-600">
-                {currentLanguage === 'ko' ? '곧 구현될 예정입니다!' : 'Coming soon!'}
-              </p>
-            </div>
+            <AIModuleBreakdown
+              currentLanguage={currentLanguage}
+              completedModules={completedModules}
+              unifiedIdea={unifiedIdea}
+              onSaveToLibrary={handleSaveToLibrary}
+              onGoToRemix={handleGoToRemix}
+              onImproveModule={handleImproveModule}
+            />
           )}
         </div>
       </div>
+
+      {/* Module Improvement Modal */}
+      <ModuleImprovementModal
+        isOpen={improvementModal.isOpen}
+        onClose={() => setImprovementModal({ isOpen: false, moduleType: '', moduleContent: '' })}
+        moduleType={improvementModal.moduleType}
+        moduleContent={improvementModal.moduleContent}
+        currentLanguage={currentLanguage}
+        onImprove={handleModuleImprovement}
+      />
     </div>
   );
 };
