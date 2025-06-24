@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Lightbulb, Loader2, ArrowRight } from 'lucide-react';
+import { Bot, User, Lightbulb, Loader2, ArrowRight, CheckCircle, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ChatMessage {
   id: string;
@@ -13,9 +15,10 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-interface SmartQuestion {
-  moduleType: string;
-  question: string;
+interface ModuleProgress {
+  completeness: number;
+  insights: string;
+  needsMore: boolean;
 }
 
 interface InteractiveIdeaChatProps {
@@ -33,229 +36,174 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentInput, setCurrentInput] = useState('');
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [ideaData, setIdeaData] = useState<any>({
-    originalIdea: initialIdea,
-    modules: {},
-    moduleProgress: {}
-  });
+  const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
+  const [moduleData, setModuleData] = useState<Record<string, string>>({});
+  const [moduleProgress, setModuleProgress] = useState<Record<string, ModuleProgress>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [smartQuestions, setSmartQuestions] = useState<SmartQuestion[]>([]);
-  const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
-  const [conversationContext, setConversationContext] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
+  const [conversationContext, setConversationContext] = useState('');
 
+  const moduleTypes = ['problem_definition', 'target_customer', 'value_proposition', 'revenue_model', 'competitive_advantage'];
+  
   const text = {
     ko: {
-      welcome: '흥미로운 아이디어네요! AI가 단계별로 구체화를 도와드릴게요.',
+      welcome: '안녕하세요! 흥미로운 아이디어네요! 🎉 함께 단계별로 더 구체적으로 발전시켜보겠습니다.',
       placeholder: '자세히 설명해주세요...',
-      nextButton: '다음 단계',
-      completeButton: '완성!',
-      thinking: 'AI가 답변을 분석하고 있습니다...',
-      generatingQuestion: 'AI가 다음 질문을 준비 중...',
-      loadingQuestions: 'AI가 맞춤 질문들을 생성하고 있습니다...',
-      errorGeneratingQuestions: '질문 생성 중 오류가 발생했습니다.',
-      analyzing: 'AI가 답변을 분석하고 있습니다...'
+      thinking: 'AI가 답변을 분석하고 더 자세한 질문을 준비 중...',
+      completeButton: '완성! 평가받기',
+      moduleNames: {
+        problem_definition: '문제 정의',
+        target_customer: '타겟 고객',
+        value_proposition: '가치 제안',
+        revenue_model: '수익 모델',
+        competitive_advantage: '경쟁 우위'
+      },
+      completeness: '완성도',
+      continue: '계속하기'
     },
     en: {
-      welcome: 'Interesting idea! AI will help you develop it step by step.',
+      welcome: 'Hello! Interesting idea! 🎉 Let\'s develop it step by step together.',
       placeholder: 'Please explain in detail...',
-      nextButton: 'Next Step',
-      completeButton: 'Complete!',
-      thinking: 'AI is analyzing your response...',
-      generatingQuestion: 'AI is preparing the next question...',
-      loadingQuestions: 'AI is generating customized questions...',
-      errorGeneratingQuestions: 'Error generating questions.',
-      analyzing: 'AI is analyzing your response...'
+      thinking: 'AI is analyzing your response and preparing more detailed questions...',
+      completeButton: 'Complete! Get Evaluation',
+      moduleNames: {
+        problem_definition: 'Problem Definition',
+        target_customer: 'Target Customer', 
+        value_proposition: 'Value Proposition',
+        revenue_model: 'Revenue Model',
+        competitive_advantage: 'Competitive Advantage'
+      },
+      completeness: 'Completeness',
+      continue: 'Continue'
     }
   };
 
-  const generateSmartQuestions = async () => {
+  useEffect(() => {
+    // Initialize conversation with welcome message
+    const welcomeMessage: ChatMessage = {
+      id: 'welcome',
+      role: 'ai',
+      content: `${text[currentLanguage].welcome}\n\n"${initialIdea}"\n\n이제 하나씩 구체적으로 발전시켜보겠습니다!`,
+      timestamp: new Date()
+    };
+    
+    setMessages([welcomeMessage]);
+    
+    // Start with first question
+    setTimeout(() => {
+      askNextQuestion();
+    }, 1000);
+  }, []);
+
+  const askNextQuestion = async () => {
+    if (currentModuleIndex >= moduleTypes.length) {
+      handleCompletion();
+      return;
+    }
+
+    const currentModule = moduleTypes[currentModuleIndex];
+    
     try {
       setIsLoading(true);
-      console.log('🔄 Generating business validation questions for idea:', initialIdea);
-
+      
       const { data, error } = await supabase.functions.invoke('generate-smart-questions', {
         body: {
           ideaText: initialIdea,
+          moduleType: currentModule,
           language: currentLanguage,
-          context: 'initial'
+          context: conversationContext,
+          previousAnswers: moduleData
         }
       });
 
       if (error) throw error;
 
-      console.log('📝 Generated questions response:', data);
-
-      if (data?.questions && Array.isArray(data.questions) && data.questions.length === 5) {
-        // Ensure proper ordering
-        const orderedQuestions = [
-          'problem_definition',
-          'target_customer', 
-          'value_proposition',
-          'revenue_model',
-          'competitive_advantage'
-        ].map(moduleType => 
-          data.questions.find((q: SmartQuestion) => q.moduleType === moduleType)
-        ).filter(Boolean);
-        
-        if (orderedQuestions.length === 5) {
-          setSmartQuestions(orderedQuestions);
-          console.log('✅ Questions set with proper order:', orderedQuestions.map(q => q.moduleType));
-        } else {
-          console.log('⚠️ Ordering failed, using fallback questions');
-          setSmartQuestions(getFallbackQuestions());
-        }
-      } else {
-        console.log('⚠️ Invalid questions format, using fallback');
-        setSmartQuestions(getFallbackQuestions());
-      }
+      const question = data?.question || getDefaultQuestion(currentModule);
+      
+      const questionMessage: ChatMessage = {
+        id: `question-${currentModuleIndex}-${Date.now()}`,
+        role: 'ai',
+        content: question,
+        moduleType: currentModule,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, questionMessage]);
     } catch (error) {
-      console.error('❌ Error generating smart questions:', error);
-      setSmartQuestions(getFallbackQuestions());
+      console.error('Error generating question:', error);
+      
+      // Fallback to default question
+      const fallbackQuestion = getDefaultQuestion(moduleTypes[currentModuleIndex]);
+      const questionMessage: ChatMessage = {
+        id: `question-${currentModuleIndex}-${Date.now()}`,
+        role: 'ai',
+        content: fallbackQuestion,
+        moduleType: moduleTypes[currentModuleIndex],
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, questionMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getFallbackQuestions = (): SmartQuestion[] => [
-    {
-      moduleType: 'problem_definition',
-      question: currentLanguage === 'ko' 
-        ? `"${initialIdea}"가 해결하려는 핵심 문제는 무엇인가요? 현재 사람들이 이 문제를 어떻게 해결하고 있나요?`
-        : `What core problem does "${initialIdea}" solve? How are people currently addressing this problem?`
-    },
-    {
-      moduleType: 'target_customer',
-      question: currentLanguage === 'ko' 
-        ? '누가 이 솔루션을 가장 절실히 필요로 할까요? 그들의 일상과 고민을 구체적으로 설명해보세요.'
-        : 'Who would most desperately need this solution? Describe their daily life and concerns in detail.'
-    },
-    {
-      moduleType: 'value_proposition',
-      question: currentLanguage === 'ko' 
-        ? '기존 방식 대신 당신의 아이디어를 선택해야 하는 결정적인 이유는 무엇인가요?'
-        : 'What is the decisive reason to choose your idea over existing methods?'
-    },
-    {
-      moduleType: 'revenue_model',
-      question: currentLanguage === 'ko' 
-        ? '이 아이디어로 어떻게 지속 가능한 수익을 만들어낼 수 있을까요?'
-        : 'How can you generate sustainable revenue with this idea?'
-    },
-    {
-      moduleType: 'competitive_advantage',
-      question: currentLanguage === 'ko' 
-        ? '비슷한 아이디어가 이미 존재한다면, 당신만의 차별화된 접근법은 무엇인가요?'
-        : 'If similar ideas already exist, what is your unique differentiated approach?'
-    }
-  ];
-
-  useEffect(() => {
-    // Initial welcome message
-    const welcomeMessage: ChatMessage = {
-      id: 'welcome',
-      role: 'ai',
-      content: `${text[currentLanguage].welcome}\n\n"${initialIdea}"`,
-      timestamp: new Date()
+  const getDefaultQuestion = (moduleType: string): string => {
+    const questions = {
+      ko: {
+        problem_definition: `"${initialIdea}"가 해결하려는 핵심 문제는 무엇인가요? 현재 사람들이 이 문제를 어떻게 해결하고 있는지, 왜 기존 방법이 불충분한지 구체적으로 설명해주세요.`,
+        target_customer: '누가 이 솔루션을 가장 절실히 필요로 할까요? 그들의 나이, 직업, 생활패턴, 고민거리를 구체적으로 설명해주세요. 예를 들어 "30대 직장인 김씨는..." 같은 식으로요.',
+        value_proposition: '기존 방식 대신 당신의 아이디어를 선택해야 하는 결정적인 이유는 무엇인가요? 시간, 비용, 편의성 등 구체적인 장점을 수치와 함께 설명해주세요.',
+        revenue_model: '이 아이디어로 어떻게 지속가능한 수익을 만들어낼 수 있을까요? 누가 얼마를 지불할 의향이 있을지, 월간/연간 예상 매출은 얼마인지 설명해주세요.',
+        competitive_advantage: '비슷한 아이디어나 경쟁업체가 있다면, 당신만의 차별화된 접근법은 무엇인가요? 왜 경쟁자들이 쉽게 따라할 수 없는지 설명해주세요.'
+      },
+      en: {
+        problem_definition: `What core problem does "${initialIdea}" solve? Please explain specifically how people currently solve this problem and why existing methods are insufficient.`,
+        target_customer: 'Who would most desperately need this solution? Please describe their age, occupation, lifestyle, and concerns in detail. For example, "30-year-old office worker Kim..."',
+        value_proposition: 'What is the decisive reason to choose your idea over existing methods? Please explain specific advantages in terms of time, cost, convenience, etc. with numbers.',
+        revenue_model: 'How can you generate sustainable revenue with this idea? Please explain who would be willing to pay how much, and what monthly/annual revenue you expect.',
+        competitive_advantage: 'If similar ideas or competitors exist, what is your unique differentiated approach? Please explain why competitors cannot easily copy you.'
+      }
     };
-
-    setMessages([welcomeMessage]);
-    generateSmartQuestions();
-  }, []);
-
-  // Modified auto-ask questions effect
-  useEffect(() => {
-    console.log('🔍 Effect triggered - Questions:', smartQuestions.length, 'Index:', currentQuestionIndex, 'Messages:', messages.length, 'Completed:', isCompleted);
     
-    if (isCompleted || smartQuestions.length === 0) {
-      console.log('❌ Skipping: completed or no questions');
-      return;
-    }
-    
-    if (currentQuestionIndex >= smartQuestions.length) {
-      console.log('✅ All questions completed, setting completion state');
-      setIsCompleted(true);
-      return;
-    }
-
-    // Check if we need to ask the next question
-    const lastMessage = messages[messages.length - 1];
-    const shouldAskQuestion = messages.length === 1 || // First question after welcome
-      (lastMessage?.role === 'ai' && 
-       !lastMessage.content.includes('?') && 
-       !lastMessage.content.includes('완벽합니다') && 
-       !lastMessage.content.includes('Perfect'));
-
-    if (shouldAskQuestion) {
-      console.log('🎯 Asking question', currentQuestionIndex + 1, 'of', smartQuestions.length);
-      askCurrentQuestion();
-    }
-  }, [smartQuestions, currentQuestionIndex, messages, isCompleted]);
-
-  const askCurrentQuestion = () => {
-    if (currentQuestionIndex < smartQuestions.length && !isCompleted) {
-      const question = smartQuestions[currentQuestionIndex];
-      console.log(`❓ Asking question ${currentQuestionIndex + 1}:`, question);
-      
-      const questionMessage: ChatMessage = {
-        id: `question-${currentQuestionIndex}-${Date.now()}`,
-        role: 'ai',
-        content: question.question,
-        moduleType: question.moduleType,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, questionMessage]);
-    }
+    return questions[currentLanguage][moduleType as keyof typeof questions[typeof currentLanguage]] || 'Please tell me more about this aspect.';
   };
 
-  const generateContextualAIResponse = async (userAnswer: string, moduleType: string) => {
+  const analyzeResponse = async (userResponse: string, moduleType: string) => {
     try {
-      setIsGeneratingQuestion(true);
-
       const { data, error } = await supabase.functions.invoke('analyze-user-response', {
         body: {
           originalIdea: initialIdea,
-          userAnswer: userAnswer,
+          userAnswer: userResponse,
           moduleType: moduleType,
-          conversationHistory: messages,
+          conversationHistory: messages.slice(-5),
           language: currentLanguage
         }
       });
 
       if (error) throw error;
 
-      const insights = data?.insights || (currentLanguage === 'ko' ? '좋은 접근입니다!' : 'Good approach!');
-      const completeness = data?.completeness || 70;
-      
-      // Update module progress
-      setIdeaData(prev => ({
-        ...prev,
-        moduleProgress: {
-          ...prev.moduleProgress,
-          [moduleType]: { completeness, insights }
-        }
-      }));
+      const completeness = data?.completeness || 60;
+      const insights = data?.insights || '좋은 시작입니다!';
+      const needsMore = completeness < 75;
 
-      return insights;
+      return { completeness, insights, needsMore };
     } catch (error) {
-      console.error('❌ Error generating AI response:', error);
-      const fallbackResponses = currentLanguage === 'ko' 
-        ? ['흥미로운 관점이네요!', '구체적이고 실용적입니다!', '창의적인 접근이에요!', '시장성이 있어 보입니다!']
-        : ['Interesting perspective!', 'Concrete and practical!', 'Creative approach!', 'Looks marketable!'];
+      console.error('Error analyzing response:', error);
       
-      return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
-    } finally {
-      setIsGeneratingQuestion(false);
+      // Fallback analysis based on length and keywords
+      const completeness = userResponse.length > 100 ? 80 : userResponse.length > 50 ? 60 : 40;
+      const insights = currentLanguage === 'ko' ? '더 구체적으로 설명해주시면 좋겠어요!' : 'Please provide more specific details!';
+      const needsMore = completeness < 75;
+      
+      return { completeness, insights, needsMore };
     }
   };
 
   const handleUserResponse = async () => {
     if (!currentInput.trim() || isCompleted) return;
 
-    console.log(`🗣️ Processing user response for question ${currentQuestionIndex + 1}`);
-
+    // Add user message
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -264,136 +212,229 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
     };
 
     setMessages(prev => [...prev, userMessage]);
+    
+    const currentModule = moduleTypes[currentModuleIndex];
+    const userResponse = currentInput.trim();
+    
+    // Save response to module data
+    setModuleData(prev => ({
+      ...prev,
+      [currentModule]: userResponse
+    }));
 
-    // Save answer to current module
-    const currentQuestion = smartQuestions[currentQuestionIndex];
-    if (currentQuestion) {
-      console.log('💾 Saving answer for module:', currentQuestion.moduleType);
-      setIdeaData(prev => ({
-        ...prev,
-        modules: {
-          ...prev.modules,
-          [currentQuestion.moduleType]: currentInput.trim()
-        }
-      }));
-
-      // Update conversation context
-      setConversationContext(prev => prev + `\n${currentQuestion.moduleType}: ${currentInput.trim()}`);
-    }
-
+    // Update conversation context
+    setConversationContext(prev => prev + `\n${currentModule}: ${userResponse}`);
+    
     setCurrentInput('');
     setIsLoading(true);
 
-    // Generate contextual AI response
-    const aiResponseText = await generateContextualAIResponse(
-      currentInput.trim(), 
-      currentQuestion?.moduleType || 'general'
-    );
+    // Analyze response quality
+    const analysis = await analyzeResponse(userResponse, currentModule);
     
-    const aiResponse: ChatMessage = {
-      id: `ai-response-${Date.now()}`,
-      role: 'ai',
-      content: aiResponseText,
-      timestamp: new Date()
+    // Update progress
+    setModuleProgress(prev => ({
+      ...prev,
+      [currentModule]: analysis
+    }));
+
+    if (analysis.needsMore) {
+      // Ask follow-up question for better completion
+      const followUpQuestion = await generateFollowUpQuestion(userResponse, currentModule, analysis.completeness);
+      
+      const followUpMessage: ChatMessage = {
+        id: `followup-${Date.now()}`,
+        role: 'ai',
+        content: followUpQuestion,
+        moduleType: currentModule,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, followUpMessage]);
+    } else {
+      // Module completed, move to next
+      const completionMessage: ChatMessage = {
+        id: `completion-${Date.now()}`,
+        role: 'ai',
+        content: `${analysis.insights} 이 부분은 완성되었습니다! 👏 다음 단계로 넘어가겠습니다.`,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, completionMessage]);
+      
+      // Move to next module after short delay
+      setTimeout(() => {
+        setCurrentModuleIndex(prev => prev + 1);
+        askNextQuestion();
+      }, 1500);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const generateFollowUpQuestion = async (userResponse: string, moduleType: string, completeness: number): Promise<string> => {
+    // Generate contextual follow-up questions based on what's missing
+    const followUpQuestions = {
+      ko: {
+        problem_definition: [
+          '구체적인 예시나 상황을 하나 더 들어주실 수 있나요?',
+          '이 문제로 인해 사람들이 실제로 어떤 손실이나 불편함을 겪고 있나요?',
+          '현재 해결책들의 가장 큰 한계점은 무엇인가요?'
+        ],
+        target_customer: [
+          '이런 고객들은 주로 어디서 시간을 보내나요? (온라인/오프라인)',
+          '이들의 하루 일과 중 언제 이 문제를 가장 심각하게 느낄까요?',
+          '비슷한 제품/서비스에 월평균 얼마나 지출하고 있을까요?'
+        ],
+        value_proposition: [
+          '시간으로 따지면 얼마나 절약해줄 수 있나요?',
+          '비용으로 따지면 어느 정도 절감 효과가 있을까요?',
+          '감정적으로는 어떤 만족감이나 안도감을 줄 수 있나요?'
+        ],
+        revenue_model: [
+          '고객 한 명당 예상 수익은 얼마 정도인가요?',
+          '월 구독? 일회성 결제? 어떤 방식이 가장 적합할까요?',
+          '초기에는 어떻게 고객을 확보할 계획인가요?'
+        ],
+        competitive_advantage: [
+          '핵심 기술이나 노하우가 있다면 무엇인가요?',
+          '특별한 파트너십이나 자원이 있나요?',
+          '진입장벽을 어떻게 만들어낼 수 있을까요?'
+        ]
+      },
+      en: {
+        problem_definition: [
+          'Can you provide one more specific example or situation?',
+          'What actual losses or inconveniences do people experience due to this problem?',
+          'What are the biggest limitations of current solutions?'
+        ],
+        target_customer: [
+          'Where do these customers typically spend their time? (online/offline)',
+          'When during their daily routine do they feel this problem most acutely?',
+          'How much do they currently spend monthly on similar products/services?'
+        ],
+        value_proposition: [
+          'In terms of time, how much can you save them?',
+          'In terms of cost, what level of savings can you provide?',
+          'Emotionally, what satisfaction or relief can you provide?'
+        ],
+        revenue_model: [
+          'What is the expected revenue per customer?',
+          'Monthly subscription? One-time payment? Which method is most suitable?',
+          'How do you plan to acquire customers initially?'
+        ],
+        competitive_advantage: [
+          'What core technology or know-how do you have?',
+          'Do you have special partnerships or resources?',
+          'How can you create barriers to entry?'
+        ]
+      }
     };
 
-    setMessages(prev => [...prev, aiResponse]);
-    setIsLoading(false);
-
-    // Move to next question or completion
-    const nextIndex = currentQuestionIndex + 1;
-    console.log(`➡️ Moving to question index ${nextIndex} of ${smartQuestions.length}`);
+    const questions = followUpQuestions[currentLanguage][moduleType as keyof typeof followUpQuestions[typeof currentLanguage]];
+    const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
     
-    if (nextIndex >= smartQuestions.length) {
-      // All questions completed - show final message
-      console.log('🎉 All questions completed, showing final message');
-      setTimeout(() => {
-        const finalMessage: ChatMessage = {
-          id: 'final',
-          role: 'ai',
-          content: currentLanguage === 'ko' 
-            ? '완벽합니다! 이제 AI가 종합적인 평가를 진행하겠습니다.' 
-            : 'Perfect! Now AI will conduct a comprehensive evaluation.',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, finalMessage]);
-        setIsCompleted(true);
-      }, 1000);
-    } else {
-      setCurrentQuestionIndex(nextIndex);
-    }
+    const encouragement = currentLanguage === 'ko' 
+      ? `좋은 답변이에요! (완성도 ${completeness}%) 조금만 더 구체적으로 설명해주시면 완벽해집니다. `
+      : `Good answer! (${completeness}% complete) Just a bit more detail and it'll be perfect. `;
+    
+    return encouragement + randomQuestion;
+  };
+
+  const handleCompletion = () => {
+    const finalMessage: ChatMessage = {
+      id: 'final',
+      role: 'ai',
+      content: currentLanguage === 'ko' 
+        ? '🎉 모든 단계가 완성되었습니다! 정말 훌륭한 아이디어로 발전시키셨네요. 이제 AI가 종합적인 평가를 진행하겠습니다.'
+        : '🎉 All stages completed! You\'ve developed it into a truly excellent idea. Now AI will conduct a comprehensive evaluation.',
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, finalMessage]);
+    setIsCompleted(true);
   };
 
   const handleComplete = () => {
-    console.log('🏁 Completing chat with data:', ideaData);
+    const completionScore = Object.values(moduleProgress).reduce((acc, progress) => acc + progress.completeness, 0) / moduleTypes.length;
+    
     onComplete({
-      ...ideaData,
+      originalIdea: initialIdea,
+      modules: moduleData,
+      moduleProgress: moduleProgress,
       chatHistory: messages,
       conversationContext: conversationContext,
-      completionScore: (Object.keys(ideaData.modules).length / smartQuestions.length) * 10
+      completionScore: completionScore / 10
     });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleUserResponse();
+      if (currentInput.trim()) {
+        handleUserResponse();
+      }
     }
   };
 
-  if (smartQuestions.length === 0 && isLoading) {
-    return (
-      <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-8">
-        <div className="text-center">
-          <div className="relative mb-6">
-            <div className="w-16 h-16 mx-auto border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Bot className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {text[currentLanguage].loadingQuestions}
-          </h3>
-          <p className="text-gray-600">"{initialIdea}"</p>
-        </div>
-      </div>
-    );
-  }
+  const getCurrentModule = () => moduleTypes[currentModuleIndex];
+  const totalProgress = (currentModuleIndex / moduleTypes.length) * 100;
+  const currentModuleProgress = moduleProgress[getCurrentModule()]?.completeness || 0;
 
   return (
-    <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100">
-      {/* Progress indicator */}
+    <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100">
+      {/* Progress Header */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">
-            💡 아이디어 구체화 ({Math.min(currentQuestionIndex + (isCompleted ? 1 : 0), smartQuestions.length)}/{smartQuestions.length})
+          <h3 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+            <Lightbulb className="w-6 h-6 text-yellow-500" />
+            <span>AI 실시간 아이디어 코칭</span>
           </h3>
           <Button variant="ghost" onClick={onCancel} size="sm">
             ✕
           </Button>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div 
-            className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all duration-700"
-            style={{ 
-              width: `${(Math.min(currentQuestionIndex + (isCompleted ? 1 : 0), smartQuestions.length) / smartQuestions.length) * 100}%` 
-            }}
-          />
-        </div>
         
-        {/* Module completion status */}
-        {Object.keys(ideaData.modules).length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {Object.entries(ideaData.moduleProgress || {}).map(([moduleType, progress]: [string, any]) => (
-              <div key={moduleType} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                {moduleType.replace('_', ' ')} ✓
-              </div>
-            ))}
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>전체 진행률</span>
+            <span>{Math.round(totalProgress)}%</span>
           </div>
-        )}
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div 
+              className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all duration-700"
+              style={{ width: `${totalProgress}%` }}
+            />
+          </div>
+          
+          {/* Module Progress */}
+          <div className="grid grid-cols-5 gap-2 mt-4">
+            {moduleTypes.map((moduleType, index) => {
+              const progress = moduleProgress[moduleType];
+              const isCompleted = progress && progress.completeness >= 75;
+              const isCurrent = index === currentModuleIndex;
+              
+              return (
+                <div key={moduleType} className={`text-center p-2 rounded-lg text-xs ${
+                  isCompleted ? 'bg-green-100 text-green-800' :
+                  isCurrent ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-600'
+                }`}>
+                  {isCompleted && <CheckCircle className="w-3 h-3 mx-auto mb-1" />}
+                  {isCurrent && <Target className="w-3 h-3 mx-auto mb-1" />}
+                  <div className="font-medium">
+                    {text[currentLanguage].moduleNames[moduleType as keyof typeof text[typeof currentLanguage]['moduleNames']]}
+                  </div>
+                  {progress && (
+                    <div className="text-xs mt-1">{progress.completeness}%</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Chat area */}
+      {/* Chat Messages */}
       <div className="p-6 max-h-96 overflow-y-auto space-y-4">
         {messages.map((message) => (
           <div key={message.id} className={`flex items-start space-x-3 ${
@@ -414,18 +455,23 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
               <p className="text-sm leading-relaxed whitespace-pre-wrap">
                 {message.content}
               </p>
+              {message.moduleType && (
+                <div className="mt-2 text-xs opacity-75">
+                  {text[currentLanguage].moduleNames[message.moduleType as keyof typeof text[typeof currentLanguage]['moduleNames']]}
+                </div>
+              )}
             </div>
           </div>
         ))}
         
-        {(isLoading || isGeneratingQuestion) && (
+        {isLoading && (
           <div className="flex items-start space-x-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white flex items-center justify-center">
               <Bot className="w-5 h-5" />
             </div>
             <div className="bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-3 rounded-2xl">
               <p className="text-sm text-gray-600">
-                {text[currentLanguage].analyzing}
+                {text[currentLanguage].thinking}
               </p>
               <div className="flex space-x-1 mt-2">
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
@@ -437,49 +483,43 @@ const InteractiveIdeaChat: React.FC<InteractiveIdeaChatProps> = ({
         )}
       </div>
 
-      {/* Input area - only show if not completed */}
-      {!isCompleted && currentQuestionIndex < smartQuestions.length && (
+      {/* Input Area */}
+      {!isCompleted && currentModuleIndex < moduleTypes.length && (
         <div className="p-6 border-t border-gray-100">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white flex items-center justify-center text-sm font-bold">
-              {currentQuestionIndex + 1}
-            </div>
-            <span className="text-sm font-medium text-gray-600">
-              {currentQuestionIndex + 1}/{smartQuestions.length} 단계
-            </span>
-          </div>
-          
           <Textarea
             value={currentInput}
             onChange={(e) => setCurrentInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={text[currentLanguage].placeholder}
             className="w-full mb-4 min-h-[120px] resize-none border-2 border-purple-100 focus:border-purple-300 text-base"
-            disabled={isLoading || isGeneratingQuestion}
+            disabled={isLoading}
           />
           
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              {currentInput.length}/500
+            </div>
             <Button
               onClick={handleUserResponse}
-              disabled={!currentInput.trim() || isLoading || isGeneratingQuestion}
+              disabled={!currentInput.trim() || isLoading}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-3"
             >
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {currentQuestionIndex === smartQuestions.length - 1 ? text[currentLanguage].completeButton : text[currentLanguage].nextButton}
+              {text[currentLanguage].continue}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* Complete button - only show when completed */}
+      {/* Completion Button */}
       {isCompleted && (
         <div className="p-6 border-t border-gray-100 text-center">
           <Button
             onClick={handleComplete}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 px-8 py-4 text-lg font-semibold"
           >
-            🎉 AI 종합 평가 받기
+            🎉 {text[currentLanguage].completeButton}
           </Button>
         </div>
       )}

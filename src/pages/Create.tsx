@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import AIQuestionFlow from '@/components/AIQuestionFlow';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import UnifiedNavigation from '@/components/UnifiedNavigation';
 import SimpleTopBar from '@/components/SimpleTopBar';
-import ConversationalIdeaCoach from '@/components/ConversationalIdeaCoach';
+import InteractiveIdeaChat from '@/components/InteractiveIdeaChat';
 import EducationalGradeDisplay from '@/components/EducationalGradeDisplay';
 import { analyzeIdeaQuality, IdeaQuality } from '@/components/IdeaQualityAnalyzer';
 import AIModuleBreakdown from '@/components/AIModuleBreakdown';
@@ -14,12 +14,12 @@ import ModuleImprovementModal from '@/components/ModuleImprovementModal';
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [initialIdea, setInitialIdea] = useState('');
-  const [processedIdea, setProcessedIdea] = useState('');
-  const [currentStep, setCurrentStep] = useState<'coach' | 'questions' | 'grade' | 'modules'>('coach');
+  const [currentStep, setCurrentStep] = useState<'chat' | 'grade' | 'modules'>('chat');
   const [completedModules, setCompletedModules] = useState<any[]>([]);
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [aiGrade, setAiGrade] = useState('');
   const [ideaQuality, setIdeaQuality] = useState<IdeaQuality | null>(null);
+  const [chatData, setChatData] = useState<any>(null);
   const [improvementModal, setImprovementModal] = useState<{
     isOpen: boolean;
     moduleType: string;
@@ -40,12 +40,12 @@ const Create = () => {
       const idea = location.state.initialIdea;
       setInitialIdea(idea);
       
-      // Analyze idea quality but with gentle approach
+      // Analyze idea quality for context
       const quality = analyzeIdeaQuality(idea, currentLanguage);
       setIdeaQuality(quality);
       
-      // Start with conversational coach for all ideas
-      setCurrentStep('coach');
+      // Start with interactive chat for all ideas
+      setCurrentStep('chat');
     }
   }, [location.state, currentLanguage]);
 
@@ -60,25 +60,37 @@ const Create = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  const handleCoachComplete = (expandedIdea: string) => {
-    // Re-analyze the expanded idea
-    const newQuality = analyzeIdeaQuality(expandedIdea, currentLanguage);
-    setIdeaQuality(newQuality);
-    setProcessedIdea(expandedIdea);
-    setCurrentStep('questions');
-  };
+  const handleChatComplete = (chatResults: any) => {
+    console.log('Chat completed with data:', chatResults);
+    setChatData(chatResults);
+    
+    // Convert chat results to module format
+    const modules = Object.entries(chatResults.modules || {}).map(([moduleType, content]) => ({
+      id: `temp-${moduleType}-${Date.now()}`,
+      module_type: moduleType,
+      content: content as string,
+      tags: [],
+      created_by: user?.id || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      version: 1,
+      quality_score: chatResults.completionScore ? chatResults.completionScore / 10 : 0.7,
+      usage_count: 0
+    }));
 
-  const handleProceedAnyway = () => {
-    // Allow proceeding with original idea
-    setProcessedIdea(initialIdea);
-    setCurrentStep('questions');
-  };
-
-  const handleQuestionsComplete = (modules: any[], unifiedIdeaText: string, grade: string) => {
     setCompletedModules(modules);
-    setUnifiedIdea(unifiedIdeaText);
-    setAiGrade(grade);
+    setUnifiedIdea(chatResults.conversationContext || initialIdea);
+    
+    // Generate AI grade based on completion score
+    const gradeMap = ['F', 'D', 'C', 'B', 'A', 'A+'];
+    const gradeIndex = Math.min(Math.floor((chatResults.completionScore || 5) / 2), 5);
+    setAiGrade(gradeMap[gradeIndex]);
+    
     setCurrentStep('grade');
+  };
+
+  const handleChatCancel = () => {
+    navigate('/');
   };
 
   const handleProceedToModules = () => {
@@ -86,7 +98,7 @@ const Create = () => {
   };
 
   const handleRetryWithEducation = () => {
-    setCurrentStep('coach');
+    setCurrentStep('chat');
   };
 
   const handleSaveToLibrary = () => {
@@ -118,12 +130,12 @@ const Create = () => {
 
   const text = {
     ko: {
-      title: '✨ AI와 함께 아이디어 완성하기',
-      subtitle: 'AI가 당신의 아이디어를 완전한 비즈니스 모델로 발전시켜드려요'
+      title: '💬 AI와 실시간 대화로 아이디어 완성하기',
+      subtitle: 'AI 코치가 실시간으로 질문하며 당신의 아이디어를 완전한 비즈니스 모델로 발전시켜드려요'
     },
     en: {
-      title: '✨ Complete Your Idea with AI',
-      subtitle: 'AI will transform your idea into a complete business model'
+      title: '💬 Complete Your Idea with Real-time AI Chat',
+      subtitle: 'AI coach will ask questions in real-time to develop your idea into a complete business model'
     }
   };
 
@@ -158,22 +170,13 @@ const Create = () => {
             </p>
           </div>
 
-          {/* Step-based rendering with conversational approach */}
-          {currentStep === 'coach' && ideaQuality && (
-            <ConversationalIdeaCoach
+          {/* Step-based rendering with conversational chat approach */}
+          {currentStep === 'chat' && initialIdea && (
+            <InteractiveIdeaChat
+              initialIdea={initialIdea}
               currentLanguage={currentLanguage}
-              originalIdea={initialIdea}
-              qualityAnalysis={ideaQuality}
-              onExpansionComplete={handleCoachComplete}
-              onProceedAnyway={handleProceedAnyway}
-            />
-          )}
-
-          {currentStep === 'questions' && processedIdea && (
-            <AIQuestionFlow 
-              currentLanguage={currentLanguage}
-              initialIdea={processedIdea}
-              onComplete={handleQuestionsComplete}
+              onComplete={handleChatComplete}
+              onCancel={handleChatCancel}
             />
           )}
 
