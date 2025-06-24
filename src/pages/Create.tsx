@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import IdeaBuilder from '@/components/IdeaBuilder';
+import AIQuestionFlow from '@/components/AIQuestionFlow';
+import AIGradeDisplay from '@/components/AIGradeDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import UnifiedNavigation from '@/components/UnifiedNavigation';
@@ -10,6 +11,11 @@ import SimpleTopBar from '@/components/SimpleTopBar';
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [initialIdea, setInitialIdea] = useState('');
+  const [currentStep, setCurrentStep] = useState<'questions' | 'grade' | 'modules'>('questions');
+  const [completedModules, setCompletedModules] = useState<any[]>([]);
+  const [unifiedIdea, setUnifiedIdea] = useState('');
+  const [aiGrade, setAiGrade] = useState('');
+  
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,6 +36,18 @@ const Create = () => {
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
+  };
+
+  const handleQuestionsComplete = (modules: any[], unifiedIdeaText: string, grade: string) => {
+    setCompletedModules(modules);
+    setUnifiedIdea(unifiedIdeaText);
+    setAiGrade(grade);
+    setCurrentStep('grade');
+  };
+
+  const handleProceedToModules = () => {
+    setCurrentStep('modules');
+    // TODO: 모듈 분해 및 리믹스 안내 구현
   };
 
   const text = {
@@ -74,11 +92,34 @@ const Create = () => {
             </p>
           </div>
 
-          {/* Direct IdeaBuilder - no tabs */}
-          <IdeaBuilder 
-            currentLanguage={currentLanguage}
-            initialIdea={initialIdea}
-          />
+          {/* Step-based rendering */}
+          {currentStep === 'questions' && initialIdea && (
+            <AIQuestionFlow 
+              currentLanguage={currentLanguage}
+              initialIdea={initialIdea}
+              onComplete={handleQuestionsComplete}
+            />
+          )}
+
+          {currentStep === 'grade' && (
+            <AIGradeDisplay
+              currentLanguage={currentLanguage}
+              grade={aiGrade}
+              unifiedIdea={unifiedIdea}
+              onProceedToModules={handleProceedToModules}
+            />
+          )}
+
+          {currentStep === 'modules' && (
+            <div className="text-center py-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                {currentLanguage === 'ko' ? '모듈 분해 및 리믹스 준비 중...' : 'Preparing module breakdown and remix...'}
+              </h2>
+              <p className="text-gray-600">
+                {currentLanguage === 'ko' ? '곧 구현될 예정입니다!' : 'Coming soon!'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

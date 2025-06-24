@@ -20,15 +20,10 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
 
   const text = {
     ko: {
-      title: '아이디어 하나, AI와 함께 완성하세요',
-      subtitle: '30초 입력하면 AI가 질문하며 완전한 비즈니스 모델로 만들어드려요',
+      title: '아이디어 하나면 AI가 완전한 비즈니스 모델로 만들어드려요',
+      subtitle: '30초 입력 → AI 맞춤 질문 → 1차 완성 → 모듈 분해 → 리믹스 개선',
       placeholder: '예: "비 오는 날 신발 안 젖는 앱"',
       enhanceButton: 'AI와 함께 완성하기',
-      processingSteps: {
-        step1: 'AI가 맞춤 질문',
-        step2: '모듈 카드 생성',
-        step3: '리믹스로 개선'
-      },
       quickActions: {
         title: '또는 이런 것들도 해보세요',
         explore: '다른 아이디어 둘러보기',
@@ -40,15 +35,10 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       }
     },
     en: {
-      title: 'Complete your idea with AI',
-      subtitle: '30 seconds input, AI asks questions to create a complete business model',
+      title: 'AI transforms your single idea into a complete business model',
+      subtitle: '30sec input → AI custom questions → 1st completion → Module breakdown → Remix improvement',
       placeholder: 'e.g., "App that keeps shoes dry in rain"',
       enhanceButton: 'Complete with AI',
-      processingSteps: {
-        step1: 'AI custom questions',
-        step2: 'Generate module cards',
-        step3: 'Improve via remix'
-      },
       quickActions: {
         title: 'Or try these actions',
         explore: 'Explore other ideas',
@@ -112,15 +102,15 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-4xl">
-        {/* Enhanced title with better contrast */}
+        {/* 단일화된 타이틀 */}
         <div className="text-center mb-12">
           <div className="mb-6">
-            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-4 leading-tight">
               {text[currentLanguage].title}
             </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto rounded-full mb-6"></div>
+            <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto rounded-full mb-4"></div>
           </div>
-          <p className="text-xl md:text-2xl text-gray-700 font-medium max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-700 font-medium max-w-3xl mx-auto leading-relaxed">
             {text[currentLanguage].subtitle}
           </p>
         </div>
@@ -155,41 +145,6 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
             </div>
           </CardContent>
         </Card>
-
-        {/* Enhanced AI Processing Steps */}
-        <div className="text-center mb-16">
-          <h3 className="text-xl font-bold text-gray-800 mb-8">
-            {currentLanguage === 'ko' ? 'AI 처리 과정' : 'AI Processing Steps'}
-          </h3>
-          <div className="flex justify-center items-center space-x-6 md:space-x-12">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                <Lightbulb className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-sm md:text-base text-gray-700 font-medium text-center">
-                {text[currentLanguage].processingSteps.step1}
-              </span>
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-400" />
-            <div className="flex flex-col items-center space-y-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-sm md:text-base text-gray-700 font-medium text-center">
-                {text[currentLanguage].processingSteps.step2}
-              </span>
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-400" />
-            <div className="flex flex-col items-center space-y-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-green-500 rounded-full flex items-center justify-center shadow-lg">
-                <Shuffle className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-sm md:text-base text-gray-700 font-medium text-center">
-                {text[currentLanguage].processingSteps.step3}
-              </span>
-            </div>
-          </div>
-        </div>
 
         {/* Enhanced quick actions section */}
         <div className="text-center space-y-10">
