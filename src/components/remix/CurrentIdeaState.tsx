@@ -79,14 +79,6 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
     return acc;
   }, {} as Record<string, any>);
 
-  const normalizeScore = (score: number): number => {
-    // Convert decimal scores (0.85) to percentage (85)
-    if (score <= 1) {
-      return Math.round(score * 100);
-    }
-    return Math.round(score);
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -129,7 +121,7 @@ const CurrentIdeaState: React.FC<CurrentIdeaStateProps> = ({
                   </Badge>
                   {hasModule && (
                     <Badge variant="outline" className="text-xs">
-                      {normalizeScore(getModuleScore(module))}점
+                      {getModuleScore(module)}점
                     </Badge>
                   )}
                 </div>

@@ -98,18 +98,11 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
       const currentScore = getModuleScore(currentModule);
       const newScore = getModuleScore(selectedAlternative);
       setScorePreview(newScore - currentScore);
+      console.log('Score comparison:', { currentScore, newScore, difference: newScore - currentScore });
     } else {
       setScorePreview(null);
     }
   }, [selectedAlternative, currentModule]);
-
-  const normalizeScore = (score: number): number => {
-    // Convert decimal scores (0.85) to percentage (85)
-    if (score <= 1) {
-      return Math.round(score * 100);
-    }
-    return Math.round(score);
-  };
 
   const handleEditCurrent = () => {
     setEditingModule(currentModule);
@@ -129,7 +122,9 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
   const renderModuleCard = (module: any, isSelected: boolean, isCurrent: boolean = false) => {
     const title = getModuleTitle(module);
     const content = getModuleContent(module);
-    const score = normalizeScore(getModuleScore(module));
+    const score = getModuleScore(module);
+
+    console.log('Rendering module card:', { moduleId: module.id, title, score, isCurrent, isSelected });
 
     return (
       <Card 
@@ -152,17 +147,17 @@ const ModuleImprovement: React.FC<ModuleImprovementProps> = ({
             </Badge>
             {!isCurrent && currentModule && (
               <div className="flex items-center space-x-1">
-                {score > normalizeScore(getModuleScore(currentModule)) ? (
+                {score > getModuleScore(currentModule) ? (
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                ) : score < normalizeScore(getModuleScore(currentModule)) ? (
+                ) : score < getModuleScore(currentModule) ? (
                   <TrendingDown className="w-4 h-4 text-red-500" />
                 ) : null}
                 <span className={`text-xs font-medium ${
-                  score > normalizeScore(getModuleScore(currentModule)) ? 'text-green-600' : 
-                  score < normalizeScore(getModuleScore(currentModule)) ? 'text-red-600' : 'text-gray-600'
+                  score > getModuleScore(currentModule) ? 'text-green-600' : 
+                  score < getModuleScore(currentModule) ? 'text-red-600' : 'text-gray-600'
                 }`}>
-                  {score > normalizeScore(getModuleScore(currentModule)) ? '+' : ''}
-                  {score - normalizeScore(getModuleScore(currentModule))}
+                  {score > getModuleScore(currentModule) ? '+' : ''}
+                  {score - getModuleScore(currentModule)}
                 </span>
               </div>
             )}
