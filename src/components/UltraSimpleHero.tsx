@@ -110,102 +110,111 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-4xl">
-        {/* Enhanced title */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {text[currentLanguage].title}
-          </h1>
-          <p className="text-xl text-gray-600">
+        {/* Enhanced title with better contrast */}
+        <div className="text-center mb-12">
+          <div className="mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-6 leading-tight">
+              {text[currentLanguage].title}
+            </h1>
+            <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto rounded-full mb-6"></div>
+          </div>
+          <p className="text-xl md:text-2xl text-gray-700 font-medium max-w-3xl mx-auto leading-relaxed">
             {text[currentLanguage].subtitle}
           </p>
         </div>
 
-        {/* Single input card with direct AI flow */}
-        <Card className="shadow-xl border-0 rounded-3xl bg-white/90 backdrop-blur-sm mb-12">
-          <CardContent className="p-8">
-            <div className="space-y-6">
+        {/* Enhanced input card */}
+        <Card className="shadow-2xl border-0 rounded-3xl bg-white/95 backdrop-blur-md mb-16 hover:shadow-3xl transition-all duration-300">
+          <CardContent className="p-8 md:p-10">
+            <div className="space-y-8">
               <Textarea
                 value={ideaText}
                 onChange={(e) => setIdeaText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={text[currentLanguage].placeholder}
-                className="w-full min-h-[100px] text-lg border-0 focus:ring-0 resize-none placeholder-gray-400 bg-transparent"
+                className="w-full min-h-[120px] text-lg md:text-xl border-0 focus:ring-0 resize-none placeholder-gray-400 bg-transparent leading-relaxed"
                 maxLength={200}
               />
               
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 font-medium">
                   {ideaText.length}/200
                 </div>
                 <Button
                   onClick={handleStartAI}
                   disabled={!ideaText.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-10 py-4 rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
+                  <Sparkles className="w-5 h-5 mr-3" />
                   {text[currentLanguage].enhanceButton}
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-5 h-5 ml-3" />
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* AI Processing Steps Preview */}
-        <div className="text-center mb-12">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">
+        {/* Enhanced AI Processing Steps */}
+        <div className="text-center mb-16">
+          <h3 className="text-xl font-bold text-gray-800 mb-8">
             {currentLanguage === 'ko' ? 'AI 처리 과정' : 'AI Processing Steps'}
           </h3>
-          <div className="flex justify-center items-center space-x-8">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                <Lightbulb className="w-4 h-4 text-white" />
+          <div className="flex justify-center items-center space-x-6 md:space-x-12">
+            <div className="flex flex-col items-center space-y-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                <Lightbulb className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm text-gray-600">{text[currentLanguage].processingSteps.step1}</span>
+              <span className="text-sm md:text-base text-gray-700 font-medium text-center">
+                {text[currentLanguage].processingSteps.step1}
+              </span>
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-400" />
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
+            <ArrowRight className="w-5 h-5 text-gray-400" />
+            <div className="flex flex-col items-center space-y-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm text-gray-600">{text[currentLanguage].processingSteps.step2}</span>
+              <span className="text-sm md:text-base text-gray-700 font-medium text-center">
+                {text[currentLanguage].processingSteps.step2}
+              </span>
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-400" />
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-green-500 rounded-full flex items-center justify-center">
-                <Shuffle className="w-4 h-4 text-white" />
+            <ArrowRight className="w-5 h-5 text-gray-400" />
+            <div className="flex flex-col items-center space-y-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-green-500 rounded-full flex items-center justify-center shadow-lg">
+                <Shuffle className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm text-gray-600">{text[currentLanguage].processingSteps.step3}</span>
+              <span className="text-sm md:text-base text-gray-700 font-medium text-center">
+                {text[currentLanguage].processingSteps.step3}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Quick actions section */}
-        <div className="text-center space-y-8">
-          <h2 className="text-2xl font-semibold text-gray-800">
+        {/* Enhanced quick actions section */}
+        <div className="text-center space-y-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
             {text[currentLanguage].quickActions.title}
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
                 <Card 
                   key={action.id} 
-                  className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 bg-white/70 backdrop-blur-sm hover:bg-white/90"
+                  className="cursor-pointer hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm hover:bg-white/95 hover:scale-105 group"
                   onClick={() => navigate(action.path)}
                 >
-                  <CardContent className="p-6 text-center space-y-4">
-                    <div className={`w-12 h-12 mx-auto rounded-full bg-gradient-to-r ${action.color} flex items-center justify-center`}>
-                      <Icon className="w-6 h-6 text-white" />
+                  <CardContent className="p-8 text-center space-y-6">
+                    <div className={`w-16 h-16 mx-auto rounded-full bg-gradient-to-r ${action.color} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                      <Icon className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">
+                      <h3 className="font-bold text-lg text-gray-900 mb-3">
                         {action.title}
                       </h3>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 leading-relaxed">
                         {action.description}
                       </p>
                     </div>
