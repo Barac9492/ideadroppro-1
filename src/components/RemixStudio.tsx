@@ -1,18 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Shuffle, 
-  Plus, 
-  ArrowLeft,
-  Sparkles
-} from 'lucide-react';
+import { Sparkles, ArrowLeft } from 'lucide-react';
 import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
-import ModuleMenuGrid from './remix/ModuleMenuGrid';
-import { getModuleTitle, getModuleContent, getModuleScore, getModuleType } from '@/utils/moduleUtils';
+import CurrentIdeaState from './remix/CurrentIdeaState';
+import ModuleImprovement from './remix/ModuleImprovement';
+import { getModuleType } from '@/utils/moduleUtils';
+import { toast } from '@/hooks/use-toast';
 
 interface RemixStudioProps {
   currentLanguage: 'ko' | 'en';
@@ -26,122 +22,114 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
   sourceIdea = ''
 }) => {
   const [selectedModules, setSelectedModules] = useState<any[]>(initialModules);
-  const [activeTab, setActiveTab] = useState('menu');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'overview' | 'improve'>('overview');
+  const [improvingModuleType, setImprovingModuleType] = useState<string | null>(null);
   const { modules, loading } = useModuleLibrary({ currentLanguage });
   const { modules: allModules } = useModularIdeas({ currentLanguage });
 
   const text = {
     ko: {
       title: '🎛️ 리믹스 스튜디오',
-      subtitle: '모듈을 조합해서 새로운 아이디어를 만들어보세요',
-      menuView: '메뉴 보기',
-      myModules: '내 모듈',
-      publicModules: '공개 모듈',
-      selectedModules: '선택된 모듈',
-      addToMix: '믹스에 추가',
-      removeFromMix: '믹스에서 제거',
-      generateIdea: '새 아이디어 생성',
-      clearAll: '모두 지우기',
-      noModules: '저장된 모듈이 없습니다',
-      noSelection: '모듈을 선택해주세요',
-      createFirst: '먼저 Create 페이지에서 아이디어를 만들어보세요',
-      backToMenu: '메뉴로 돌아가기'
+      subtitle: '모듈을 개선해서 더 나은 아이디어를 만들어보세요',
+      generateFinalIdea: '최종 아이디어 생성',
+      loading: '모듈을 불러오는 중...',
+      noModulesForType: '이 카테고리의 모듈이 없습니다',
+      ideaGenerated: '새로운 아이디어가 생성되었습니다!'
     },
     en: {
       title: '🎛️ Remix Studio',
-      subtitle: 'Combine modules to create new ideas',
-      menuView: 'Menu View',
-      myModules: 'My Modules',
-      publicModules: 'Public Modules',
-      selectedModules: 'Selected Modules',
-      addToMix: 'Add to Mix',
-      removeFromMix: 'Remove from Mix',
-      generateIdea: 'Generate New Idea',
-      clearAll: 'Clear All',
-      noModules: 'No saved modules',
-      noSelection: 'Please select modules',
-      createFirst: 'Create your first idea on the Create page',
-      backToMenu: 'Back to Menu'
+      subtitle: 'Improve modules to create better ideas',
+      generateFinalIdea: 'Generate Final Idea',
+      loading: 'Loading modules...',
+      noModulesForType: 'No modules for this category',
+      ideaGenerated: 'New idea generated!'
     }
   };
 
-  const isModuleSelected = (moduleId: string) => {
-    return selectedModules.some(m => m.id === moduleId);
+  const handleImproveModule = (moduleType: string) => {
+    setImprovingModuleType(moduleType);
+    setCurrentView('improve');
   };
 
-  const handleModuleToggle = (module: any) => {
-    if (isModuleSelected(module.id)) {
-      setSelectedModules(prev => prev.filter(m => m.id !== module.id));
-    } else {
-      setSelectedModules(prev => [...prev, module]);
+  const handleBackToOverview = () => {
+    setCurrentView('overview');
+    setImprovingModuleType(null);
+  };
+
+  const handleSelectModule = (newModule: any) => {
+    const moduleType = getModuleType(newModule);
+    
+    // Remove existing module of the same type
+    const updatedModules = selectedModules.filter(m => getModuleType(m) !== moduleType);
+    
+    // Add the new module
+    setSelectedModules([...updatedModules, newModule]);
+    
+    toast({
+      title: '모듈이 업데이트되었습니다!',
+      description: `${moduleType} 모듈이 새로운 내용으로 교체되었습니다.`,
+      duration: 3000,
+    });
+    
+    handleBackToOverview();
+  };
+
+  const handleGenerateNewModule = () => {
+    // This would typically call an AI service to generate new modules
+    toast({
+      title: 'AI 모듈 생성 기능',
+      description: '곧 AI가 새로운 모듈을 생성해드릴 예정입니다!',
+      duration: 3000,
+    });
+  };
+
+  const handleGenerateFinalIdea = () => {
+    if (selectedModules.length < 3) {
+      toast({
+        title: '더 많은 모듈이 필요합니다',
+        description: '최소 3개 이상의 모듈이 있어야 아이디어를 생성할 수 있습니다.',
+        variant: 'destructive',
+        duration: 3000,
+      });
+      return;
     }
+
+    // This would typically call an AI service to combine modules into a final idea
+    toast({
+      title: text[currentLanguage].ideaGenerated,
+      description: `${selectedModules.length}개의 모듈이 하나의 완성된 아이디어로 통합되었습니다.`,
+      duration: 5000,
+    });
   };
 
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-    setActiveTab('category-modules');
+  // Get alternative modules for the current improving type
+  const getAlternativeModules = (moduleType: string) => {
+    const allAvailableModules = [...modules, ...allModules];
+    return allAvailableModules.filter(module => {
+      const type = getModuleType(module);
+      return type === moduleType;
+    });
   };
 
-  const handleClearAll = () => {
-    setSelectedModules([]);
+  // Get current module of the improving type
+  const getCurrentModule = (moduleType: string) => {
+    return selectedModules.find(module => getModuleType(module) === moduleType);
   };
 
-  const handleGenerateIdea = () => {
-    console.log('Generating idea from modules:', selectedModules);
-  };
-
-  // Get modules for selected category - Fixed type checking
-  const categoryModules = selectedCategory 
-    ? [...modules, ...allModules].filter(module => {
-        const moduleType = getModuleType(module);
-        return moduleType === selectedCategory;
-      })
-    : [];
-
-  const renderModuleCard = (module: any, isFromLibrary = true) => {
-    const isSelected = isModuleSelected(module.id);
-    const title = getModuleTitle(module);
-    const content = getModuleContent(module);
-    const score = getModuleScore(module);
-
+  if (loading) {
     return (
-      <Card 
-        key={module.id}
-        className={`transition-all duration-200 hover:shadow-md cursor-pointer ${
-          isSelected ? 'ring-2 ring-purple-500 bg-purple-50' : ''
-        }`}
-        onClick={() => handleModuleToggle(module)}
-      >
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <Badge variant={isSelected ? "default" : "secondary"} className="text-xs">
-              {score}%
-            </Badge>
-          </div>
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        </CardHeader>
-        
-        <CardContent className="space-y-2">
-          <p className="text-xs text-gray-600 line-clamp-2">
-            {content}
-          </p>
-          
-          <Button
-            size="sm"
-            variant={isSelected ? "destructive" : "default"}
-            className="w-full text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleModuleToggle(module);
-            }}
-          >
-            {isSelected ? text[currentLanguage].removeFromMix : text[currentLanguage].addToMix}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-6"></div>
+              <p className="text-lg text-gray-600">{text[currentLanguage].loading}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
@@ -156,139 +144,41 @@ const RemixStudio: React.FC<RemixStudioProps> = ({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content Area */}
-          <div className="lg:col-span-3">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="menu">{text[currentLanguage].menuView}</TabsTrigger>
-                <TabsTrigger value="my-modules">{text[currentLanguage].myModules}</TabsTrigger>
-                <TabsTrigger value="public-modules">{text[currentLanguage].publicModules}</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="menu" className="mt-6">
-                <ModuleMenuGrid
-                  modules={[...modules, ...allModules]}
-                  currentLanguage={currentLanguage}
-                  onCategorySelect={handleCategorySelect}
-                  onModuleSelect={handleModuleToggle}
-                  selectedModules={selectedModules}
-                />
-              </TabsContent>
-              
-              <TabsContent value="my-modules" className="mt-6">
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading modules...</p>
-                  </div>
-                ) : modules.length === 0 ? (
-                  <div className="text-center py-12">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {text[currentLanguage].noModules}
-                    </h3>
-                    <p className="text-gray-600">
-                      {text[currentLanguage].createFirst}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {modules.map(module => renderModuleCard(module, true))}
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="public-modules" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {allModules.slice(0, 12).map(module => renderModuleCard(module, false))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="category-modules" className="mt-6">
-                {selectedCategory && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-4">
-                      <Button
-                        variant="ghost"
-                        onClick={() => setActiveTab('menu')}
-                      >
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        {text[currentLanguage].backToMenu}
-                      </Button>
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        {selectedCategory} 모듈들
-                      </h2>
-                      <Badge variant="secondary">
-                        {categoryModules.length}개
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {categoryModules.map(module => renderModuleCard(module, false))}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+        {/* Main Content */}
+        {currentView === 'overview' ? (
+          <div className="space-y-8">
+            <CurrentIdeaState
+              currentModules={selectedModules}
+              sourceIdea={sourceIdea}
+              currentLanguage={currentLanguage}
+              onImproveModule={handleImproveModule}
+            />
+            
+            {/* Generate Final Idea Button */}
+            {selectedModules.length > 0 && (
+              <div className="text-center">
+                <Button
+                  onClick={handleGenerateFinalIdea}
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 text-lg"
+                >
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  {text[currentLanguage].generateFinalIdea}
+                </Button>
+              </div>
+            )}
           </div>
-
-          {/* Selected Modules & Actions */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>{text[currentLanguage].selectedModules}</span>
-                  <Badge variant="secondary">{selectedModules.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {selectedModules.length === 0 ? (
-                  <p className="text-sm text-gray-600 text-center py-4">
-                    {text[currentLanguage].noSelection}
-                  </p>
-                ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {selectedModules.map(module => {
-                      const title = getModuleTitle(module);
-                      const content = getModuleContent(module);
-                      return (
-                        <div key={module.id} className="bg-gray-50 rounded p-2">
-                          <div className="text-xs font-medium truncate mb-1">
-                            {title}
-                          </div>
-                          <div className="text-xs text-gray-600 line-clamp-2">
-                            {content}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                
-                <div className="space-y-2 border-t pt-4">
-                  <Button
-                    onClick={handleGenerateIdea}
-                    disabled={selectedModules.length === 0}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {text[currentLanguage].generateIdea}
-                  </Button>
-                  
-                  <Button
-                    onClick={handleClearAll}
-                    disabled={selectedModules.length === 0}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    {text[currentLanguage].clearAll}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        ) : (
+          <ModuleImprovement
+            moduleType={improvingModuleType!}
+            currentModule={getCurrentModule(improvingModuleType!)}
+            alternativeModules={getAlternativeModules(improvingModuleType!)}
+            currentLanguage={currentLanguage}
+            onBack={handleBackToOverview}
+            onSelectModule={handleSelectModule}
+            onGenerateNew={handleGenerateNewModule}
+          />
+        )}
       </div>
     </div>
   );
