@@ -447,6 +447,81 @@ export type Database = {
         }
         Relationships: []
       }
+      semantic_automation_config: {
+        Row: {
+          auto_clustering_enabled: boolean | null
+          auto_embedding_enabled: boolean | null
+          clustering_schedule: string | null
+          created_at: string | null
+          embedding_batch_size: number | null
+          id: string
+          last_clustering_date: string | null
+          min_modules_for_clustering: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_clustering_enabled?: boolean | null
+          auto_embedding_enabled?: boolean | null
+          clustering_schedule?: string | null
+          created_at?: string | null
+          embedding_batch_size?: number | null
+          id?: string
+          last_clustering_date?: string | null
+          min_modules_for_clustering?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_clustering_enabled?: boolean | null
+          auto_embedding_enabled?: boolean | null
+          clustering_schedule?: string | null
+          created_at?: string | null
+          embedding_batch_size?: number | null
+          id?: string
+          last_clustering_date?: string | null
+          min_modules_for_clustering?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      semantic_automation_logs: {
+        Row: {
+          clusters_created: number | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          modules_processed: number | null
+          operation_type: string
+          started_at: string | null
+          status: string
+          trigger_type: string
+        }
+        Insert: {
+          clusters_created?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          modules_processed?: number | null
+          operation_type: string
+          started_at?: string | null
+          status: string
+          trigger_type: string
+        }
+        Update: {
+          clusters_created?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          modules_processed?: number | null
+          operation_type?: string
+          started_at?: string | null
+          status?: string
+          trigger_type?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_emoji: string
@@ -665,9 +740,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      semantic_automation_status: {
+        Row: {
+          auto_clustering_enabled: boolean | null
+          auto_embedding_enabled: boolean | null
+          clustered_modules: number | null
+          clustering_schedule: string | null
+          clusterings_last_week: number | null
+          embeddings_last_24h: number | null
+          last_clustering_date: string | null
+          min_modules_for_clustering: number | null
+          modules_with_embeddings: number | null
+          modules_without_embeddings: number | null
+          total_clusters: number | null
+          total_modules: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      auto_clustering_check: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
