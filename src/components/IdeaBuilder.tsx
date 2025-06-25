@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap, Save, Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap, Save, AlertCircle, CheckCircle, MessageSquare } from 'lucide-react';
 import { useModularIdeas, IdeaModule } from '@/hooks/useModularIdeas';
 import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
+import AIQuestionFlow from './AIQuestionFlow';
 
 type ModuleType = Database['public']['Enums']['module_type'];
 
@@ -35,29 +36,22 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
   const [selectedForSaving, setSelectedForSaving] = useState<Set<string>>(new Set());
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [isGeneratingUnified, setIsGeneratingUnified] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'input' | 'confirm' | 'analyzing' | 'modules' | 'unified'>('input');
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'input' | 'interactive' | 'modules' | 'unified'>('input');
+  const [generatedGrade, setGeneratedGrade] = useState<string>('');
   const navigate = useNavigate();
 
-  // Remove auto-start functionality - only pre-fill the input
+  // Pre-fill the input but don't auto-start
   useEffect(() => {
     setFreeTextIdea(initialIdea);
-    if (initialIdea) {
-      setCurrentStep('input');
-    }
   }, [initialIdea]);
 
   const text = {
     ko: {
       title: 'AI 아이디어 빌더',
-      subtitle: 'AI가 당신의 아이디어를 분석하고 완전한 비즈니스 모델 카드로 만들어드려요',
+      subtitle: 'AI와 함께 대화하며 완전한 비즈니스 모델을 만들어보세요',
       freeTextInput: '아이디어를 입력해주세요',
-      decompose: 'AI로 분석 시작',
-      confirmTitle: '모듈 생성 확인',
-      confirmMessage: '이 아이디어로 비즈니스 모델 카드들을 생성하시겠습니까?',
-      expectedModules: '생성될 모듈 타입',
-      confirmGenerate: '네, 생성하겠습니다',
-      cancelGenerate: '다시 수정하겠습니다',
+      startInteractive: '🤖 AI와 대화하며 발전시키기',
+      quickGenerate: '⚡ 빠른 분석으로 시작하기',
       generatedIdea: '완성된 통합 아이디어',
       generateUnified: '통합 아이디어 생성',
       goToRemix: '리믹스 스튜디오로 이동',
@@ -70,13 +64,10 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       decomposingText: 'AI가 아이디어를 분석하는 중...',
       generatingText: '통합 아이디어를 생성하는 중...',
       moduleCards: '생성된 아이디어 카드들',
-      qualityCheck: '품질 확인',
-      regenerateModule: '모듈 재생성',
-      stepLabels: {
-        analyzing: 'AI가 분석 중',
-        processing: '카드로 변환 중',
-        ready: '리믹스 준비 완료'
-      },
+      interactiveRecommended: '🌟 추천',
+      interactiveDescription: 'AI가 질문을 통해 더 구체적이고 실현 가능한 아이디어로 발전시켜드려요',
+      quickDescription: '입력한 아이디어를 바로 분석해서 모듈로 만들어드려요',
+      gradeDisplay: '1차 완성 등급',
       moduleTypes: {
         problem: '문제점',
         solution: '솔루션',
@@ -94,18 +85,14 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     },
     en: {
       title: 'AI Idea Builder',
-      subtitle: 'AI analyzes your idea and creates complete business model cards',
+      subtitle: 'Create a complete business model through conversation with AI',
       freeTextInput: 'Enter your idea',
-      decompose: 'Start AI Analysis',
-      confirmTitle: 'Confirm Module Generation',
-      confirmMessage: 'Would you like to generate business model cards for this idea?',
-      expectedModules: 'Expected Module Types',
-      confirmGenerate: 'Yes, Generate',
-      cancelGenerate: 'Edit First',
+      startInteractive: '🤖 Develop with AI Conversation',
+      quickGenerate: '⚡ Start with Quick Analysis',
       generatedIdea: 'Generated Unified Idea',
       generateUnified: 'Generate Unified Idea',
       goToRemix: 'Go to Remix Studio',
-      saveModules: 'Save Selected Modules',
+      saveSelectedModules: 'Save Selected Modules',
       saveToLibrary: 'Save to My Library',
       selectModules: 'Select modules to save',
       allModules: 'All Modules',
@@ -114,13 +101,10 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       decomposingText: 'AI is analyzing your idea...',
       generatingText: 'Generating unified idea...',
       moduleCards: 'Generated Idea Cards',
-      qualityCheck: 'Quality Check',
-      regenerateModule: 'Regenerate Module',
-      stepLabels: {
-        analyzing: 'AI Analyzing',
-        processing: 'Converting to Cards',
-        ready: 'Remix Ready'
-      },
+      interactiveRecommended: '🌟 Recommended',
+      interactiveDescription: 'AI will develop your idea into something more specific and feasible through questions',
+      quickDescription: 'Directly analyze your input idea and create modules',
+      gradeDisplay: '1st Completion Grade',
       moduleTypes: {
         problem: 'Problem',
         solution: 'Solution',
@@ -138,7 +122,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     }
   };
 
-  const handleStartAnalysis = () => {
+  const handleStartInteractive = () => {
     if (!freeTextIdea.trim()) {
       toast({
         title: currentLanguage === 'ko' ? '아이디어를 입력해주세요' : 'Please enter an idea',
@@ -147,13 +131,17 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       return;
     }
 
-    setShowConfirmation(true);
-    setCurrentStep('confirm');
+    setCurrentStep('interactive');
   };
 
-  const handleConfirmGeneration = async () => {
-    setShowConfirmation(false);
-    setCurrentStep('analyzing');
+  const handleQuickGenerate = async () => {
+    if (!freeTextIdea.trim()) {
+      toast({
+        title: currentLanguage === 'ko' ? '아이디어를 입력해주세요' : 'Please enter an idea',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       const decomposition = await decomposeIdea(freeTextIdea);
@@ -167,27 +155,33 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         version: 1,
-        quality_score: 0,
+        quality_score: 0.5, // Lower quality for quick generation
         usage_count: 0
       }));
 
       setSelectedModules(newModules);
+      setGeneratedGrade('C'); // Default grade for quick generation
       setCurrentStep('modules');
 
       toast({
-        title: currentLanguage === 'ko' ? '카드 생성 완료!' : 'Cards Generated!',
-        description: currentLanguage === 'ko' ? '아이디어가 모듈 카드로 변환되었습니다' : 'Your idea has been converted to module cards',
+        title: currentLanguage === 'ko' ? '빠른 분석 완료!' : 'Quick Analysis Complete!',
+        description: currentLanguage === 'ko' ? 'AI 대화로 더 높은 등급에 도전해보세요' : 'Try AI conversation for higher grades',
       });
     } catch (error) {
-      console.error('Decomposition failed:', error);
-      setCurrentStep('input');
-      setShowConfirmation(false);
+      console.error('Quick generation failed:', error);
+      toast({
+        title: currentLanguage === 'ko' ? '분석 실패' : 'Analysis Failed',
+        description: currentLanguage === 'ko' ? '다시 시도해주세요' : 'Please try again',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleCancelGeneration = () => {
-    setShowConfirmation(false);
-    setCurrentStep('input');
+  const handleInteractiveComplete = (modules: IdeaModule[], unifiedIdea: string, grade: string) => {
+    setSelectedModules(modules);
+    setUnifiedIdea(unifiedIdea);
+    setGeneratedGrade(grade);
+    setCurrentStep('unified');
   };
 
   const handleModuleSelectionToggle = (moduleId: string) => {
@@ -322,35 +316,33 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     'revenue_model', 'competitive_advantage'
   ];
 
+  const getGradeColor = (grade: string) => {
+    if (grade.includes('A')) return 'text-green-600 bg-green-50';
+    if (grade.includes('B')) return 'text-blue-600 bg-blue-50';
+    if (grade.includes('C')) return 'text-yellow-600 bg-yellow-50';
+    if (grade.includes('D')) return 'text-orange-600 bg-orange-50';
+    return 'text-red-600 bg-red-50';
+  };
+
+  if (currentStep === 'interactive') {
+    return (
+      <AIQuestionFlow
+        currentLanguage={currentLanguage}
+        initialIdea={freeTextIdea}
+        onComplete={handleInteractiveComplete}
+      />
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Enhanced Header with Progress */}
+      {/* Enhanced Header */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold flex items-center justify-center space-x-3">
           <Lightbulb className="w-8 h-8 text-yellow-500" />
           <span>{text[currentLanguage].title}</span>
         </h1>
         <p className="text-lg text-gray-600">{text[currentLanguage].subtitle}</p>
-        
-        {/* Progress Indicator */}
-        {currentStep !== 'input' && currentStep !== 'confirm' && (
-          <div className="flex justify-center items-center space-x-4 mt-6">
-            <div className={`flex items-center space-x-2 ${currentStep === 'analyzing' ? 'text-purple-600' : 'text-gray-400'}`}>
-              <div className={`w-3 h-3 rounded-full ${currentStep === 'analyzing' ? 'bg-purple-600 animate-pulse' : 'bg-gray-300'}`}></div>
-              <span className="text-sm">{text[currentLanguage].stepLabels.analyzing}</span>
-            </div>
-            <ArrowRight className="w-4 h-4 text-gray-400" />
-            <div className={`flex items-center space-x-2 ${currentStep === 'modules' ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-3 h-3 rounded-full ${currentStep === 'modules' ? 'bg-blue-600 animate-pulse' : 'bg-gray-300'}`}></div>
-              <span className="text-sm">{text[currentLanguage].stepLabels.processing}</span>
-            </div>
-            <ArrowRight className="w-4 h-4 text-gray-400" />
-            <div className={`flex items-center space-x-2 ${currentStep === 'unified' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-3 h-3 rounded-full ${currentStep === 'unified' ? 'bg-green-600' : 'bg-gray-300'}`}></div>
-              <span className="text-sm">{text[currentLanguage].stepLabels.ready}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Input Section */}
@@ -361,83 +353,84 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
             <span>{text[currentLanguage].freeTextInput}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <Textarea 
             placeholder={text[currentLanguage].placeholder}
             value={freeTextIdea}
             onChange={(e) => setFreeTextIdea(e.target.value)}
             rows={4}
             className="resize-none"
-            disabled={currentStep === 'analyzing' || showConfirmation}
+            disabled={decomposing}
           />
-          <Button 
-            onClick={handleStartAnalysis}
-            disabled={!freeTextIdea.trim() || decomposing || currentStep === 'analyzing' || showConfirmation}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600"
-          >
-            <Lightbulb className="w-4 h-4 mr-2" />
-            {text[currentLanguage].decompose}
-          </Button>
+          
+          {/* Two-option approach */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="border-2 border-purple-200 bg-purple-50">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium text-purple-800">{text[currentLanguage].startInteractive}</span>
+                  <Badge className="bg-purple-200 text-purple-800 text-xs">{text[currentLanguage].interactiveRecommended}</Badge>
+                </div>
+                <p className="text-sm text-purple-700">{text[currentLanguage].interactiveDescription}</p>
+                <Button 
+                  onClick={handleStartInteractive}
+                  disabled={!freeTextIdea.trim()}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  {text[currentLanguage].startInteractive}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-gray-200 bg-gray-50">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Zap className="w-5 h-5 text-gray-600" />
+                  <span className="font-medium text-gray-800">{text[currentLanguage].quickGenerate}</span>
+                </div>
+                <p className="text-sm text-gray-600">{text[currentLanguage].quickDescription}</p>
+                <Button 
+                  onClick={handleQuickGenerate}
+                  disabled={!freeTextIdea.trim() || decomposing}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  {text[currentLanguage].quickGenerate}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Confirmation Dialog */}
-      {showConfirmation && (
-        <Card className="border-2 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-blue-600" />
-              <span>{text[currentLanguage].confirmTitle}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-lg text-gray-800">{text[currentLanguage].confirmMessage}</p>
-            
-            <div className="bg-white p-4 rounded-lg border">
-              <h4 className="font-medium mb-3 flex items-center">
-                <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                {text[currentLanguage].expectedModules}:
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {expectedModuleTypes.map((type) => (
-                  <Badge key={type} variant="secondary" className="bg-purple-100 text-purple-800">
-                    {text[currentLanguage].moduleTypes[type as keyof typeof text[typeof currentLanguage]['moduleTypes']]}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <Button variant="outline" onClick={handleCancelGeneration}>
-                {text[currentLanguage].cancelGenerate}
-              </Button>
-              <Button 
-                onClick={handleConfirmGeneration}
-                className="bg-gradient-to-r from-purple-600 to-blue-600"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {text[currentLanguage].confirmGenerate}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Loading State */}
-      {currentStep === 'analyzing' && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-lg text-gray-600">{text[currentLanguage].decomposingText}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Enhanced Module Cards Display */}
-      {selectedModules.length > 0 && currentStep === 'modules' && (
+      {/* Results Section */}
+      {selectedModules.length > 0 && (
         <>
           <Separator />
 
+          {/* Grade Display */}
+          {generatedGrade && (
+            <Card className="text-center">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-center space-x-4">
+                  <div className={`px-4 py-2 rounded-full text-2xl font-bold ${getGradeColor(generatedGrade)}`}>
+                    {generatedGrade}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">{text[currentLanguage].gradeDisplay}</h3>
+                    <p className="text-sm text-gray-600">
+                      {currentLanguage === 'ko' ? '리믹스로 더 높은 등급에 도전하세요!' : 'Challenge for higher grades with remix!'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Module Cards Display */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -474,7 +467,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
                         variant="secondary"
                         className="bg-white/70 text-gray-700 font-medium"
                       >
-                        {text[currentLanguage].moduleTypes[module.module_type as keyof typeof text[typeof currentLanguage]['moduleTypes']]}
+                        {text[currentLanguage].moduleTypes[module.module_type as keyof typeof text[typeof currentLanguage]['moduleTypes']] || module.module_type}
                       </Badge>
                       <Checkbox
                         checked={selectedForSaving.has(module.id)}
@@ -524,30 +517,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
                     </span>
                   </div>
                   <Button
-                    onClick={async () => {
-                      if (!user) {
-                        toast({
-                          title: currentLanguage === 'ko' ? '로그인이 필요합니다' : 'Login required',
-                          variant: 'destructive',
-                        });
-                        return;
-                      }
-
-                      const modulesToSave = selectedModules.filter(m => selectedForSaving.has(m.id));
-                      
-                      if (modulesToSave.length === 0) {
-                        toast({
-                          title: currentLanguage === 'ko' ? '저장할 모듈을 선택해주세요' : 'Please select modules to save',
-                          variant: 'destructive',
-                        });
-                        return;
-                      }
-
-                      const success = await saveModulesToLibrary(modulesToSave, freeTextIdea);
-                      if (success) {
-                        setSelectedForSaving(new Set());
-                      }
-                    }}
+                    onClick={handleSaveSelectedModules}
                     disabled={selectedForSaving.size === 0 || saving}
                     className="bg-gradient-to-r from-green-600 to-emerald-600"
                   >
@@ -563,48 +533,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
 
               <div className="mt-8 flex justify-center space-x-4">
                 <Button 
-                  onClick={async () => {
-                    if (selectedModules.length === 0 || !freeTextIdea.trim()) return;
-
-                    setIsGeneratingUnified(true);
-                    try {
-                      const modulesObj = selectedModules.reduce((acc, module) => {
-                        acc[module.module_type] = module.content;
-                        return acc;
-                      }, {} as Record<string, string>);
-
-                      const { data, error } = await supabase.functions.invoke('generate-unified-idea', {
-                        body: {
-                          originalIdea: freeTextIdea,
-                          modules: modulesObj,
-                          language: currentLanguage
-                        }
-                      });
-
-                      if (error) throw error;
-
-                      if (!data.success) {
-                        throw new Error(data.error || 'Failed to generate unified idea');
-                      }
-
-                      setUnifiedIdea(data.unifiedIdea);
-                      setCurrentStep('unified');
-                      
-                      toast({
-                        title: currentLanguage === 'ko' ? '통합 아이디어 생성 완료!' : 'Unified idea generated!',
-                        description: currentLanguage === 'ko' ? '리믹스 스튜디오에서 더 발전시켜보세요' : 'Develop it further in the remix studio',
-                      });
-                    } catch (error: any) {
-                      console.error('Error generating unified idea:', error);
-                      toast({
-                        title: currentLanguage === 'ko' ? '오류 발생' : 'Error occurred',
-                        description: error.message,
-                        variant: 'destructive',
-                      });
-                    } finally {
-                      setIsGeneratingUnified(false);
-                    }
-                  }}
+                  onClick={handleGenerateUnifiedIdea}
                   disabled={isGeneratingUnified}
                   className="bg-gradient-to-r from-green-600 to-emerald-600"
                 >
@@ -642,12 +571,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
             
             <div className="flex justify-center space-x-4">
               <Button 
-                onClick={() => navigate('/remix', { 
-                  state: { 
-                    sourceModules: selectedModules,
-                    originalIdea: freeTextIdea 
-                  } 
-                })}
+                onClick={handleGoToRemix}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
                 <Shuffle className="w-4 h-4 mr-2" />

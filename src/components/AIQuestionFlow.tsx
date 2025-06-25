@@ -101,17 +101,71 @@ const AIQuestionFlow: React.FC<AIQuestionFlowProps> = ({
 
   const loadQuestions = async () => {
     try {
-      // Analyze idea quality to determine question complexity
-      const qualityAnalysis = analyzeIdeaQuality(initialIdea, currentLanguage);
-      
-      // Generate adaptive questions
-      const adaptiveQuestions = await generateAdaptiveQuestions(
-        initialIdea, 
-        qualityAnalysis, 
-        currentLanguage
-      );
-      
-      setQuestions(adaptiveQuestions);
+      // For now, create mock questions - in production, this would call an AI service
+      const mockQuestions: Question[] = [
+        {
+          moduleType: 'problem_definition',
+          question: currentLanguage === 'ko' 
+            ? '이 아이디어가 해결하려는 구체적인 문제는 무엇인가요? 누가 이 문제로 고생하고 있나요?'
+            : 'What specific problem does this idea solve? Who is struggling with this problem?',
+          educationalTip: currentLanguage === 'ko'
+            ? '좋은 비즈니스는 실제 사람들이 겪는 진짜 문제에서 시작됩니다. 문제가 클수록, 더 많은 사람이 겪을수록 좋은 비즈니스가 될 가능성이 높아집니다.'
+            : 'Great businesses start with real problems that real people face. The bigger the problem and the more people who face it, the better the business opportunity.',
+          followUpQuestions: currentLanguage === 'ko' 
+            ? ['이 문제 때문에 사람들이 얼마나 자주 불편함을 느끼나요?', '현재 사람들은 이 문제를 어떻게 해결하고 있나요?', '이 문제가 해결되지 않으면 어떤 결과가 생기나요?']
+            : ['How often do people feel frustrated by this problem?', 'How are people currently solving this problem?', 'What happens if this problem is not solved?']
+        },
+        {
+          moduleType: 'target_customer',
+          question: currentLanguage === 'ko'
+            ? '이 솔루션을 가장 절실히 원하는 사람들은 누구인가요? 그들의 특성을 구체적으로 설명해주세요.'
+            : 'Who are the people who most desperately want this solution? Describe their characteristics in detail.',
+          educationalTip: currentLanguage === 'ko'
+            ? '타겟 고객을 너무 넓게 잡으면 아무도 만족시키지 못합니다. 처음에는 작은 그룹이라도 100% 만족시키는 것이 중요합니다.'
+            : 'If you target everyone, you satisfy no one. It\'s better to make a small group 100% happy than to make everyone 10% happy.',
+          followUpQuestions: currentLanguage === 'ko'
+            ? ['이들의 나이, 직업, 소득 수준은 어떻게 되나요?', '이들은 어디서 시간을 보내나요?', '이들이 돈을 쓰는 패턴은 어떤가요?']
+            : ['What are their age, occupation, and income level?', 'Where do they spend their time?', 'What are their spending patterns?']
+        },
+        {
+          moduleType: 'value_proposition',
+          question: currentLanguage === 'ko'
+            ? '당신의 솔루션이 다른 해결책들과 비교해서 더 나은 점은 무엇인가요?'
+            : 'What makes your solution better than other alternatives?',
+          educationalTip: currentLanguage === 'ko'
+            ? '가치 제안은 단순히 기능 나열이 아닙니다. 고객이 얻는 구체적인 이익과 감정적 만족을 설명해야 합니다.'
+            : 'Value proposition is not just listing features. You need to explain the specific benefits and emotional satisfaction customers get.',
+          followUpQuestions: currentLanguage === 'ko'
+            ? ['고객이 이 솔루션을 사용한 후 어떤 기분이 들까요?', '이 솔루션으로 고객이 절약하는 시간이나 비용이 있나요?', '이 솔루션이 없다면 고객은 어떤 손해를 볼까요?']
+            : ['How will customers feel after using this solution?', 'What time or money does this solution save for customers?', 'What would customers lose without this solution?']
+        },
+        {
+          moduleType: 'revenue_model',
+          question: currentLanguage === 'ko'
+            ? '이 아이디어로 어떻게 돈을 벌 계획인가요? 고객이 언제, 얼마나 지불하게 될까요?'
+            : 'How do you plan to make money with this idea? When and how much will customers pay?',
+          educationalTip: currentLanguage === 'ko'
+            ? '수익 모델은 단순할수록 좋습니다. 고객이 가치를 느끼는 순간과 지불하는 순간이 가까울수록 성공 확률이 높아집니다.'
+            : 'Simpler revenue models are better. The closer the moment customers feel value to the moment they pay, the higher the success rate.',
+          followUpQuestions: currentLanguage === 'ko'
+            ? ['고객이 이 금액을 지불할 만큼 가치를 느낄까요?', '경쟁사들은 보통 얼마를 받나요?', '가격을 낮추거나 높일 수 있는 여지가 있나요?']
+            : ['Will customers feel enough value to pay this amount?', 'How much do competitors usually charge?', 'Is there room to lower or raise the price?']
+        },
+        {
+          moduleType: 'competitive_advantage',
+          question: currentLanguage === 'ko'
+            ? '경쟁사들이 쉽게 따라할 수 없는 당신만의 강점은 무엇인가요?'
+            : 'What is your unique strength that competitors cannot easily copy?',
+          educationalTip: currentLanguage === 'ko'
+            ? '진정한 경쟁 우위는 기술이나 아이디어가 아니라 실행력, 네트워크, 브랜드, 데이터 등에서 나옵니다.'
+            : 'True competitive advantage comes not from technology or ideas, but from execution, network, brand, data, etc.',
+          followUpQuestions: currentLanguage === 'ko'
+            ? ['이 강점을 더욱 강화하려면 무엇이 필요한가요?', '시간이 지나면서 이 우위가 더 커질까요?', '새로운 경쟁자가 나타나면 어떻게 대응할까요?']
+            : ['What do you need to strengthen this advantage further?', 'Will this advantage grow stronger over time?', 'How will you respond when new competitors appear?']
+        }
+      ];
+
+      setQuestions(mockQuestions);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to load questions:', error);
