@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap, Save, Upload } from 'lucide-react';
+import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap, Save, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import { useModularIdeas, IdeaModule } from '@/hooks/useModularIdeas';
 import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,17 +35,11 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
   const [selectedForSaving, setSelectedForSaving] = useState<Set<string>>(new Set());
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [isGeneratingUnified, setIsGeneratingUnified] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'input' | 'analyzing' | 'modules' | 'unified'>('input');
+  const [currentStep, setCurrentStep] = useState<'input' | 'confirm' | 'analyzing' | 'modules' | 'unified'>('input');
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const navigate = useNavigate();
 
-  // Auto-start analysis if requested
-  useEffect(() => {
-    if (autoStart && initialIdea && !decomposing && selectedModules.length === 0) {
-      handleDecomposeIdea();
-    }
-  }, [autoStart, initialIdea]);
-
-  // Update freeTextIdea when initialIdea changes
+  // Remove auto-start functionality - only pre-fill the input
   useEffect(() => {
     setFreeTextIdea(initialIdea);
     if (initialIdea) {
@@ -59,6 +53,11 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       subtitle: 'AI가 당신의 아이디어를 분석하고 완전한 비즈니스 모델 카드로 만들어드려요',
       freeTextInput: '아이디어를 입력해주세요',
       decompose: 'AI로 분석 시작',
+      confirmTitle: '모듈 생성 확인',
+      confirmMessage: '이 아이디어로 비즈니스 모델 카드들을 생성하시겠습니까?',
+      expectedModules: '생성될 모듈 타입',
+      confirmGenerate: '네, 생성하겠습니다',
+      cancelGenerate: '다시 수정하겠습니다',
       generatedIdea: '완성된 통합 아이디어',
       generateUnified: '통합 아이디어 생성',
       goToRemix: '리믹스 스튜디오로 이동',
@@ -71,6 +70,8 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       decomposingText: 'AI가 아이디어를 분석하는 중...',
       generatingText: '통합 아이디어를 생성하는 중...',
       moduleCards: '생성된 아이디어 카드들',
+      qualityCheck: '품질 확인',
+      regenerateModule: '모듈 재생성',
       stepLabels: {
         analyzing: 'AI가 분석 중',
         processing: '카드로 변환 중',
@@ -96,6 +97,11 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       subtitle: 'AI analyzes your idea and creates complete business model cards',
       freeTextInput: 'Enter your idea',
       decompose: 'Start AI Analysis',
+      confirmTitle: 'Confirm Module Generation',
+      confirmMessage: 'Would you like to generate business model cards for this idea?',
+      expectedModules: 'Expected Module Types',
+      confirmGenerate: 'Yes, Generate',
+      cancelGenerate: 'Edit First',
       generatedIdea: 'Generated Unified Idea',
       generateUnified: 'Generate Unified Idea',
       goToRemix: 'Go to Remix Studio',
@@ -108,6 +114,8 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       decomposingText: 'AI is analyzing your idea...',
       generatingText: 'Generating unified idea...',
       moduleCards: 'Generated Idea Cards',
+      qualityCheck: 'Quality Check',
+      regenerateModule: 'Regenerate Module',
       stepLabels: {
         analyzing: 'AI Analyzing',
         processing: 'Converting to Cards',
@@ -130,7 +138,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     }
   };
 
-  const handleDecomposeIdea = async () => {
+  const handleStartAnalysis = () => {
     if (!freeTextIdea.trim()) {
       toast({
         title: currentLanguage === 'ko' ? '아이디어를 입력해주세요' : 'Please enter an idea',
@@ -139,6 +147,12 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       return;
     }
 
+    setShowConfirmation(true);
+    setCurrentStep('confirm');
+  };
+
+  const handleConfirmGeneration = async () => {
+    setShowConfirmation(false);
     setCurrentStep('analyzing');
 
     try {
@@ -167,7 +181,13 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     } catch (error) {
       console.error('Decomposition failed:', error);
       setCurrentStep('input');
+      setShowConfirmation(false);
     }
+  };
+
+  const handleCancelGeneration = () => {
+    setShowConfirmation(false);
+    setCurrentStep('input');
   };
 
   const handleModuleSelectionToggle = (moduleId: string) => {
@@ -297,6 +317,11 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     return colorMap[moduleType] || 'from-gray-100 to-gray-200 border-gray-300';
   };
 
+  const expectedModuleTypes = [
+    'problem', 'solution', 'target_customer', 'value_proposition', 
+    'revenue_model', 'competitive_advantage'
+  ];
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Enhanced Header with Progress */}
@@ -308,7 +333,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
         <p className="text-lg text-gray-600">{text[currentLanguage].subtitle}</p>
         
         {/* Progress Indicator */}
-        {currentStep !== 'input' && (
+        {currentStep !== 'input' && currentStep !== 'confirm' && (
           <div className="flex justify-center items-center space-x-4 mt-6">
             <div className={`flex items-center space-x-2 ${currentStep === 'analyzing' ? 'text-purple-600' : 'text-gray-400'}`}>
               <div className={`w-3 h-3 rounded-full ${currentStep === 'analyzing' ? 'bg-purple-600 animate-pulse' : 'bg-gray-300'}`}></div>
@@ -343,30 +368,73 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
             onChange={(e) => setFreeTextIdea(e.target.value)}
             rows={4}
             className="resize-none"
-            disabled={currentStep === 'analyzing'}
+            disabled={currentStep === 'analyzing' || showConfirmation}
           />
           <Button 
-            onClick={handleDecomposeIdea}
-            disabled={!freeTextIdea.trim() || decomposing || currentStep === 'analyzing'}
+            onClick={handleStartAnalysis}
+            disabled={!freeTextIdea.trim() || decomposing || currentStep === 'analyzing' || showConfirmation}
             className="w-full bg-gradient-to-r from-purple-600 to-blue-600"
           >
-            {decomposing || currentStep === 'analyzing' ? (
-              <>
-                <Zap className="w-4 h-4 mr-2 animate-pulse" />
-                {text[currentLanguage].decomposingText}
-              </>
-            ) : (
-              <>
-                <Lightbulb className="w-4 h-4 mr-2" />
-                {text[currentLanguage].decompose}
-              </>
-            )}
+            <Lightbulb className="w-4 h-4 mr-2" />
+            {text[currentLanguage].decompose}
           </Button>
         </CardContent>
       </Card>
 
+      {/* Confirmation Dialog */}
+      {showConfirmation && (
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-blue-600" />
+              <span>{text[currentLanguage].confirmTitle}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-lg text-gray-800">{text[currentLanguage].confirmMessage}</p>
+            
+            <div className="bg-white p-4 rounded-lg border">
+              <h4 className="font-medium mb-3 flex items-center">
+                <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                {text[currentLanguage].expectedModules}:
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {expectedModuleTypes.map((type) => (
+                  <Badge key={type} variant="secondary" className="bg-purple-100 text-purple-800">
+                    {text[currentLanguage].moduleTypes[type as keyof typeof text[typeof currentLanguage]['moduleTypes']]}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <Button variant="outline" onClick={handleCancelGeneration}>
+                {text[currentLanguage].cancelGenerate}
+              </Button>
+              <Button 
+                onClick={handleConfirmGeneration}
+                className="bg-gradient-to-r from-purple-600 to-blue-600"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {text[currentLanguage].confirmGenerate}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading State */}
+      {currentStep === 'analyzing' && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-lg text-gray-600">{text[currentLanguage].decomposingText}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Enhanced Module Cards Display */}
-      {selectedModules.length > 0 && (
+      {selectedModules.length > 0 && currentStep === 'modules' && (
         <>
           <Separator />
 
@@ -379,7 +447,12 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
-                    onClick={handleGoToRemix}
+                    onClick={() => navigate('/remix', { 
+                      state: { 
+                        sourceModules: selectedModules,
+                        originalIdea: freeTextIdea 
+                      } 
+                    })}
                     variant="outline"
                     className="border-purple-200 text-purple-600 hover:bg-purple-50"
                   >
@@ -405,7 +478,17 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
                       </Badge>
                       <Checkbox
                         checked={selectedForSaving.has(module.id)}
-                        onCheckedChange={() => handleModuleSelectionToggle(module.id)}
+                        onCheckedChange={() => {
+                          setSelectedForSaving(prev => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(module.id)) {
+                              newSet.delete(module.id);
+                            } else {
+                              newSet.add(module.id);
+                            }
+                            return newSet;
+                          });
+                        }}
                         className="border-2 border-white/70"
                       />
                     </div>
@@ -428,14 +511,43 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
                   <div className="flex items-center space-x-4">
                     <Checkbox
                       checked={selectedForSaving.size === selectedModules.length}
-                      onCheckedChange={handleSelectAllModules}
+                      onCheckedChange={() => {
+                        if (selectedForSaving.size === selectedModules.length) {
+                          setSelectedForSaving(new Set());
+                        } else {
+                          setSelectedForSaving(new Set(selectedModules.map(m => m.id)));
+                        }
+                      }}
                     />
                     <span className="text-sm font-medium">
                       {text[currentLanguage].allModules} ({selectedForSaving.size}{text[currentLanguage].selectedCount})
                     </span>
                   </div>
                   <Button
-                    onClick={handleSaveSelectedModules}
+                    onClick={async () => {
+                      if (!user) {
+                        toast({
+                          title: currentLanguage === 'ko' ? '로그인이 필요합니다' : 'Login required',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+
+                      const modulesToSave = selectedModules.filter(m => selectedForSaving.has(m.id));
+                      
+                      if (modulesToSave.length === 0) {
+                        toast({
+                          title: currentLanguage === 'ko' ? '저장할 모듈을 선택해주세요' : 'Please select modules to save',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+
+                      const success = await saveModulesToLibrary(modulesToSave, freeTextIdea);
+                      if (success) {
+                        setSelectedForSaving(new Set());
+                      }
+                    }}
                     disabled={selectedForSaving.size === 0 || saving}
                     className="bg-gradient-to-r from-green-600 to-emerald-600"
                   >
@@ -451,7 +563,48 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
 
               <div className="mt-8 flex justify-center space-x-4">
                 <Button 
-                  onClick={handleGenerateUnifiedIdea}
+                  onClick={async () => {
+                    if (selectedModules.length === 0 || !freeTextIdea.trim()) return;
+
+                    setIsGeneratingUnified(true);
+                    try {
+                      const modulesObj = selectedModules.reduce((acc, module) => {
+                        acc[module.module_type] = module.content;
+                        return acc;
+                      }, {} as Record<string, string>);
+
+                      const { data, error } = await supabase.functions.invoke('generate-unified-idea', {
+                        body: {
+                          originalIdea: freeTextIdea,
+                          modules: modulesObj,
+                          language: currentLanguage
+                        }
+                      });
+
+                      if (error) throw error;
+
+                      if (!data.success) {
+                        throw new Error(data.error || 'Failed to generate unified idea');
+                      }
+
+                      setUnifiedIdea(data.unifiedIdea);
+                      setCurrentStep('unified');
+                      
+                      toast({
+                        title: currentLanguage === 'ko' ? '통합 아이디어 생성 완료!' : 'Unified idea generated!',
+                        description: currentLanguage === 'ko' ? '리믹스 스튜디오에서 더 발전시켜보세요' : 'Develop it further in the remix studio',
+                      });
+                    } catch (error: any) {
+                      console.error('Error generating unified idea:', error);
+                      toast({
+                        title: currentLanguage === 'ko' ? '오류 발생' : 'Error occurred',
+                        description: error.message,
+                        variant: 'destructive',
+                      });
+                    } finally {
+                      setIsGeneratingUnified(false);
+                    }
+                  }}
                   disabled={isGeneratingUnified}
                   className="bg-gradient-to-r from-green-600 to-emerald-600"
                 >
@@ -474,7 +627,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       )}
 
       {/* Generated Unified Idea */}
-      {unifiedIdea && (
+      {unifiedIdea && currentStep === 'unified' && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -489,7 +642,12 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
             
             <div className="flex justify-center space-x-4">
               <Button 
-                onClick={handleGoToRemix}
+                onClick={() => navigate('/remix', { 
+                  state: { 
+                    sourceModules: selectedModules,
+                    originalIdea: freeTextIdea 
+                  } 
+                })}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
                 <Shuffle className="w-4 h-4 mr-2" />
