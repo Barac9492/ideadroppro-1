@@ -40,6 +40,9 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
   const [showViralShare, setShowViralShare] = useState(false);
   const navigate = useNavigate();
 
+  // Get the saving state from useModuleLibrary hook
+  const { saveModulesToLibrary, saving } = useModuleLibrary({ currentLanguage });
+
   // Pre-fill the input but don't auto-start
   useEffect(() => {
     setFreeTextIdea(initialIdea);
@@ -175,7 +178,6 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       return;
     }
 
-    const { saveModulesToLibrary, saving } = useModuleLibrary({ currentLanguage });
     const success = await saveModulesToLibrary(modulesToSave, freeTextIdea);
     if (success) {
       setSelectedForSaving(new Set());
