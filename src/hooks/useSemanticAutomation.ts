@@ -64,7 +64,16 @@ export const useSemanticAutomation = () => {
         .limit(20);
 
       if (error) throw error;
-      setLogs(data || []);
+      
+      // Type cast the database results to match our interface
+      const typedLogs: AutomationLog[] = (data || []).map(log => ({
+        ...log,
+        operation_type: log.operation_type as 'embedding' | 'clustering',
+        status: log.status as 'pending' | 'running' | 'completed' | 'failed',
+        trigger_type: log.trigger_type as 'auto' | 'manual' | 'scheduled'
+      }));
+      
+      setLogs(typedLogs);
     } catch (error) {
       console.error('Error fetching automation logs:', error);
     }

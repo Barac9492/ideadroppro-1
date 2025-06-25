@@ -243,7 +243,7 @@ const SemanticAutomationManager: React.FC<SemanticAutomationManagerProps> = ({
               <div className="text-sm text-gray-600">{text[currentLanguage].clusteredModules}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{status.embeddingsLast24h}</div>
+              <div className="text-2xl font-bold text-purple-600">{status.embeddings_last_24h}</div>
               <div className="text-sm text-gray-600">{text[currentLanguage].embeddingsLast24h}</div>
             </div>
           </div>
