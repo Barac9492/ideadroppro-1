@@ -9,6 +9,74 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      combination_feedback: {
+        Row: {
+          combination_id: string | null
+          created_at: string | null
+          feedback_text: string | null
+          id: string
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          combination_id?: string | null
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          combination_id?: string | null
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          rating?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combination_feedback_combination_id_fkey"
+            columns: ["combination_id"]
+            isOneToOne: false
+            referencedRelation: "module_combinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combination_recommendations: {
+        Row: {
+          accepted: boolean | null
+          confidence_score: number | null
+          created_at: string | null
+          current_modules: string[] | null
+          id: string
+          recommendation_type: string | null
+          recommended_modules: string[] | null
+          user_id: string
+        }
+        Insert: {
+          accepted?: boolean | null
+          confidence_score?: number | null
+          created_at?: string | null
+          current_modules?: string[] | null
+          id?: string
+          recommendation_type?: string | null
+          recommended_modules?: string[] | null
+          user_id: string
+        }
+        Update: {
+          accepted?: boolean | null
+          confidence_score?: number | null
+          created_at?: string | null
+          current_modules?: string[] | null
+          id?: string
+          recommendation_type?: string | null
+          recommended_modules?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_prompts: {
         Row: {
           created_at: string
@@ -30,6 +98,39 @@ export type Database = {
           id?: string
           prompt_text_en?: string
           prompt_text_ko?: string
+        }
+        Relationships: []
+      }
+      genetic_generations: {
+        Row: {
+          average_fitness_score: number | null
+          best_fitness_score: number | null
+          created_at: string | null
+          crossover_rate: number | null
+          generation_number: number
+          id: string
+          mutation_rate: number | null
+          population_size: number
+        }
+        Insert: {
+          average_fitness_score?: number | null
+          best_fitness_score?: number | null
+          created_at?: string | null
+          crossover_rate?: number | null
+          generation_number: number
+          id?: string
+          mutation_rate?: number | null
+          population_size: number
+        }
+        Update: {
+          average_fitness_score?: number | null
+          best_fitness_score?: number | null
+          created_at?: string | null
+          crossover_rate?: number | null
+          generation_number?: number
+          id?: string
+          mutation_rate?: number | null
+          population_size?: number
         }
         Relationships: []
       }
@@ -312,6 +413,51 @@ export type Database = {
           id?: number
           member_count?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      module_combinations: {
+        Row: {
+          complementarity_score: number | null
+          created_at: string | null
+          feedback_score: number | null
+          id: string
+          like_count: number | null
+          marketability_score: number | null
+          module_ids: string[]
+          novelty_score: number | null
+          overall_score: number | null
+          updated_at: string | null
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          complementarity_score?: number | null
+          created_at?: string | null
+          feedback_score?: number | null
+          id?: string
+          like_count?: number | null
+          marketability_score?: number | null
+          module_ids: string[]
+          novelty_score?: number | null
+          overall_score?: number | null
+          updated_at?: string | null
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          complementarity_score?: number | null
+          created_at?: string | null
+          feedback_score?: number | null
+          id?: string
+          like_count?: number | null
+          marketability_score?: number | null
+          module_ids?: string[]
+          novelty_score?: number | null
+          overall_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+          view_count?: number | null
         }
         Relationships: []
       }
