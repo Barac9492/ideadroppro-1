@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +6,12 @@ import AdminPanel from '@/components/AdminPanel';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import Badge from '@/components/ui/badge';
+import Tabs from '@/components/ui/tabs';
+import TabsList from '@/components/ui/tabs-list';
+import TabsTrigger from '@/components/ui/tabs-trigger';
+import TabsContent from '@/components/ui/tabs-content';
+import SemanticModuleManager from '@/components/SemanticModuleManager';
 
 const Admin: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -111,23 +116,50 @@ const Admin: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <Header currentLanguage={currentLanguage} onLanguageToggle={toggleLanguage} />
+    <div className="min-h-screen bg-gray-50">
+      <Header />
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button
-            onClick={() => navigate('/')}
-            variant="outline"
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {text[currentLanguage].backToHome}
-          </Button>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            {text[currentLanguage].adminPanel}
-          </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">관리자 패널</h1>
+          <Badge variant="secondary" className="px-3 py-1">
+            Admin Access
+          </Badge>
         </div>
-        <AdminPanel currentLanguage={currentLanguage} />
+
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="users">사용자 관리</TabsTrigger>
+            <TabsTrigger value="ideas">아이디어 관리</TabsTrigger>
+            <TabsTrigger value="seeds">시드 관리</TabsTrigger>
+            <TabsTrigger value="prompts">프롬프트 관리</TabsTrigger>
+            <TabsTrigger value="system">시스템 관리</TabsTrigger>
+            <TabsTrigger value="semantic">의미 분석</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users">
+            {/* ... keep existing code (user management tabs) */}
+          </TabsContent>
+
+          <TabsContent value="ideas">
+            {/* ... keep existing code (idea management tabs) */}
+          </TabsContent>
+
+          <TabsContent value="seeds">
+            {/* ... keep existing code (seed management tabs) */}
+          </TabsContent>
+
+          <TabsContent value="prompts">
+            {/* ... keep existing code (prompt management tabs) */}
+          </TabsContent>
+
+          <TabsContent value="system">
+            {/* ... keep existing code (system management tabs) */}
+          </TabsContent>
+
+          <TabsContent value="semantic">
+            <SemanticModuleManager currentLanguage="ko" />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

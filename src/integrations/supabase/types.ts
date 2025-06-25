@@ -100,9 +100,12 @@ export type Database = {
       }
       idea_modules: {
         Row: {
+          cluster_id: number | null
+          cluster_label: string | null
           content: string
           created_at: string
           created_by: string
+          embedding: string | null
           id: string
           module_type: Database["public"]["Enums"]["module_type"]
           original_idea_id: string | null
@@ -113,9 +116,12 @@ export type Database = {
           version: number | null
         }
         Insert: {
+          cluster_id?: number | null
+          cluster_label?: string | null
           content: string
           created_at?: string
           created_by: string
+          embedding?: string | null
           id?: string
           module_type: Database["public"]["Enums"]["module_type"]
           original_idea_id?: string | null
@@ -126,9 +132,12 @@ export type Database = {
           version?: number | null
         }
         Update: {
+          cluster_id?: number | null
+          cluster_label?: string | null
           content?: string
           created_at?: string
           created_by?: string
+          embedding?: string | null
           id?: string
           module_type?: Database["public"]["Enums"]["module_type"]
           original_idea_id?: string | null
@@ -276,6 +285,36 @@ export type Database = {
           },
         ]
       }
+      module_clusters: {
+        Row: {
+          center_embedding: string | null
+          cluster_id: number
+          cluster_label: string | null
+          created_at: string | null
+          id: number
+          member_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          center_embedding?: string | null
+          cluster_id: number
+          cluster_label?: string | null
+          created_at?: string | null
+          id?: number
+          member_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          center_embedding?: string | null
+          cluster_id?: number
+          cluster_label?: string | null
+          created_at?: string | null
+          id?: number
+          member_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       module_recommendations: {
         Row: {
           compatibility_score: number | null
@@ -312,6 +351,45 @@ export type Database = {
           {
             foreignKeyName: "module_recommendations_source_module_id_fkey"
             columns: ["source_module_id"]
+            isOneToOne: false
+            referencedRelation: "idea_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_similarities: {
+        Row: {
+          created_at: string | null
+          id: string
+          module_a_id: string | null
+          module_b_id: string | null
+          similarity_score: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module_a_id?: string | null
+          module_b_id?: string | null
+          similarity_score: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module_a_id?: string | null
+          module_b_id?: string | null
+          similarity_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_similarities_module_a_id_fkey"
+            columns: ["module_a_id"]
+            isOneToOne: false
+            referencedRelation: "idea_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_similarities_module_b_id_fkey"
+            columns: ["module_b_id"]
             isOneToOne: false
             referencedRelation: "idea_modules"
             referencedColumns: ["id"]
@@ -590,13 +668,50 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       check_and_award_streak_badge: {
         Args: { p_user_id: string; p_streak: number }
         Returns: undefined
       }
+      cosine_similarity: {
+        Args: { embedding1: string; embedding2: string }
+        Returns: number
+      }
       delete_idea_cascade: {
         Args: { idea_id: string; user_id: string }
         Returns: boolean
+      }
+      find_similar_modules: {
+        Args: {
+          target_module_id: string
+          similarity_threshold?: number
+          limit_count?: number
+        }
+        Returns: {
+          module_id: string
+          similarity_score: number
+          module_type: string
+          content: string
+        }[]
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
       has_role: {
         Args: {
@@ -605,9 +720,57 @@ export type Database = {
         }
         Returns: boolean
       }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: unknown
+      }
       reset_periodic_scores: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
       update_influence_score: {
         Args: {
@@ -622,6 +785,30 @@ export type Database = {
       update_user_streak: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
     }
     Enums: {
