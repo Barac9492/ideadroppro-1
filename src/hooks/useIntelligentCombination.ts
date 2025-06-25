@@ -53,7 +53,12 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
       evaluationError: '조합 평가 중 오류가 발생했습니다',
       optimizationError: '최적화 중 오류가 발생했습니다',
       combinationSaved: '조합이 저장되었습니다',
-      feedbackSubmitted: '피드백이 제출되었습니다'
+      feedbackSubmitted: '피드백이 제출되었습니다',
+      authenticationRequired: '인증이 필요합니다',
+      accessDenied: '접근이 거부되었습니다',
+      dataIntegrityError: '데이터 무결성 오류가 발생했습니다',
+      invalidScoreRange: '점수 범위가 올바르지 않습니다 (0-100)',
+      invalidRatingRange: '평점 범위가 올바르지 않습니다 (1-5)'
     },
     en: {
       evaluating: 'Evaluating combination...',
@@ -62,7 +67,12 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
       evaluationError: 'Error evaluating combination',
       optimizationError: 'Error during optimization',
       combinationSaved: 'Combination saved',
-      feedbackSubmitted: 'Feedback submitted'
+      feedbackSubmitted: 'Feedback submitted',
+      authenticationRequired: 'Authentication required',
+      accessDenied: 'Access denied',
+      dataIntegrityError: 'Data integrity error occurred',
+      invalidScoreRange: 'Invalid score range (0-100)',
+      invalidRatingRange: 'Invalid rating range (1-5)'
     }
   };
 
@@ -82,13 +92,19 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
       if (error) throw error;
 
       if (data.success) {
-        setCurrentScores(data.scores);
+        // 점수 범위 검증 (0-5 범위를 0-100으로 변환)
+        const scores = data.scores;
+        if (!isValidScoreRange(scores)) {
+          throw new Error(text[currentLanguage].invalidScoreRange);
+        }
+        setCurrentScores(scores);
       }
     } catch (error: any) {
       console.error('Error evaluating combination:', error);
+      const errorMessage = getErrorMessage(error, currentLanguage);
       toast({
         title: text[currentLanguage].evaluationError,
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -131,6 +147,12 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
 
     } catch (error: any) {
       console.error('Error getting recommendations:', error);
+      const errorMessage = getErrorMessage(error, currentLanguage);
+      toast({
+        title: text[currentLanguage].recommendationError,
+        description: errorMessage,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -163,9 +185,10 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
 
     } catch (error: any) {
       console.error('Error finding optimal combinations:', error);
+      const errorMessage = getErrorMessage(error, currentLanguage);
       toast({
         title: text[currentLanguage].optimizationError,
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive'
       });
       return [];
@@ -178,7 +201,12 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
   const saveCombination = async (moduleIds: string[], scores: CombinationScores) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error(text[currentLanguage].authenticationRequired);
+
+      // 점수 범위 검증
+      if (!isValidScoreRange(scores)) {
+        throw new Error(text[currentLanguage].invalidScoreRange);
+      }
 
       const { data, error } = await supabase
         .from('module_combinations')
@@ -205,7 +233,8 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
 
     } catch (error: any) {
       console.error('Error saving combination:', error);
-      throw error;
+      const errorMessage = getErrorMessage(error, currentLanguage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -213,7 +242,12 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
   const submitFeedback = async (combinationId: string, rating: number, feedback?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error(text[currentLanguage].authenticationRequired);
+
+      // 평점 범위 검증
+      if (rating < 1 || rating > 5) {
+        throw new Error(text[currentLanguage].invalidRatingRange);
+      }
 
       const { error } = await supabase
         .from('combination_feedback')
@@ -235,7 +269,8 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
 
     } catch (error: any) {
       console.error('Error submitting feedback:', error);
-      throw error;
+      const errorMessage = getErrorMessage(error, currentLanguage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -254,6 +289,8 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
 
     } catch (error: any) {
       console.error('Error fetching top combinations:', error);
+      // RLS 정책으로 인해 데이터를 못 가져올 수 있으므로 조용히 처리
+      setTopCombinations([]);
     }
   };
 
@@ -284,3 +321,42 @@ export const useIntelligentCombination = ({ currentLanguage }: UseIntelligentCom
     fetchTopCombinations
   };
 };
+
+// 유틸리티 함수들
+function isValidScoreRange(scores: CombinationScores): boolean {
+  const { novelty_score, complementarity_score, marketability_score, overall_score } = scores;
+  return (
+    novelty_score >= 0 && novelty_score <= 5 &&
+    complementarity_score >= 0 && complementarity_score <= 5 &&
+    marketability_score >= 0 && marketability_score <= 5 &&
+    overall_score >= 0 && overall_score <= 5
+  );
+}
+
+function getErrorMessage(error: any, language: 'ko' | 'en'): string {
+  const messages = {
+    ko: {
+      auth: '인증이 필요합니다',
+      rls: '접근 권한이 없습니다',
+      constraint: '데이터 제약 조건 위반',
+      foreign_key: '참조 무결성 오류',
+      default: '알 수 없는 오류가 발생했습니다'
+    },
+    en: {
+      auth: 'Authentication required',
+      rls: 'Access denied',
+      constraint: 'Data constraint violation',
+      foreign_key: 'Foreign key constraint violation',
+      default: 'An unknown error occurred'
+    }
+  };
+
+  const msg = messages[language];
+  
+  if (error.message?.includes('auth')) return msg.auth;
+  if (error.message?.includes('RLS') || error.message?.includes('policy')) return msg.rls;
+  if (error.message?.includes('constraint') || error.message?.includes('check')) return msg.constraint;
+  if (error.message?.includes('foreign key')) return msg.foreign_key;
+  
+  return error.message || msg.default;
+}

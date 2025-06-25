@@ -42,6 +42,13 @@ export type Database = {
             referencedRelation: "module_combinations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_combination_feedback_combination"
+            columns: ["combination_id"]
+            isOneToOne: false
+            referencedRelation: "module_combinations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       combination_recommendations: {

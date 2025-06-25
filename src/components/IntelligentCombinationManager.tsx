@@ -8,6 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useIntelligentCombination } from '@/hooks/useIntelligentCombination';
 import { useModularIdeas } from '@/hooks/useModularIdeas';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 import { 
   Brain, 
   Zap, 
@@ -19,7 +21,8 @@ import {
   Target,
   Award,
   ThumbsUp,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 
 interface IntelligentCombinationManagerProps {
@@ -29,6 +32,7 @@ interface IntelligentCombinationManagerProps {
 const IntelligentCombinationManager: React.FC<IntelligentCombinationManagerProps> = ({ 
   currentLanguage 
 }) => {
+  const { user } = useAuth();
   const [feedbackText, setFeedbackText] = useState('');
   const [selectedRating, setSelectedRating] = useState(0);
   const [showOptimalResults, setShowOptimalResults] = useState(false);
@@ -72,7 +76,9 @@ const IntelligentCombinationManager: React.FC<IntelligentCombinationManagerProps
       moduleCount: '모듈 수',
       createdAt: '생성일',
       findingOptimal: 'AI가 최적 조합을 찾는 중...',
-      optimalResults: '최적 조합 결과'
+      optimalResults: '최적 조합 결과',
+      loginRequired: '로그인이 필요합니다',
+      authenticationNeeded: '이 기능을 사용하려면 로그인해주세요'
     },
     en: {
       title: '🧠 Intelligent Combination Engine',
@@ -97,7 +103,9 @@ const IntelligentCombinationManager: React.FC<IntelligentCombinationManagerProps
       moduleCount: 'Module Count',
       createdAt: 'Created',
       findingOptimal: 'AI is finding optimal combinations...',
-      optimalResults: 'Optimal Combination Results'
+      optimalResults: 'Optimal Combination Results',
+      loginRequired: 'Login required',
+      authenticationNeeded: 'Please login to use this feature'
     }
   };
 
@@ -110,6 +118,15 @@ const IntelligentCombinationManager: React.FC<IntelligentCombinationManagerProps
   };
 
   const handleFindOptimal = async () => {
+    if (!user) {
+      toast({
+        title: text[currentLanguage].loginRequired,
+        description: text[currentLanguage].authenticationNeeded,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const results = await findOptimalCombinations();
     if (results && results.length > 0) {
       setOptimalCombinations(results);
@@ -118,23 +135,51 @@ const IntelligentCombinationManager: React.FC<IntelligentCombinationManagerProps
   };
 
   const handleSaveCombination = async () => {
+    if (!user) {
+      toast({
+        title: text[currentLanguage].loginRequired,
+        description: text[currentLanguage].authenticationNeeded,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (currentScores && selectedModules.length >= 2) {
       try {
         await saveCombination(selectedModules, currentScores);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error saving combination:', error);
+        toast({
+          title: currentLanguage === 'ko' ? '저장 실패' : 'Save failed',
+          description: error.message,
+          variant: 'destructive',
+        });
       }
     }
   };
 
   const handleSubmitFeedback = async (combinationId: string) => {
+    if (!user) {
+      toast({
+        title: text[currentLanguage].loginRequired,
+        description: text[currentLanguage].authenticationNeeded,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (selectedRating > 0) {
       try {
         await submitFeedback(combinationId, selectedRating, feedbackText);
         setSelectedRating(0);
         setFeedbackText('');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error submitting feedback:', error);
+        toast({
+          title: currentLanguage === 'ko' ? '피드백 제출 실패' : 'Feedback submission failed',
+          description: error.message,
+          variant: 'destructive',
+        });
       }
     }
   };
@@ -144,6 +189,33 @@ const IntelligentCombinationManager: React.FC<IntelligentCombinationManagerProps
     if (score >= 3) return 'text-yellow-600';
     return 'text-red-600';
   };
+
+  // 인증되지 않은 사용자를 위한 메시지
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Lock className="w-5 h-5" />
+              <span>{text[currentLanguage].title}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center py-8">
+            <p className="text-gray-600 mb-4">
+              {text[currentLanguage].authenticationNeeded}
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/auth'}
+              className="bg-gradient-to-r from-purple-600 to-blue-600"
+            >
+              {text[currentLanguage].loginRequired}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
