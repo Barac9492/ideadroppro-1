@@ -72,6 +72,7 @@ const Builder = () => {
             <IdeaBuilder 
               currentLanguage={currentLanguage} 
               initialIdea={initialIdea}
+              autoStart={autoStart}
             />
           </TabsContent>
 

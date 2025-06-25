@@ -1,15 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap, Save, Upload } from 'lucide-react';
 import { useModularIdeas, IdeaModule } from '@/hooks/useModularIdeas';
+import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 
 type ModuleType = Database['public']['Enums']['module_type'];
@@ -17,16 +19,31 @@ type ModuleType = Database['public']['Enums']['module_type'];
 interface IdeaBuilderProps {
   currentLanguage: 'ko' | 'en';
   initialIdea?: string;
+  autoStart?: boolean;
 }
 
-const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea = '' }) => {
+const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ 
+  currentLanguage, 
+  initialIdea = '',
+  autoStart = false 
+}) => {
   const { decomposeIdea, decomposing } = useModularIdeas({ currentLanguage });
+  const { saveModulesToLibrary, saving } = useModuleLibrary({ currentLanguage });
+  const { user } = useAuth();
   const [freeTextIdea, setFreeTextIdea] = useState(initialIdea);
   const [selectedModules, setSelectedModules] = useState<IdeaModule[]>([]);
+  const [selectedForSaving, setSelectedForSaving] = useState<Set<string>>(new Set());
   const [unifiedIdea, setUnifiedIdea] = useState('');
   const [isGeneratingUnified, setIsGeneratingUnified] = useState(false);
   const [currentStep, setCurrentStep] = useState<'input' | 'analyzing' | 'modules' | 'unified'>('input');
   const navigate = useNavigate();
+
+  // Auto-start analysis if requested
+  useEffect(() => {
+    if (autoStart && initialIdea && !decomposing && selectedModules.length === 0) {
+      handleDecomposeIdea();
+    }
+  }, [autoStart, initialIdea]);
 
   // Update freeTextIdea when initialIdea changes
   useEffect(() => {
@@ -45,7 +62,11 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
       generatedIdea: '완성된 통합 아이디어',
       generateUnified: '통합 아이디어 생성',
       goToRemix: '리믹스 스튜디오로 이동',
-      saveModules: '내 모듈 컬렉션에 저장',
+      saveModules: '선택한 모듈 저장',
+      saveToLibrary: '내 라이브러리에 저장',
+      selectModules: '저장할 모듈 선택',
+      allModules: '모든 모듈',
+      selectedCount: '개 선택됨',
       placeholder: '예: AI 기반 개인 맞춤형 학습 플랫폼 아이디어...',
       decomposingText: 'AI가 아이디어를 분석하는 중...',
       generatingText: '통합 아이디어를 생성하는 중...',
@@ -78,7 +99,11 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
       generatedIdea: 'Generated Unified Idea',
       generateUnified: 'Generate Unified Idea',
       goToRemix: 'Go to Remix Studio',
-      saveModules: 'Save to My Module Collection',
+      saveModules: 'Save Selected Modules',
+      saveToLibrary: 'Save to My Library',
+      selectModules: 'Select modules to save',
+      allModules: 'All Modules',
+      selectedCount: ' selected',
       placeholder: 'e.g., AI-powered personalized learning platform idea...',
       decomposingText: 'AI is analyzing your idea...',
       generatingText: 'Generating unified idea...',
@@ -106,14 +131,19 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
   };
 
   const handleDecomposeIdea = async () => {
-    if (!freeTextIdea.trim()) return;
+    if (!freeTextIdea.trim()) {
+      toast({
+        title: currentLanguage === 'ko' ? '아이디어를 입력해주세요' : 'Please enter an idea',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setCurrentStep('analyzing');
 
     try {
       const decomposition = await decomposeIdea(freeTextIdea);
       
-      // Convert decomposition to modules with proper type casting
       const newModules: IdeaModule[] = Object.entries(decomposition).map(([type, content]) => ({
         id: `temp-${type}-${Date.now()}`,
         module_type: type as ModuleType,
@@ -137,6 +167,51 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
     } catch (error) {
       console.error('Decomposition failed:', error);
       setCurrentStep('input');
+    }
+  };
+
+  const handleModuleSelectionToggle = (moduleId: string) => {
+    setSelectedForSaving(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId);
+      } else {
+        newSet.add(moduleId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAllModules = () => {
+    if (selectedForSaving.size === selectedModules.length) {
+      setSelectedForSaving(new Set());
+    } else {
+      setSelectedForSaving(new Set(selectedModules.map(m => m.id)));
+    }
+  };
+
+  const handleSaveSelectedModules = async () => {
+    if (!user) {
+      toast({
+        title: currentLanguage === 'ko' ? '로그인이 필요합니다' : 'Login required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const modulesToSave = selectedModules.filter(m => selectedForSaving.has(m.id));
+    
+    if (modulesToSave.length === 0) {
+      toast({
+        title: currentLanguage === 'ko' ? '저장할 모듈을 선택해주세요' : 'Please select modules to save',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const success = await saveModulesToLibrary(modulesToSave, freeTextIdea);
+    if (success) {
+      setSelectedForSaving(new Set());
     }
   };
 
@@ -184,7 +259,6 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
   };
 
   const handleGoToRemix = () => {
-    // Navigate to remix with the generated modules
     navigate('/remix', { 
       state: { 
         sourceModules: selectedModules,
@@ -205,7 +279,6 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
     return aIndex - bIndex;
   });
 
-  // Enhanced module card colors
   const getModuleCardColor = (moduleType: string) => {
     const colorMap: Record<string, string> = {
       problem: 'from-red-100 to-red-200 border-red-300',
@@ -304,14 +377,16 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
                   <Sparkles className="w-5 h-5 text-blue-500" />
                   <span>{text[currentLanguage].moduleCards} ({selectedModules.length})</span>
                 </div>
-                <Button
-                  onClick={handleGoToRemix}
-                  variant="outline"
-                  className="border-purple-200 text-purple-600 hover:bg-purple-50"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  {text[currentLanguage].goToRemix}
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={handleGoToRemix}
+                    variant="outline"
+                    className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                  >
+                    <Shuffle className="w-4 h-4 mr-2" />
+                    {text[currentLanguage].goToRemix}
+                  </Button>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -321,12 +396,19 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
                     key={module.id} 
                     className={`bg-gradient-to-br ${getModuleCardColor(module.module_type)} rounded-xl p-4 space-y-3 border-2 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer transform hover:-translate-y-1`}
                   >
-                    <Badge 
-                      variant="secondary"
-                      className="bg-white/70 text-gray-700 font-medium"
-                    >
-                      {text[currentLanguage].moduleTypes[module.module_type as keyof typeof text[typeof currentLanguage]['moduleTypes']]}
-                    </Badge>
+                    <div className="flex items-center justify-between">
+                      <Badge 
+                        variant="secondary"
+                        className="bg-white/70 text-gray-700 font-medium"
+                      >
+                        {text[currentLanguage].moduleTypes[module.module_type as keyof typeof text[typeof currentLanguage]['moduleTypes']]}
+                      </Badge>
+                      <Checkbox
+                        checked={selectedForSaving.has(module.id)}
+                        onCheckedChange={() => handleModuleSelectionToggle(module.id)}
+                        className="border-2 border-white/70"
+                      />
+                    </div>
                     <p className="text-sm text-gray-800 font-medium leading-relaxed">
                       {module.content}
                     </p>
@@ -340,6 +422,33 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({ currentLanguage, initialIdea 
                 ))}
               </div>
               
+              {/* Module Selection and Save Section */}
+              <div className="mt-8 space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <Checkbox
+                      checked={selectedForSaving.size === selectedModules.length}
+                      onCheckedChange={handleSelectAllModules}
+                    />
+                    <span className="text-sm font-medium">
+                      {text[currentLanguage].allModules} ({selectedForSaving.size}{text[currentLanguage].selectedCount})
+                    </span>
+                  </div>
+                  <Button
+                    onClick={handleSaveSelectedModules}
+                    disabled={selectedForSaving.size === 0 || saving}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600"
+                  >
+                    {saving ? (
+                      <Zap className="w-4 h-4 mr-2 animate-pulse" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {text[currentLanguage].saveToLibrary}
+                  </Button>
+                </div>
+              </div>
+
               <div className="mt-8 flex justify-center space-x-4">
                 <Button 
                   onClick={handleGenerateUnifiedIdea}
