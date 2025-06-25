@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import IdeaBuilder from '@/components/IdeaBuilder';
 import ModuleMixMatch from '@/components/ModuleMixMatch';
@@ -7,6 +8,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Builder = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
+  const [initialIdea, setInitialIdea] = useState('');
+  const [autoStart, setAutoStart] = useState(false);
+  const location = useLocation();
+
+  // Get initial idea and auto-start flag from navigation state
+  useEffect(() => {
+    if (location.state?.initialIdea) {
+      setInitialIdea(location.state.initialIdea);
+    }
+    if (location.state?.autoStart) {
+      setAutoStart(location.state.autoStart);
+    }
+  }, [location.state]);
 
   const handleLanguageToggle = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
@@ -55,7 +69,10 @@ const Builder = () => {
           </TabsList>
 
           <TabsContent value="builder">
-            <IdeaBuilder currentLanguage={currentLanguage} />
+            <IdeaBuilder 
+              currentLanguage={currentLanguage} 
+              initialIdea={initialIdea}
+            />
           </TabsContent>
 
           <TabsContent value="mixmatch">

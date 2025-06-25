@@ -9,12 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, Zap, ArrowRight, Sparkles, Gift } from 'lucide-react';
+import { Lightbulb, ArrowRight, Sparkles, Gift } from 'lucide-react';
 
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
   const [ideaText, setIdeaText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,30 +36,14 @@ const Create = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  const handleQuickStart = async () => {
+  const handleAnalyzeIdea = () => {
     if (!ideaText.trim()) return;
     
-    setIsSubmitting(true);
-    
-    // Simulate AI processing
-    setTimeout(() => {
-      // Navigate to a simple results page or show results inline
-      console.log('Quick processing:', ideaText);
-      setIsSubmitting(false);
-      
-      // For now, just show a success message
-      alert(`아이디어 처리 완료: ${ideaText}`);
-    }, 2000);
-  };
-
-  const handleDetailedAnalysis = () => {
-    if (!ideaText.trim()) return;
-    
-    // Navigate to the detailed analysis flow
-    navigate('/create/detailed', { 
+    // Navigate to builder with the idea for analysis
+    navigate('/builder', { 
       state: { 
         initialIdea: ideaText.trim(),
-        autoStartQuestions: true 
+        autoStart: true 
       } 
     });
   };
@@ -68,10 +51,9 @@ const Create = () => {
   const text = {
     ko: {
       title: '💡 아이디어 만들기',
-      subtitle: '간단하게 시작하세요! 30초 만에 AI 분석을 받아보거나 상세하게 발전시켜보세요',
+      subtitle: '간단하게 시작하세요! AI가 아이디어를 분석하고 발전시켜드려요',
       placeholder: '어떤 아이디어든 환영합니다!\n\n예시:\n• "배달음식 포장지를 재활용하는 앱"\n• "AI로 반려동물 건강 체크하는 서비스"\n• "중고차 실시간 경매 플랫폼"',
-      quickStart: '🚀 30초 AI 분석',
-      detailedAnalysis: '📝 상세 분석 & 발전',
+      analyzeButton: '🚀 AI 아이디어 분석 시작',
       bonus: '첫 아이디어 보너스',
       tips: [
         '💡 구체적일수록 더 좋은 분석 결과를 받을 수 있어요',
@@ -81,10 +63,9 @@ const Create = () => {
     },
     en: {
       title: '💡 Create Idea',
-      subtitle: 'Start simple! Get AI analysis in 30 seconds or develop it in detail',
+      subtitle: 'Start simple! AI will analyze and develop your idea',
       placeholder: 'Any idea is welcome!\n\nExamples:\n• "App to recycle food delivery packaging"\n• "AI pet health check service"\n• "Real-time used car auction platform"',
-      quickStart: '🚀 30sec AI Analysis',
-      detailedAnalysis: '📝 Detailed Analysis & Development',
+      analyzeButton: '🚀 Start AI Idea Analysis',
       bonus: 'First Idea Bonus',
       tips: [
         '💡 More specific ideas get better analysis results',
@@ -109,7 +90,7 @@ const Create = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (ideaText.trim()) {
-        handleQuickStart();
+        handleAnalyzeIdea();
       }
     }
   };
@@ -186,37 +167,17 @@ const Create = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Single Action Button */}
+                <div className="flex justify-center">
                   <Button
-                    onClick={handleQuickStart}
-                    disabled={!ideaText.trim() || isSubmitting}
-                    className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold py-4 text-lg shadow-lg"
-                    size="lg"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        AI 분석 중...
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-5 h-5 mr-2" />
-                        {text[currentLanguage].quickStart}
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button
-                    onClick={handleDetailedAnalysis}
+                    onClick={handleAnalyzeIdea}
                     disabled={!ideaText.trim()}
-                    variant="outline"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-8 text-lg shadow-lg w-full md:w-auto"
                     size="lg"
-                    className="border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-bold py-4 text-lg"
                   >
                     <Sparkles className="w-5 h-5 mr-2" />
-                    {text[currentLanguage].detailedAnalysis}
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    {text[currentLanguage].analyzeButton}
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
               </CardContent>
