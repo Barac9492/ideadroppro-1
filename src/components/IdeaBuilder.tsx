@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 import AIQuestionFlow from './AIQuestionFlow';
+import ViralShareCard from './ViralShareCard';
 
 type ModuleType = Database['public']['Enums']['module_type'];
 
@@ -38,6 +39,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
   const [isGeneratingUnified, setIsGeneratingUnified] = useState(false);
   const [currentStep, setCurrentStep] = useState<'input' | 'interactive' | 'modules' | 'unified'>('input');
   const [generatedGrade, setGeneratedGrade] = useState<string>('');
+  const [showViralShare, setShowViralShare] = useState(false);
   const navigate = useNavigate();
 
   // Pre-fill the input but don't auto-start
@@ -182,6 +184,9 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     setUnifiedIdea(unifiedIdea);
     setGeneratedGrade(grade);
     setCurrentStep('unified');
+    
+    // Show viral sharing after completion
+    setShowViralShare(true);
   };
 
   const handleModuleSelectionToggle = (moduleId: string) => {
@@ -405,6 +410,54 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Viral Share Modal/Card */}
+      {showViralShare && generatedGrade && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                {currentLanguage === 'ko' ? '🎉 분석 완료!' : '🎉 Analysis Complete!'}
+              </h2>
+              <p className="text-gray-600">
+                {currentLanguage === 'ko' ? '친구들에게 자랑해보세요!' : 'Share with your friends!'}
+              </p>
+            </div>
+            
+            <ViralShareCard
+              grade={generatedGrade}
+              ideaTitle={initialIdea || freeTextIdea}
+              userName={user?.email?.split('@')[0] || 'Anonymous'}
+              currentLanguage={currentLanguage}
+            />
+            
+            <div className="flex justify-center space-x-3 mt-4">
+              <Button
+                onClick={() => setShowViralShare(false)}
+                variant="outline"
+                className="px-6"
+              >
+                {currentLanguage === 'ko' ? '나중에' : 'Later'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowViralShare(false);
+                  // Auto-navigate to remix
+                  navigate('/remix', { 
+                    state: { 
+                      sourceModules: selectedModules,
+                      originalIdea: freeTextIdea 
+                    } 
+                  });
+                }}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 px-6"
+              >
+                {currentLanguage === 'ko' ? '리믹스 하기' : 'Start Remix'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Results Section */}
       {selectedModules.length > 0 && (
