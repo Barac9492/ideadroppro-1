@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap, Save, AlertCircle, CheckCircle, MessageSquare } from 'lucide-react';
+import { Lightbulb, Sparkles, ArrowRight, Shuffle, Zap, Save, MessageSquare } from 'lucide-react';
 import { useModularIdeas, IdeaModule } from '@/hooks/useModularIdeas';
 import { useModuleLibrary } from '@/hooks/useModuleLibrary';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,8 +29,6 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
   initialIdea = '',
   autoStart = false 
 }) => {
-  const { decomposeIdea, decomposing } = useModularIdeas({ currentLanguage });
-  const { saveModulesToLibrary, saving } = useModuleLibrary({ currentLanguage });
   const { user } = useAuth();
   const [freeTextIdea, setFreeTextIdea] = useState(initialIdea);
   const [selectedModules, setSelectedModules] = useState<IdeaModule[]>([]);
@@ -52,8 +50,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       title: 'AI 아이디어 빌더',
       subtitle: 'AI와 함께 대화하며 완전한 비즈니스 모델을 만들어보세요',
       freeTextInput: '아이디어를 입력해주세요',
-      startInteractive: '🤖 AI와 대화하며 발전시키기',
-      quickGenerate: '⚡ 빠른 분석으로 시작하기',
+      startInteractive: '🤖 AI와 대화 시작하기',
       generatedIdea: '완성된 통합 아이디어',
       generateUnified: '통합 아이디어 생성',
       goToRemix: '리믹스 스튜디오로 이동',
@@ -63,12 +60,9 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       allModules: '모든 모듈',
       selectedCount: '개 선택됨',
       placeholder: '예: AI 기반 개인 맞춤형 학습 플랫폼 아이디어...',
-      decomposingText: 'AI가 아이디어를 분석하는 중...',
       generatingText: '통합 아이디어를 생성하는 중...',
       moduleCards: '생성된 아이디어 카드들',
-      interactiveRecommended: '🌟 추천',
-      interactiveDescription: 'AI가 질문을 통해 더 구체적이고 실현 가능한 아이디어로 발전시켜드려요',
-      quickDescription: '입력한 아이디어를 바로 분석해서 모듈로 만들어드려요',
+      interactiveDescription: 'AI가 질문을 통해 더 구체적이고 실현 가능한 아이디어로 발전시켜드려요. 단계별로 함께 완성해보세요!',
       gradeDisplay: '1차 완성 등급',
       moduleTypes: {
         problem: '문제점',
@@ -89,8 +83,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       title: 'AI Idea Builder',
       subtitle: 'Create a complete business model through conversation with AI',
       freeTextInput: 'Enter your idea',
-      startInteractive: '🤖 Develop with AI Conversation',
-      quickGenerate: '⚡ Start with Quick Analysis',
+      startInteractive: '🤖 Start AI Conversation',
       generatedIdea: 'Generated Unified Idea',
       generateUnified: 'Generate Unified Idea',
       goToRemix: 'Go to Remix Studio',
@@ -100,12 +93,9 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       allModules: 'All Modules',
       selectedCount: ' selected',
       placeholder: 'e.g., AI-powered personalized learning platform idea...',
-      decomposingText: 'AI is analyzing your idea...',
       generatingText: 'Generating unified idea...',
       moduleCards: 'Generated Idea Cards',
-      interactiveRecommended: '🌟 Recommended',
-      interactiveDescription: 'AI will develop your idea into something more specific and feasible through questions',
-      quickDescription: 'Directly analyze your input idea and create modules',
+      interactiveDescription: 'AI will develop your idea into something more specific and feasible through questions. Let\'s complete it step by step!',
       gradeDisplay: '1st Completion Grade',
       moduleTypes: {
         problem: 'Problem',
@@ -134,49 +124,6 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
     }
 
     setCurrentStep('interactive');
-  };
-
-  const handleQuickGenerate = async () => {
-    if (!freeTextIdea.trim()) {
-      toast({
-        title: currentLanguage === 'ko' ? '아이디어를 입력해주세요' : 'Please enter an idea',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      const decomposition = await decomposeIdea(freeTextIdea);
-      
-      const newModules: IdeaModule[] = Object.entries(decomposition).map(([type, content]) => ({
-        id: `temp-${type}-${Date.now()}`,
-        module_type: type as ModuleType,
-        content: content as string,
-        tags: [],
-        created_by: 'temp',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        version: 1,
-        quality_score: 0.5, // Lower quality for quick generation
-        usage_count: 0
-      }));
-
-      setSelectedModules(newModules);
-      setGeneratedGrade('C'); // Default grade for quick generation
-      setCurrentStep('modules');
-
-      toast({
-        title: currentLanguage === 'ko' ? '빠른 분석 완료!' : 'Quick Analysis Complete!',
-        description: currentLanguage === 'ko' ? 'AI 대화로 더 높은 등급에 도전해보세요' : 'Try AI conversation for higher grades',
-      });
-    } catch (error) {
-      console.error('Quick generation failed:', error);
-      toast({
-        title: currentLanguage === 'ko' ? '분석 실패' : 'Analysis Failed',
-        description: currentLanguage === 'ko' ? '다시 시도해주세요' : 'Please try again',
-        variant: 'destructive',
-      });
-    }
   };
 
   const handleInteractiveComplete = (modules: IdeaModule[], unifiedIdea: string, grade: string) => {
@@ -228,6 +175,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
       return;
     }
 
+    const { saveModulesToLibrary, saving } = useModuleLibrary({ currentLanguage });
     const success = await saveModulesToLibrary(modulesToSave, freeTextIdea);
     if (success) {
       setSelectedForSaving(new Set());
@@ -340,7 +288,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8">
       {/* Enhanced Header */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold flex items-center justify-center space-x-3">
@@ -350,8 +298,8 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
         <p className="text-lg text-gray-600">{text[currentLanguage].subtitle}</p>
       </div>
 
-      {/* Input Section */}
-      <Card>
+      {/* Simplified Input Section */}
+      <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
@@ -364,54 +312,29 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
             value={freeTextIdea}
             onChange={(e) => setFreeTextIdea(e.target.value)}
             rows={4}
-            className="resize-none"
-            disabled={decomposing}
+            className="resize-none text-lg border-purple-200 focus:border-purple-400"
           />
           
-          {/* Two-option approach */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <Card className="border-2 border-purple-200 bg-purple-50">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium text-purple-800">{text[currentLanguage].startInteractive}</span>
-                  <Badge className="bg-purple-200 text-purple-800 text-xs">{text[currentLanguage].interactiveRecommended}</Badge>
-                </div>
-                <p className="text-sm text-purple-700">{text[currentLanguage].interactiveDescription}</p>
-                <Button 
-                  onClick={handleStartInteractive}
-                  disabled={!freeTextIdea.trim()}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600"
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  {text[currentLanguage].startInteractive}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-gray-200 bg-gray-50">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Zap className="w-5 h-5 text-gray-600" />
-                  <span className="font-medium text-gray-800">{text[currentLanguage].quickGenerate}</span>
-                </div>
-                <p className="text-sm text-gray-600">{text[currentLanguage].quickDescription}</p>
-                <Button 
-                  onClick={handleQuickGenerate}
-                  disabled={!freeTextIdea.trim() || decomposing}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  {text[currentLanguage].quickGenerate}
-                </Button>
-              </CardContent>
-            </Card>
+          {/* AI Conversation CTA */}
+          <div className="text-center space-y-4">
+            <p className="text-purple-700 font-medium leading-relaxed">
+              {text[currentLanguage].interactiveDescription}
+            </p>
+            <Button 
+              onClick={handleStartInteractive}
+              disabled={!freeTextIdea.trim()}
+              size="lg"
+              className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-12 py-4 text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <MessageSquare className="w-5 h-5 mr-3" />
+              {text[currentLanguage].startInteractive}
+              <ArrowRight className="w-5 h-5 ml-3" />
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Viral Share Modal/Card */}
+      {/* Viral Share Modal */}
       {showViralShare && generatedGrade && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4">
@@ -442,13 +365,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
               <Button
                 onClick={() => {
                   setShowViralShare(false);
-                  // Auto-navigate to remix
-                  navigate('/remix', { 
-                    state: { 
-                      sourceModules: selectedModules,
-                      originalIdea: freeTextIdea 
-                    } 
-                  });
+                  handleGoToRemix();
                 }}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 px-6"
               >
@@ -459,7 +376,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
         </div>
       )}
 
-      {/* Results Section */}
+      {/* Results Section - only show after completion */}
       {selectedModules.length > 0 && (
         <>
           <Separator />
@@ -469,7 +386,13 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
             <Card className="text-center">
               <CardContent className="p-6">
                 <div className="flex items-center justify-center space-x-4">
-                  <div className={`px-4 py-2 rounded-full text-2xl font-bold ${getGradeColor(generatedGrade)}`}>
+                  <div className={`px-4 py-2 rounded-full text-2xl font-bold ${
+                    generatedGrade.includes('A') ? 'text-green-600 bg-green-50' :
+                    generatedGrade.includes('B') ? 'text-blue-600 bg-blue-50' :
+                    generatedGrade.includes('C') ? 'text-yellow-600 bg-yellow-50' :
+                    generatedGrade.includes('D') ? 'text-orange-600 bg-orange-50' :
+                    'text-red-600 bg-red-50'
+                  }`}>
                     {generatedGrade}
                   </div>
                   <div>
@@ -493,12 +416,7 @@ const IdeaBuilder: React.FC<IdeaBuilderProps> = ({
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
-                    onClick={() => navigate('/remix', { 
-                      state: { 
-                        sourceModules: selectedModules,
-                        originalIdea: freeTextIdea 
-                      } 
-                    })}
+                    onClick={handleGoToRemix}
                     variant="outline"
                     className="border-purple-200 text-purple-600 hover:bg-purple-50"
                   >
