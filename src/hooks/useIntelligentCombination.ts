@@ -20,11 +20,17 @@ interface CombinationRecommendation {
 
 interface ModuleCombination {
   id: string;
+  user_id: string;
   module_ids: string[];
-  scores: CombinationScores;
+  novelty_score: number;
+  complementarity_score: number;
+  marketability_score: number;
+  overall_score: number;
   feedback_score: number;
+  view_count: number;
   like_count: number;
   created_at: string;
+  updated_at: string;
 }
 
 interface UseIntelligentCombinationProps {
