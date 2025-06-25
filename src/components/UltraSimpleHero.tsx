@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,7 +23,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       subtitle: '가장 똑똑한 방법',
       description: '30초 안에 아이디어를 입력하면, AI가 완전한 비즈니스 모델로 발전시켜드립니다.',
       placeholder: '예: "비 오는 날 신발이 젖지 않는 스마트 우산"',
-      enhanceButton: 'AI와 함께 시작하기',
+      enhanceButton: 'AI 분석 시작하기',
       stats: {
         ideas: '12,847개 아이디어',
         users: '3,294명 창업가',
@@ -44,7 +43,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
       subtitle: 'ideas into reality',
       description: 'Input your idea in 30 seconds and AI will develop it into a complete business model.',
       placeholder: 'e.g., "Smart umbrella that keeps shoes dry in rain"',
-      enhanceButton: 'Start with AI',
+      enhanceButton: 'Start AI Analysis',
       stats: {
         ideas: '12,847 Ideas',
         users: '3,294 Entrepreneurs',
@@ -61,12 +60,13 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
     }
   };
 
-  const handleStartAI = () => {
+  const handleStartAnalysis = () => {
     if (ideaText.trim()) {
-      navigate('/create', { 
+      // Navigate directly to Builder with auto-start
+      navigate('/builder', { 
         state: { 
           initialIdea: ideaText.trim(),
-          autoStartQuestions: true 
+          autoStart: true 
         } 
       });
     }
@@ -76,7 +76,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (ideaText.trim()) {
-        handleStartAI();
+        handleStartAnalysis();
       }
     }
   };
@@ -186,7 +186,7 @@ const UltraSimpleHero: React.FC<UltraSimpleHeroProps> = ({
                         {ideaText.length}/200
                       </div>
                       <Button
-                        onClick={handleStartAI}
+                        onClick={handleStartAnalysis}
                         disabled={!ideaText.trim()}
                         className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl border-0"
                       >

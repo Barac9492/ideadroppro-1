@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, ArrowRight, Sparkles, Gift } from 'lucide-react';
+import { Lightbulb, ArrowRight, Sparkles, Gift, FileText, Edit3 } from 'lucide-react';
 
 const Create = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
@@ -36,10 +36,10 @@ const Create = () => {
     setCurrentLanguage(prev => prev === 'ko' ? 'en' : 'ko');
   };
 
-  const handleAnalyzeIdea = () => {
+  const handleStartAnalysis = () => {
     if (!ideaText.trim()) return;
     
-    // Navigate to builder with the idea for analysis
+    // Navigate directly to builder with auto-start
     navigate('/builder', { 
       state: { 
         initialIdea: ideaText.trim(),
@@ -50,27 +50,43 @@ const Create = () => {
 
   const text = {
     ko: {
-      title: '💡 아이디어 만들기',
-      subtitle: '간단하게 시작하세요! AI가 아이디어를 분석하고 발전시켜드려요',
-      placeholder: '어떤 아이디어든 환영합니다!\n\n예시:\n• "배달음식 포장지를 재활용하는 앱"\n• "AI로 반려동물 건강 체크하는 서비스"\n• "중고차 실시간 경매 플랫폼"',
-      analyzeButton: '🚀 AI 아이디어 분석 시작',
-      bonus: '첫 아이디어 보너스',
+      title: '✍️ 상세한 아이디어 작성',
+      subtitle: '더 구체적인 아이디어를 작성하여 정확한 AI 분석을 받으세요',
+      placeholder: '아이디어를 자세히 설명해주세요...\n\n예시:\n• 문제 상황: 배달음식을 주문할 때마다 일회용 포장지가 너무 많이 나와서 환경 부담이 된다\n• 해결 아이디어: 재사용 가능한 포장 용기를 제공하는 배달 서비스\n• 작동 방식: 사용자가 용기를 반납하면 포인트를 적립해주고, 다음 주문 시 할인 혜택 제공\n• 타겟 고객: 환경을 생각하는 20-30대 직장인',
+      analyzeButton: '🚀 AI 분석 시작하기',
+      detailedFeatures: {
+        title: '상세 작성의 장점',
+        items: [
+          '더 정확한 AI 분석 결과',
+          '구체적인 비즈니스 모델 제안',
+          '실현 가능성 높은 솔루션',
+          '맞춤형 시장 분석 제공'
+        ]
+      },
       tips: [
-        '💡 구체적일수록 더 좋은 분석 결과를 받을 수 있어요',
-        '🎯 문제와 솔루션을 간단히 적어보세요',
-        '🚀 Enter키로 빠른 제출도 가능해요'
+        '💡 문제 상황을 구체적으로 설명하세요',
+        '🎯 타겟 고객을 명확히 정의하세요',
+        '⚡ 해결 방법을 상세히 적어보세요'
       ]
     },
     en: {
-      title: '💡 Create Idea',
-      subtitle: 'Start simple! AI will analyze and develop your idea',
-      placeholder: 'Any idea is welcome!\n\nExamples:\n• "App to recycle food delivery packaging"\n• "AI pet health check service"\n• "Real-time used car auction platform"',
-      analyzeButton: '🚀 Start AI Idea Analysis',
-      bonus: 'First Idea Bonus',
+      title: '✍️ Detailed Idea Writing',
+      subtitle: 'Write more specific ideas for accurate AI analysis',
+      placeholder: 'Please describe your idea in detail...\n\nExample:\n• Problem: Too much disposable packaging from food delivery creates environmental burden\n• Solution: Delivery service with reusable packaging containers\n• How it works: Users get points for returning containers, discount for next order\n• Target: Environmentally conscious office workers in 20s-30s',
+      analyzeButton: '🚀 Start AI Analysis',
+      detailedFeatures: {
+        title: 'Benefits of Detailed Writing',
+        items: [
+          'More accurate AI analysis',
+          'Specific business model proposals',
+          'Highly feasible solutions',
+          'Customized market analysis'
+        ]
+      },
       tips: [
-        '💡 More specific ideas get better analysis results',
-        '🎯 Write problem and solution briefly',
-        '🚀 Press Enter for quick submit'
+        '💡 Describe the problem specifically',
+        '🎯 Clearly define target customers',
+        '⚡ Detail your solution approach'
       ]
     }
   };
@@ -87,10 +103,10 @@ const Create = () => {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       if (ideaText.trim()) {
-        handleAnalyzeIdea();
+        handleStartAnalysis();
       }
     }
   };
@@ -117,35 +133,12 @@ const Create = () => {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            {/* Bonus Banner */}
-            <div className="bg-gradient-to-r from-green-400 to-blue-500 rounded-xl p-6 mb-8 text-white text-center shadow-lg">
-              <div className="flex items-center justify-center space-x-2 mb-4">
-                <Gift className="w-6 h-6 animate-bounce" />
-                <span className="text-xl font-bold">{text[currentLanguage].bonus}</span>
-                <Gift className="w-6 h-6 animate-bounce" />
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div className="bg-white/20 rounded-lg p-3">
-                  <div className="text-lg font-bold">+100 XP</div>
-                  <div className="text-xs opacity-90">경험치</div>
-                </div>
-                <div className="bg-white/20 rounded-lg p-3">
-                  <div className="text-lg font-bold">무료 분석</div>
-                  <div className="text-xs opacity-90">AI 평가</div>
-                </div>
-                <div className="bg-white/20 rounded-lg p-3">
-                  <div className="text-lg font-bold">VC 노출</div>
-                  <div className="text-xs opacity-90">우선 추천</div>
-                </div>
-              </div>
-            </div>
-
             {/* Main Input Card */}
-            <Card className="shadow-xl border-2 border-purple-200">
+            <Card className="shadow-xl border-2 border-purple-200 mb-8">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Lightbulb className="w-6 h-6 text-purple-600" />
-                  <span>아이디어를 입력해주세요</span>
+                  <Edit3 className="w-6 h-6 text-purple-600" />
+                  <span>상세한 아이디어 작성</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -154,23 +147,23 @@ const Create = () => {
                   onChange={(e) => setIdeaText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={text[currentLanguage].placeholder}
-                  className="min-h-[200px] text-lg border-2 border-purple-100 focus:border-purple-300 resize-none rounded-xl"
-                  maxLength={500}
+                  className="min-h-[300px] text-lg border-2 border-purple-100 focus:border-purple-300 resize-none rounded-xl"
+                  maxLength={1000}
                 />
                 
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-500">
-                    💡 팁: Enter로 빠른 분석, Shift+Enter로 줄바꿈
+                    💡 팁: Cmd/Ctrl + Enter로 빠른 분석
                   </div>
                   <div className="text-sm text-gray-500 font-medium">
-                    {ideaText.length}/500
+                    {ideaText.length}/1000
                   </div>
                 </div>
 
-                {/* Single Action Button */}
+                {/* Action Button */}
                 <div className="flex justify-center">
                   <Button
-                    onClick={handleAnalyzeIdea}
+                    onClick={handleStartAnalysis}
                     disabled={!ideaText.trim()}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-8 text-lg shadow-lg w-full md:w-auto"
                     size="lg"
@@ -183,8 +176,26 @@ const Create = () => {
               </CardContent>
             </Card>
 
+            {/* Features Section */}
+            <Card className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 mb-8">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-green-600" />
+                  {text[currentLanguage].detailedFeatures.title}
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {text[currentLanguage].detailedFeatures.items.map((item, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Tips Section */}
-            <div className="mt-8 grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               {text[currentLanguage].tips.map((tip, index) => (
                 <Card key={index} className="bg-white/50 border border-purple-100">
                   <CardContent className="p-4 text-center">
