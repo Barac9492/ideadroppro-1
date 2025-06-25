@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,11 +7,8 @@ import AdminPanel from '@/components/AdminPanel';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import Badge from '@/components/ui/badge';
-import Tabs from '@/components/ui/tabs';
-import TabsList from '@/components/ui/tabs-list';
-import TabsTrigger from '@/components/ui/tabs-trigger';
-import TabsContent from '@/components/ui/tabs-content';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import SemanticModuleManager from '@/components/SemanticModuleManager';
 
 const Admin: React.FC = () => {
@@ -117,7 +115,7 @@ const Admin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header currentLanguage={currentLanguage} onLanguageToggle={toggleLanguage} />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">관리자 패널</h1>
@@ -137,27 +135,27 @@ const Admin: React.FC = () => {
           </TabsList>
 
           <TabsContent value="users">
-            {/* ... keep existing code (user management tabs) */}
+            <AdminPanel currentLanguage={currentLanguage} />
           </TabsContent>
 
           <TabsContent value="ideas">
-            {/* ... keep existing code (idea management tabs) */}
+            <AdminPanel currentLanguage={currentLanguage} />
           </TabsContent>
 
           <TabsContent value="seeds">
-            {/* ... keep existing code (seed management tabs) */}
+            <AdminPanel currentLanguage={currentLanguage} />
           </TabsContent>
 
           <TabsContent value="prompts">
-            {/* ... keep existing code (prompt management tabs) */}
+            <AdminPanel currentLanguage={currentLanguage} />
           </TabsContent>
 
           <TabsContent value="system">
-            {/* ... keep existing code (system management tabs) */}
+            <AdminPanel currentLanguage={currentLanguage} />
           </TabsContent>
 
           <TabsContent value="semantic">
-            <SemanticModuleManager currentLanguage="ko" />
+            <SemanticModuleManager currentLanguage={currentLanguage} />
           </TabsContent>
         </Tabs>
       </div>
