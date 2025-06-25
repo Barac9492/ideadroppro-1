@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -11,6 +12,7 @@ import Community from '@/pages/Community';
 import Remix from '@/pages/Remix';
 import Create from '@/pages/Create';
 import Explore from '@/pages/Explore';
+import Admin from '@/pages/Admin';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -35,6 +37,7 @@ function App() {
               <Route path="/my-workspace" element={<MyWorkspace />} />
               <Route path="/community" element={<Community />} />
               <Route path="/remix" element={<Remix />} />
+              <Route path="/admin" element={<Admin />} />
             </Routes>
           </div>
           <Toaster />
