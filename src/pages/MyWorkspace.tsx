@@ -4,9 +4,10 @@ import UserRemixDashboard from '@/components/UserRemixDashboard';
 import TopInfluencersBoard from '@/components/TopInfluencersBoard';
 import UserProfile from '@/components/UserProfile';
 import UserSettings from '@/components/UserSettings';
+import IdeaHistoryCard from '@/components/IdeaHistoryCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sparkles, Flame, Users, Settings } from 'lucide-react';
+import { Sparkles, Flame, Users, Settings, History } from 'lucide-react';
 import { useInfluenceScore } from '@/hooks/useInfluenceScore';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useDailyChallenge } from '@/hooks/useDailyChallenge';
@@ -37,7 +38,8 @@ const MyWorkspace = () => {
       influenceScore: '영향력 점수',
       currentStreak: '연속 참여',
       dailyChallenge: '오늘의 도전',
-      adminPanel: '관리자 패널'
+      adminPanel: '관리자 패널',
+      ideaHistory: '아이디어 히스토리'
     },
     en: {
       title: '👤 My Workspace',
@@ -50,7 +52,8 @@ const MyWorkspace = () => {
       influenceScore: 'Influence Score',
       currentStreak: 'Current Streak',
       dailyChallenge: 'Daily Challenge',
-      adminPanel: 'Admin Panel'
+      adminPanel: 'Admin Panel',
+      ideaHistory: 'Idea History'
     }
   };
 
@@ -121,7 +124,13 @@ const MyWorkspace = () => {
                   </div>
                 )}
               </div>
-              <UserRemixDashboard currentLanguage={currentLanguage} />
+
+              {/* 아이디어 히스토리 추가 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <IdeaHistoryCard currentLanguage={currentLanguage} />
+                <UserRemixDashboard currentLanguage={currentLanguage} />
+              </div>
+              
               <TopInfluencersBoard />
             </TabsContent>
 

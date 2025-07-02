@@ -12,6 +12,7 @@ import Community from '@/pages/Community';
 import Remix from '@/pages/Remix';
 import Create from '@/pages/Create';
 import Explore from '@/pages/Explore';
+import Profile from '@/pages/Profile';
 import Admin from '@/pages/Admin';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -35,8 +36,10 @@ function App() {
               <Route path="/submission-complete" element={<SubmissionComplete />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/my-workspace" element={<MyWorkspace />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/community" element={<Community />} />
-              <Route path="/remix" element={<Remix />} />
+              <Route path="/remix" element={<Route />} />
               <Route path="/admin" element={<Admin />} />
             </Routes>
           </div>

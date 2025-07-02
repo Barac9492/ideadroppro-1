@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Explore = () => {
   const [currentLanguage, setCurrentLanguage] = useState<'ko' | 'en'>('ko');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLanguageToggle = () => {
@@ -27,6 +28,7 @@ const Explore = () => {
       startYourOwn: '나만의 아이디어 시작하기',
       comingSoon: '곧 업데이트됩니다!',
       placeholder: '실제 아이디어 데이터가 로딩되면 여기에 표시됩니다.',
+      allCategories: '전체 카테고리',
       sampleIdeas: [
         {
           title: 'AI 기반 반려동물 건강 모니터링',
@@ -61,6 +63,7 @@ const Explore = () => {
       startYourOwn: 'Start Your Own Idea',
       comingSoon: 'Coming Soon!',
       placeholder: 'Real idea data will appear here when loaded.',
+      allCategories: 'All Categories',
       sampleIdeas: [
         {
           title: 'AI Pet Health Monitoring',
@@ -95,6 +98,18 @@ const Explore = () => {
     { name: currentLanguage === 'ko' ? '핀테크' : 'FinTech', count: 134, color: 'bg-yellow-100 text-yellow-800' },
     { name: currentLanguage === 'ko' ? '게임' : 'Gaming', count: 98, color: 'bg-pink-100 text-pink-800' }
   ];
+
+  // 선택된 카테고리에 따라 아이디어 필터링
+  const filteredIdeas = selectedCategory 
+    ? text[currentLanguage].sampleIdeas.filter(idea => 
+        idea.category.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+        selectedCategory.toLowerCase().includes(idea.category.toLowerCase())
+      )
+    : text[currentLanguage].sampleIdeas;
+
+  const handleCategoryClick = (categoryName: string) => {
+    setSelectedCategory(selectedCategory === categoryName ? null : categoryName);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
@@ -159,8 +174,31 @@ const Explore = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {/* All Categories Button */}
+                  <div 
+                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                      !selectedCategory 
+                        ? 'bg-purple-100 border-2 border-purple-300' 
+                        : 'hover:bg-gray-50 border-2 border-transparent'
+                    }`}
+                    onClick={() => setSelectedCategory(null)}
+                  >
+                    <span className="font-medium">{text[currentLanguage].allCategories}</span>
+                    <Badge variant="outline">
+                      {text[currentLanguage].sampleIdeas.length}
+                    </Badge>
+                  </div>
+                  
                   {categories.map((category, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <div 
+                      key={index} 
+                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedCategory === category.name 
+                          ? 'bg-purple-100 border-2 border-purple-300' 
+                          : 'hover:bg-gray-50 border-2 border-transparent'
+                      }`}
+                      onClick={() => handleCategoryClick(category.name)}
+                    >
                       <span className="font-medium">{category.name}</span>
                       <Badge className={category.color}>
                         {category.count}
@@ -173,34 +211,58 @@ const Explore = () => {
 
             {/* Main Content */}
             <div className="lg:col-span-3 space-y-8">
-              {/* Trending Ideas */}
+              {/* Selected Category Info */}
+              {selectedCategory && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-purple-800">
+                    {selectedCategory} 카테고리의 아이디어들
+                  </h3>
+                  <p className="text-purple-600 text-sm">
+                    {filteredIdeas.length}개의 아이디어가 있습니다
+                  </p>
+                </div>
+              )}
+
+              {/* Ideas List */}
               <div>
                 <div className="flex items-center space-x-2 mb-6">
                   <TrendingUp className="w-6 h-6 text-orange-500" />
-                  <h2 className="text-2xl font-bold text-gray-900">{text[currentLanguage].trending}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedCategory ? `${selectedCategory} 아이디어` : text[currentLanguage].trending}
+                  </h2>
                 </div>
                 
                 <div className="grid gap-6">
-                  {text[currentLanguage].sampleIdeas.map((idea, index) => (
-                    <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{idea.title}</h3>
-                            <p className="text-gray-600 mb-3">{idea.description}</p>
-                            <div className="flex items-center space-x-4">
-                              <span className="text-sm text-gray-500">by {idea.author}</span>
-                              <Badge variant="outline">{idea.category}</Badge>
+                  {filteredIdeas.length > 0 ? (
+                    filteredIdeas.map((idea, index) => (
+                      <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <h3 className="text-xl font-bold text-gray-900 mb-2">{idea.title}</h3>
+                              <p className="text-gray-600 mb-3">{idea.description}</p>
+                              <div className="flex items-center space-x-4">
+                                <span className="text-sm text-gray-500">by {idea.author}</span>
+                                <Badge variant="outline">{idea.category}</Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2 ml-4">
+                              <Star className="w-5 h-5 text-yellow-500" />
+                              <span className="text-xl font-bold text-gray-900">{idea.score}</span>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2 ml-4">
-                            <Star className="w-5 h-5 text-yellow-500" />
-                            <span className="text-xl font-bold text-gray-900">{idea.score}</span>
-                          </div>
-                        </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <Card>
+                      <CardContent className="p-8 text-center">
+                        <p className="text-gray-500">
+                          {selectedCategory} 카테고리에 해당하는 아이디어가 없습니다.
+                        </p>
                       </CardContent>
                     </Card>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
