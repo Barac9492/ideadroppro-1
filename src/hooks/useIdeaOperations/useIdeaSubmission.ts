@@ -59,8 +59,13 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
     if (/\p{Emoji}/u.test(ideaText)) score += 0.3;
     if (/\d+/.test(ideaText)) score += 0.3;
     
-    const randomBonus = Math.random() * 1.5;
-    score += randomBonus;
+      // 텍스트 기반 일관성 보장 (해시 기반 보너스)
+      const textHash = ideaText.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      const consistentBonus = (Math.abs(textHash) % 150) / 100; // 0-1.5 범위
+      score += consistentBonus;
     
     const finalScore = Math.max(3.0, Math.min(9.0, score));
     console.log(`💯 Guaranteed score: ${finalScore.toFixed(1)} for text length ${textLength}`);
@@ -189,7 +194,7 @@ export const useIdeaSubmission = ({ currentLanguage, user, fetchIdeas }: UseIdea
             await new Promise(resolve => setTimeout(resolve, 1000));
           } else {
             ideaData = insertedIdea;
-            console.log(`✅ Idea inserted successfully with score: ${finalScore}`);
+            console.log(`✅ Idea inserted successfully with ID: ${insertedIdea.id} and score: ${finalScore}`);
           }
         } catch (retryError) {
           console.error(`❌ Insert retry ${insertAttempts} error:`, retryError);

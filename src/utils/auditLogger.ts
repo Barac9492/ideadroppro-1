@@ -67,23 +67,13 @@ class AuditLogger {
     this.queue = [];
 
     try {
-      // Store in Supabase (you'll need to create this table)
-      const { error } = await supabase
-        .from('security_audit_logs')
-        .insert(events.map(event => ({
-          ...event,
-          created_at: new Date().toISOString(),
-        })));
-
-      if (error) {
-        console.error('Failed to store security logs:', error);
-        // Put events back in queue for retry
-        this.queue.unshift(...events);
-      }
+      // Store locally for now (can be enhanced with backend integration later)
+      this.storeLocally(events);
+      console.log(`🔒 Stored ${events.length} security events locally`);
     } catch (error) {
       console.error('Failed to flush security logs:', error);
-      // Store locally as fallback
-      this.storeLocally(events);
+      // Put events back in queue for retry
+      this.queue.unshift(...events);
     }
   }
 
@@ -99,7 +89,11 @@ class AuditLogger {
   private storeLocally(events: SecurityEvent[]) {
     try {
       const existing = JSON.parse(localStorage.getItem('security_logs') || '[]');
-      const updated = [...existing, ...events].slice(-100); // Keep last 100 events
+      const eventsWithTimestamp = events.map(event => ({
+        ...event,
+        created_at: new Date().toISOString()
+      }));
+      const updated = [...existing, ...eventsWithTimestamp].slice(-100); // Keep last 100 events
       localStorage.setItem('security_logs', JSON.stringify(updated));
     } catch (error) {
       console.error('Failed to store security logs locally:', error);
@@ -109,17 +103,18 @@ class AuditLogger {
   // Security monitoring methods
   async checkSuspiciousActivity(userId: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from('security_audit_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('event_type', SecurityEventType.LOGIN_FAILED)
-        .gte('created_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()) // Last 15 minutes
-        .order('created_at', { ascending: false });
+      // Check local storage for suspicious activity patterns
+      const stored = localStorage.getItem('security_logs');
+      if (!stored) return false;
 
-      if (error) throw error;
+      const logs = JSON.parse(stored);
+      const recentLogs = logs.filter((log: any) => 
+        log.user_id === userId &&
+        log.event_type === SecurityEventType.LOGIN_FAILED &&
+        new Date(log.created_at).getTime() > Date.now() - 15 * 60 * 1000
+      );
 
-      return (data?.length || 0) >= 5; // 5 failed attempts in 15 minutes
+      return recentLogs.length >= 5; // 5 failed attempts in 15 minutes
     } catch (error) {
       console.error('Failed to check suspicious activity:', error);
       return false;
@@ -134,15 +129,16 @@ class AuditLogger {
     }[timeRange];
 
     try {
-      const { data, error } = await supabase
-        .from('security_audit_logs')
-        .select('event_type, risk_level, created_at')
-        .gte('created_at', new Date(Date.now() - timeAgo).toISOString());
+      const stored = localStorage.getItem('security_logs');
+      if (!stored) return null;
 
-      if (error) throw error;
+      const logs = JSON.parse(stored);
+      const recentLogs = logs.filter((log: any) => 
+        new Date(log.created_at).getTime() > Date.now() - timeAgo
+      );
 
       const metrics = {
-        totalEvents: data?.length || 0,
+        totalEvents: recentLogs.length,
         riskLevels: {
           low: 0,
           medium: 0,
@@ -152,7 +148,7 @@ class AuditLogger {
         eventTypes: {} as Record<string, number>,
       };
 
-      data?.forEach(event => {
+      recentLogs.forEach((event: any) => {
         metrics.riskLevels[event.risk_level]++;
         metrics.eventTypes[event.event_type] = (metrics.eventTypes[event.event_type] || 0) + 1;
       });

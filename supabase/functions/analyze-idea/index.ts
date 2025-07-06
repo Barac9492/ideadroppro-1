@@ -53,6 +53,14 @@ serve(async (req) => {
       if (/\p{Emoji}/u.test(ideaText)) score += 0.3;
       if (/\d+/.test(ideaText)) score += 0.3;
       
+      // 텍스트 기반 일관성 보장 (해시 기반 변동)
+      const textHash = ideaText.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      const consistentVariation = (Math.abs(textHash) % 100) / 100 * 0.5; // 0-0.5 범위
+      score += consistentVariation;
+      
       // 최종 점수: 3.5 ~ 8.5 범위
       const finalScore = Math.max(3.5, Math.min(8.5, score));
       console.log(`💯 Guaranteed score calculated: ${finalScore.toFixed(1)}`);
@@ -235,8 +243,13 @@ Each item should be specific and actionable.`;
             if (improvements.length >= 3) aiScore += 0.5;
             if (pitchPoints.length >= 3) aiScore += 0.5;
             
-            const randomVariation = (Math.random() - 0.5) * 1.0;
-            aiScore += randomVariation;
+            // 텍스트 기반 일관성 보장 (해시 기반 변동)
+            const textHash = ideaText.split('').reduce((a, b) => {
+              a = ((a << 5) - a) + b.charCodeAt(0);
+              return a & a;
+            }, 0);
+            const consistentVariation = (Math.abs(textHash) % 100) / 100 * 1.0 - 0.5; // -0.5 ~ 0.5 범위
+            aiScore += consistentVariation;
             
             const finalScore = Math.max(2.0, Math.min(10.0, parseFloat(aiScore.toFixed(1))));
 
