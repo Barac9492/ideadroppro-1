@@ -39,7 +39,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/community" element={<Community />} />
-              <Route path="/remix" element={<Route />} />
+              <Route path="/remix" element={<Remix />} />
               <Route path="/admin" element={<Admin />} />
             </Routes>
           </div>
